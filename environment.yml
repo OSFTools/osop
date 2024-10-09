@@ -1,0 +1,14 @@
+name: osop-simple
+channels:
+  - iri-nextgen
+  - conda-forge
+  - defaults
+dependencies:
+  - pycpt
+  - xesmf
+  - cfgrib
+  - cdsapi
+  - xskillscore
+  - pytest
+  - pytest-cov
+  - black

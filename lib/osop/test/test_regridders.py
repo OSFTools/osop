@@ -11,7 +11,7 @@ import numpy as np
 from osop.regridders import regrid_cons_masked, interp_target
 import pytest
 
-TEST_DATA = os.getenv("TEST_DATA")
+TEST_DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data")
 
 
 # supress warning from Cython usually ignoed by numpy

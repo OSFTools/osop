@@ -1,4 +1,13 @@
 #!/bin/bash -l
+#SBATCH --mail-user=emma.dyer@metoffice.gov.uk
+#SBATCH --mail-type=ALL
+#SBATCH --qos=normal
+#SBATCH --mem=64G
+#SBATCH --ntasks=8
+#SBATCH --output=BRC_batch.txt
+#SBATCH --error=BRC_batch.err
+#SBATCH --time=00-06:00:00
+#SBATCH --export=NONE
 # (C) Crown Copyright, Met Office. All rights reserved.
 #
 # This file is part of osop and is released under the BSD 3-Clause license.
@@ -11,11 +20,12 @@ set -eu
 # this conda env gives an error on load, so
 # can't use -u option
 set +u
-conda activate osop
+conda activate climada_2024 ## to do build osop env, error using conda main
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/test_downloads
+downloaddir=$SCRATCH/seafoam/data
+
 mkdir -p $downloaddir
 
 # loop over all centres of interest and get data

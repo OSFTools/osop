@@ -23,7 +23,10 @@ python get_any_hindcast.py --centre <centre> --month <month> --leads <leads>
 
 import cdsapi
 import argparse
-from osop.constants import SYSTEMS
+import sys
+
+sys.path.append('/home/h01/edyer/IASAS/osop/')
+from lib.osop.constants import SYSTEMS
 
 
 def do_cdsapi_call(
@@ -103,7 +106,7 @@ def do_cdsapi_call(
             ],
             "product_type": "monthly_mean",
             "year": years,
-            "month": month,
+            "month": '{:02d}'.format(month),
             "leadtime_month": leadtime_month,
             "area": area,
         },

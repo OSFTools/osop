@@ -37,7 +37,7 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, DATADIR):
     print('Computing 3-month aggregation')
     hcst_3m = hcst.rolling(forecastMonth=3).mean() ## rollng method defaults to look backwards
     ## Want only 3 month mean with complete 3 months
-    hcst_3m = hcst_3m.where(hcst_3m.forecastMonth>=int(config['leads_p'][2]),drop=True) # ED change, need to check
+    hcst_3m = hcst_3m.where(hcst_3m.forecastMonth>=int(config['leads'][2]),drop=True) # ED change, need to check
     #hcst_3m = hcst_3m.where(hcst_3m.forecastMonth>=3,drop=True)
     
     # CALCULATE ANOMALIES (and save to file)
@@ -58,8 +58,9 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, DATADIR):
     return hcst, hcst_3m
 
 
-# We define a function to calculate the boundaries of forecast categories defined by quantiles
 def get_thresh(icat,quantiles,xrds,dims=['number','start_date']):
+    ''' Function to calculate the
+    boundaries of forecast categories defined by quantiles'''
 
     if not all(elem in xrds.dims for elem in dims):           
         raise Exception('Some of the dimensions in {} is not present in the xr.Dataset {}'.format(dims,xrds)) 
@@ -80,7 +81,8 @@ def get_thresh(icat,quantiles,xrds,dims=['number','start_date']):
 
 
 def prob_terc(hcst_bname, hcst, hcst_3m, DATADIR):
-    #  CALCULATE PROBABILITIES for tercile categories by counting members within each category
+    '''CALCULATE PROBABILITIES for tercile categories
+    by counting members within each category'''
 
     print('Computing probabilities (tercile categories)')
     quantiles = [1/3., 2/3.]
@@ -108,7 +110,7 @@ def prob_terc(hcst_bname, hcst, hcst_3m, DATADIR):
 
 
 def calc_products(config, downloaddir):
-        hcst_bname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}'.format(**config)
+        hcst_bname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}'.format(**config)
         hcst_fname = f'{downloaddir}/{hcst_bname}.grib'
 
         # For the re-shaping of time coordinates in xarray.Dataset we need to select the right one 
@@ -141,6 +143,10 @@ def parse_args():
         required=True,
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
+    parser.add_argument(
+        "--variable",
+        required=True,
+        help="variable to download, 2m_temperature, total_precipitation")
     parser.add_argument("--downloaddir", required=True, help="location to download to")
     parser.add_argument(
         "--years",
@@ -172,14 +178,16 @@ if __name__ == "__main__":
     leads_str = "".join([str(mon) for mon in leadtime_month])
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")
+    variable = args.variable
 
     # add arguments to config
     config = dict(
         start_month = month,
-        leads_p = [2,3,4],
+        leads = leadtime_month,
         origin = centre,
         area_str = area_str,
-        leads_str = leads_str
+        leads_str = leads_str,
+        var = variable
     )
 
     if args.years:

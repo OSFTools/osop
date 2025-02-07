@@ -36,6 +36,7 @@ for centre in meteo_france dwd cmcc ncep ukmo  ecmwf jma eccc ;do
         --month 5 \
         --leads "2,3,4" \
         --area "45,-30,-2.5,60" \
+        --variable "2m_temperature" \
         --downloaddir $downloaddir \
         > $downloaddir/download_log_jja_${centre}.txt 2>&1
     exitcode=$?

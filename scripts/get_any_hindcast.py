@@ -30,7 +30,7 @@ from lib.osop.constants import SYSTEMS
 
 
 def do_cdsapi_call(
-    centre, system, month, leadtime_month, area, area_str, downloaddir, years="hc"
+    centre, system, month, leadtime_month, area, area_str, variable, downloaddir, years="hc"
 ):
     """
     calls cdsapi for the requested period and area
@@ -100,17 +100,14 @@ def do_cdsapi_call(
             "format": "grib",
             "originating_centre": f"{centre}",
             "system": system,
-            "variable": [
-                "2m_temperature",
-                "total_precipitation",
-            ],
+            "variable": [variable],
             "product_type": "monthly_mean",
             "year": years,
             "month": '{:02d}'.format(month),
             "leadtime_month": leadtime_month,
             "area": area,
         },
-        f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}.grib",
+        f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
     )
 
 
@@ -133,6 +130,10 @@ def parse_args():
         required=True,
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
+    parser.add_argument(
+        "--variable",
+        required=True,
+        help="variable to download, 2m_temperature, total_precipitation")
     parser.add_argument("--downloaddir", required=True, help="location to download to")
     parser.add_argument(
         "--years",
@@ -162,6 +163,7 @@ def main():
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")
     month = int(args.month)
+    variable = str(args.variable)
 
     area = [float(pt) for pt in args.area.split(",")]
     if len(area) != 4:
@@ -180,6 +182,7 @@ def main():
             leadtime_month,
             area,
             area_str,
+            variable,
             downloaddir,
             years,
         )
@@ -190,6 +193,7 @@ def main():
             leadtime_month,
             area,
             area_str,
+            variable,
             downloaddir,
             years,
         )
@@ -203,6 +207,7 @@ def main():
             leadtime_month,
             area,
             area_str,
+            variable,
             downloaddir,
             years,
         )

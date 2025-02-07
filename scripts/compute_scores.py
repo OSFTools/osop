@@ -197,10 +197,10 @@ def scores_prblstc(era5_1deg, era5_1deg_3m, hcst_bname, config, downloaddir):
 
 
 def calc_scores(config, downloaddir):
-    hcst_bname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}'.format(**config)
+    hcst_bname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}'.format(**config)
 
     ## obs info
-    obs_fname = '{fpath}/era5_{hcstarty}-{hcendy}_monthly_{start_month}_{obs_str}_{area_str}.grib'.format(fpath=downloaddir,**config)
+    obs_fname = '{fpath}/era5_{hc_var}_{hcstarty}-{hcendy}_monthly_{start_month}_{obs_str}_{area_str}.grib'.format(fpath=downloaddir,**config)
 
     ## read obs
     era5_1deg, era5_1deg_3m = read_obs(obs_fname, config)
@@ -221,7 +221,10 @@ def parse_args():
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
     parser.add_argument("--aggregation", required=True, help="1m or 3m period for verification")
-    parser.add_argument("--variable", required=True, help="variable to verify")
+    parser.add_argument(
+        "--variable",
+        required=True,
+        help="variable to verify. t2m or tprate")
     parser.add_argument(
         "--leads", required=True, help="forecast range in months (comma separated)"
     )
@@ -266,6 +269,13 @@ if __name__ == "__main__":
     aggr = args.aggregation
     var = args.variable
 
+    if var == "t2m":
+        hc_var = "2m_temperature"
+    elif var == "tprate":
+        hc_var = "total_precipitation"
+    else:
+        raise ValueError(f"Unknown hindcast variable: {var}")
+
     # add arguments to config
     config = dict(
         start_month = month,
@@ -274,7 +284,8 @@ if __name__ == "__main__":
         leads_str = leads_str,
         obs_str = obs_str,
         aggr = aggr,
-        var = var
+        var = var,
+        hc_var = hc_var
     )
 
     if args.years:

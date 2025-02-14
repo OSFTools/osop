@@ -2,6 +2,7 @@
 import xarray as xr
 import pandas as pd
 import numpy as np
+import os
 
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
@@ -20,7 +21,8 @@ from lib.osop.constants import SYSTEMS
 def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, DATADIR):
     print('Reading HCST data from file')
     hcst = xr.open_dataset(hcst_fname,engine='cfgrib', backend_kwargs=dict(time_dims=('forecastMonth', st_dim_name)))
-    hcst = hcst.chunk({'forecastMonth':1, 'latitude':'auto', 'longitude':'auto'}) #force dask.array using chunks on leadtime, latitude and longitude coordinate
+    # force dask.array using chunks on leadtime, latitude and longitude coordinate
+    hcst = hcst.chunk({'forecastMonth':1, 'latitude':'auto', 'longitude':'auto'})
     hcst = hcst.rename({'latitude':'lat','longitude':'lon', st_dim_name:'start_date'})
 
     print ('Re-arranging time metadata in xr.Dataset object')
@@ -35,10 +37,10 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, DATADIR):
     # CALCULATE 3-month AGGREGATIONS
     # NOTE rolling() assigns the label to the end of the N month period, so the first N-1 elements have NaN and can be dropped
     print('Computing 3-month aggregation')
-    hcst_3m = hcst.rolling(forecastMonth=3).mean() ## rollng method defaults to look backwards
-    ## Want only 3 month mean with complete 3 months
-    hcst_3m = hcst_3m.where(hcst_3m.forecastMonth>=int(config['leads'][2]),drop=True) # ED change, need to check
-    #hcst_3m = hcst_3m.where(hcst_3m.forecastMonth>=3,drop=True)
+    # rollng method defaults to look backwards
+    hcst_3m = hcst.rolling(forecastMonth=3).mean()
+    # Want only 3 month mean with complete 3 months
+    hcst_3m = hcst_3m.where(hcst_3m.forecastMonth>=int(config['leads'][2]),drop=True)
     
     # CALCULATE ANOMALIES (and save to file)
     print('Computing anomalies 1m')
@@ -89,24 +91,27 @@ def prob_terc(hcst_bname, hcst, hcst_3m, DATADIR):
     numcategories = len(quantiles)+1
 
     for aggr,h in [("1m",hcst), ("3m",hcst_3m)]:
-        print(f'Computing tercile probabilities {aggr}')
+        if os.path.exist(f'{DATADIR}/{hcst_bname}.{aggr}.tercile_probs.nc'):
+            print("(f'{DATADIR}/{hcst_bname}.{aggr}.tercile_probs.nc') exists")
+        else:
+            print(f'Computing tercile probabilities {aggr}')
 
-        l_probs_hcst=list()
-        for icat in range(numcategories):
+            l_probs_hcst=list()
+            for icat in range(numcategories):
 
-            h_lo,h_hi = get_thresh(icat, quantiles, h)
-            probh = np.logical_and(h>h_lo, h<=h_hi).sum('number')/float(h.dims['number'])
+                h_lo,h_hi = get_thresh(icat, quantiles, h)
+                probh = np.logical_and(h>h_lo, h<=h_hi).sum('number')/float(h.dims['number'])
 
-            # Instead of using the coordinate 'quantile' coming from the hindcast xr.Dataset
-            # we will create a new coordinate called 'category'
-            if 'quantile' in probh:
-                probh = probh.drop('quantile')
-            l_probs_hcst.append(probh.assign_coords({'category':icat}))
+                # Instead of using the coordinate 'quantile' coming from the hindcast xr.Dataset
+                # we will create a new coordinate called 'category'
+                if 'quantile' in probh:
+                    probh = probh.drop('quantile')
+                l_probs_hcst.append(probh.assign_coords({'category':icat}))
 
-        print(f'Concatenating {aggr} tercile probs categories')
-        probs = xr.concat(l_probs_hcst,dim='category')                    
-        print(f'Saving {aggr} tercile probs netCDF files')
-        probs.to_netcdf(f'{DATADIR}/{hcst_bname}.{aggr}.tercile_probs.nc')
+            print(f'Concatenating {aggr} tercile probs categories')
+            probs = xr.concat(l_probs_hcst,dim='category')                    
+            print(f'Saving {aggr} tercile probs netCDF files')
+            probs.to_netcdf(f'{DATADIR}/{hcst_bname}.{aggr}.tercile_probs.nc')
 
 
 def calc_products(config, downloaddir):
@@ -215,8 +220,3 @@ if __name__ == "__main__":
             raise ValueError(f"Unknown system for C3S: {centre}")
         config['system'] = SYSTEMS[centre]
         calc_products(config, downloaddir)
-    
-
-
-    
-

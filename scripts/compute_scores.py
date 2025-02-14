@@ -31,18 +31,23 @@ def read_obs(obs_fname, config):
     era5_1deg = era5_1deg.assign_coords(forecastMonth=('valid_time',fcmonths))
     # Drop obs values not needed (earlier than first start date) - this is useful to create well shaped 3-month aggregations from obs.
     era5_1deg = era5_1deg.where(era5_1deg.valid_time>=np.datetime64('{hcstarty}-{start_month:02d}-01'.format(**config)),drop=True)
+    # Drop obs values not needed (later than 01/12/YYYY where YYYY is end year)
+    era5_1deg = era5_1deg.where(era5_1deg.valid_time<=np.datetime64('{hcendy}-12-02'.format(**config)),drop=True)
 
     # CALCULATE 3-month AGGREGATIONS
     # NOTE rolling() assigns the label to the end of the N month period
     print('Calculate observation 3-monthly aggregations')
     # NOTE care should be taken with the data available in the "obs" xr.Dataset so the rolling mean (over valid_time) is meaningful
-    era5_1deg_3m = era5_1deg.rolling(valid_time=3).mean()
-    era5_1deg_3m = era5_1deg_3m.where(era5_1deg_3m.forecastMonth>=3)
+    #era5_1deg_3m = era5_1deg.rolling(valid_time=3).mean()
+    era5_1deg_3m = era5_1deg.rolling(forecastMonth=3).mean()
+    era5_1deg_3m = era5_1deg_3m.where(era5_1deg_3m.forecastMonth>=int(config['leads'][2]),drop=True)
 
     # As we don't need it anymore at this stage, we can safely remove 'forecastMonth'
     era5_1deg = era5_1deg.drop('forecastMonth')
     era5_1deg_3m = era5_1deg_3m.drop('forecastMonth')
 
+    era5_1deg['valid_time'] = era5_1deg.valid_time.dt.strftime('%Y-%m')
+    era5_1deg_3m['valid_time'] = era5_1deg_3m.valid_time.dt.strftime('%Y-%m')
     return era5_1deg, era5_1deg_3m
 
 
@@ -69,9 +74,10 @@ def scores_dtrmnstc(era5_1deg, era5_1deg_3m, hcst_bname, downloaddir):
         for this_fcmonth in h.forecastMonth.values:
             print(f'forecastMonth={this_fcmonth}' )
             thishcst = h.sel(forecastMonth=this_fcmonth).swap_dims({'start_date':'valid_time'})
-            print(thishcst)
+            thishcst['valid_time'] = thishcst.valid_time.dt.strftime('%Y-%m')
+            print(thishcst['valid_time'])
+            print(o['valid_time'])
             thisobs = o.where(o.valid_time==thishcst.valid_time,drop=True)
-            print(thisobs)
             thishcst_em = thishcst if not is_fullensemble else thishcst.mean('number')
             l_corr.append( xs.spearman_r(thishcst_em, thisobs, dim='valid_time') )
             l_corr_pval.append ( xs.spearman_r_p_value(thishcst_em, thisobs, dim='valid_time') )
@@ -102,21 +108,13 @@ def scores_prblstc(era5_1deg, era5_1deg_3m, hcst_bname, config, downloaddir):
     
     # READ hindcast probabilities file
     probs_hcst = xr.open_dataset(f'{downloaddir}/{hcst_bname}.{aggr}.tercile_probs.nc')
-    #probs_hcst = probs_hcst[config['var']]
-
-    ## met office forecast has unexpected valid times e.g. not just JJA
-    #if 'ukmo' in hcst_bname:
-    #    print('ukmo')
-    #    #probs_hcst['start_date'] = probs_hcst.start_date.dt.strftime('%Y-%m')
-    #    probs_hcst = probs_hcst.where(probs_hcst.start_date.dt.month==config['start_month'],drop=True)
-    #print(probs_hcst.coords['valid_time'].values)
 
     l_roc=list()
     l_rps=list()
     l_rocss=list()
     l_bs=list()
     l_rel=list()
-    o['valid_time'] = o.valid_time.dt.strftime('%Y-%m')
+
     print(probs_hcst.forecastMonth.values)
 
     for this_fcmonth in probs_hcst.forecastMonth.values:
@@ -126,6 +124,9 @@ def scores_prblstc(era5_1deg, era5_1deg_3m, hcst_bname, config, downloaddir):
         print('We need to calculate probabilities (tercile categories) from observations')
         l_probs_obs=list()
         thishcst['valid_time'] = thishcst.valid_time.dt.strftime('%Y-%m')
+        print(thishcst.valid_time.values)
+        print(o.valid_time.values)
+
         thiso = o.where(o.valid_time==thishcst.valid_time,drop=True)
 
         for icat in range(numcategories):
@@ -165,13 +166,16 @@ def scores_prblstc(era5_1deg, era5_1deg_3m, hcst_bname, config, downloaddir):
                 relcat.append(xs.reliability(thisobscat.astype(int), thishcstcat))
 
             thisbs[var] = xr.concat(bscat,dim='category')
-            thisrel[var] = xr.concat(relcat,dim='category')
+            thisrel[var] = xr.concat(relcat,dim='category')        
 
         l_roc.append(thisroc)
         l_rps.append(thisrps)
         l_rocss.append(thisrocss)
         l_bs.append(thisbs)
         l_rel.append(thisrel)
+        ## Only want first month if aggr == 1m
+        if aggr == '1m':
+            break
 
     print('concat roc')
     roc=xr.concat(l_roc,dim='forecastMonth')
@@ -205,7 +209,7 @@ def calc_scores(config, downloaddir):
     ## read obs
     era5_1deg, era5_1deg_3m = read_obs(obs_fname, config)
     ## calc scores
-    #scores_dtrmnstc(era5_1deg, era5_1deg_3m, hcst_bname, downloaddir)
+    scores_dtrmnstc(era5_1deg, era5_1deg_3m, hcst_bname, downloaddir)
     scores_prblstc(era5_1deg, era5_1deg_3m, hcst_bname, config, downloaddir)
 
 
@@ -227,6 +231,9 @@ def parse_args():
         help="variable to verify. t2m or tprate")
     parser.add_argument(
         "--leads", required=True, help="forecast range in months (comma separated)"
+    )
+    parser.add_argument(
+        "--leads_obs", required=True, help="observation range in months (comma separated)"
     )
     parser.add_argument(
         "--area",
@@ -263,18 +270,19 @@ if __name__ == "__main__":
     leads = args.leads
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
-    obs_str = "".join([str(mon-1) for mon in leadtime_month])
+    obs_month = [int(l) for l in args.leads_obs.split(",")]
+    obs_str = "".join([str(mon) for mon in obs_month])
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")
     aggr = args.aggregation
-    var = args.variable
+    hc_var = args.variable
 
-    if var == "t2m":
-        hc_var = "2m_temperature"
-    elif var == "tprate":
-        hc_var = "total_precipitation"
+    if hc_var == "2m_temperature":
+        var = "t2m"
+    elif hc_var == "total_precipitation":
+        var = "tprate"
     else:
-        raise ValueError(f"Unknown hindcast variable: {var}")
+        raise ValueError(f"Unknown hindcast variable: {hc_var}")
 
     # add arguments to config
     config = dict(
@@ -282,6 +290,7 @@ if __name__ == "__main__":
         origin = centre,
         area_str = area_str,
         leads_str = leads_str,
+        leads = leadtime_month,
         obs_str = obs_str,
         aggr = aggr,
         var = var,

@@ -3,6 +3,7 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 import os
+import eccodes
 
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
@@ -18,7 +19,22 @@ sys.path.append('/home/h01/edyer/IASAS/osop/')
 from lib.osop.constants import SYSTEMS
 
 
-def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, DATADIR):
+def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
+    """
+    Calculate anomalies and save them to netCDF files.
+
+    Parameters:
+    hcst_fname (str): File path of the hindcast grib file.
+    hcst_bname (str): Base name of the hindcast grib file.
+    config (dict): Configuration parameters.
+    st_dim_name (str): Name of the start date dimension (important for lagged models)
+    datadir (str): Directory path to save the netCDF files.
+
+    Returns:
+    saves 1 month and 3 month anomalies to netCDF files
+    returns a tuple containing the original hindcast data and the 3-month aggregated data.
+    """
+
     print('Reading HCST data from file')
     hcst = xr.open_dataset(hcst_fname,engine='cfgrib', backend_kwargs=dict(time_dims=('forecastMonth', st_dim_name)))
     # force dask.array using chunks on leadtime, latitude and longitude coordinate
@@ -54,15 +70,25 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, DATADIR):
     anom_3m = anom_3m.assign_attrs(reference_period='{hcstarty}-{hcendy}'.format(**config))
 
     print('Saving anomalies 1m/3m to netCDF files')
-    anom.to_netcdf(f'{DATADIR}/{hcst_bname}.1m.anom.nc')
-    anom_3m.to_netcdf(f'{DATADIR}/{hcst_bname}.3m.anom.nc')
+    anom.to_netcdf(f'{datadir}/{hcst_bname}.1m.anom.nc')
+    anom_3m.to_netcdf(f'{datadir}/{hcst_bname}.3m.anom.nc')
 
     return hcst, hcst_3m
 
 
 def get_thresh(icat,quantiles,xrds,dims=['number','start_date']):
-    ''' Function to calculate the
-    boundaries of forecast categories defined by quantiles'''
+    """ Calculate the boundaries of forecast categories defined by quantiles
+
+    Args:
+        icat (int): The category number. 0 (lower than), 1 (normal), 2 (higher than).
+        quantiles (list): The list of quantiles. Use [1/3., 2/3.] for terciles. 
+        xrds (xarray.Dataset): The dataset containing the hindcast data.
+        dims (list, optional): The dimensions to consider when calculating the quantiles. 
+            Defaults to ['number', 'start_date'].
+    
+    Returns:
+        tuple: A tuple containing the lower and upper boundaries for the forecast category.
+    """
 
     if not all(elem in xrds.dims for elem in dims):           
         raise Exception('Some of the dimensions in {} is not present in the xr.Dataset {}'.format(dims,xrds)) 
@@ -82,17 +108,28 @@ def get_thresh(icat,quantiles,xrds,dims=['number','start_date']):
     return xrds_lo,xrds_hi
 
 
-def prob_terc(hcst_bname, hcst, hcst_3m, DATADIR):
-    '''CALCULATE PROBABILITIES for tercile categories
-    by counting members within each category'''
+def prob_terc(hcst_bname, hcst, hcst_3m, datadir):
+    """Calculate probabilities for tercile categories
+    by counting members within each category
+    
+    Args:
+        hcst_bname (str): Basename of hincast file.
+        hcst (xarray.Dataset): The dataset containing the hindcast data.
+        hcst_3m (xarray.Dataset): The dataset containing the 3-month aggregated hindcast data.
+        datadir (str): Directory path to save the netCDF files.
+    
+    Returns:
+        NA
+        Saves tercile forecasts to netcdf file. 
+    """
 
     print('Computing probabilities (tercile categories)')
     quantiles = [1/3., 2/3.]
     numcategories = len(quantiles)+1
 
     for aggr,h in [("1m",hcst), ("3m",hcst_3m)]:
-        if os.path.exist(f'{DATADIR}/{hcst_bname}.{aggr}.tercile_probs.nc'):
-            print("(f'{DATADIR}/{hcst_bname}.{aggr}.tercile_probs.nc') exists")
+        if os.path.isfile(f'{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc'):
+            print(f"{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc exists")
         else:
             print(f'Computing tercile probabilities {aggr}')
 
@@ -111,22 +148,55 @@ def prob_terc(hcst_bname, hcst, hcst_3m, DATADIR):
             print(f'Concatenating {aggr} tercile probs categories')
             probs = xr.concat(l_probs_hcst,dim='category')                    
             print(f'Saving {aggr} tercile probs netCDF files')
-            probs.to_netcdf(f'{DATADIR}/{hcst_bname}.{aggr}.tercile_probs.nc')
+            probs.to_netcdf(f'{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc')
 
 
 def calc_products(config, downloaddir):
+        """ Calculate anomalies and tercile probabilities for a given hindcast dataset
+        
+        Args:
+            config (dict): Configuration parameters.
+            downloaddir (str): Directory path to save the netCDF files.
+        """
+
         hcst_bname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}'.format(**config)
         hcst_fname = f'{downloaddir}/{hcst_bname}.grib'
 
-        # For the re-shaping of time coordinates in xarray.Dataset we need to select the right one 
+        # For the re-shaping of time coordinates in xarray.Dataset we need to select the right coord 
         #  -> burst mode ensembles (e.g. ECMWF SEAS5) use "time". This is the default option
         #  -> lagged start ensembles (e.g. MetOffice GloSea6) use "indexing_time" (see CDS documentation about nominal start date)
-        st_dim_name = 'time' if not config.get('isLagged',False) else 'indexing_time'
+        st_dim_name = get_tindex(hcst_fname)
+        #st_dim_name = 'time' if not config.get('isLagged',False) else 'indexing_time'
 
         ## calc anoms
         hcst, hcst_3m = calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, downloaddir)
         ## calc terc probs
         prob_terc(hcst_bname, hcst, hcst_3m, downloaddir)
+
+
+def get_tindex(infile):
+    """
+    Use eccodes to check if there is an indexing time dimension
+
+    Input
+        infile(str): name of file to check
+    Returns:
+        st_dim_name (str): name of time dimension to use for indexing. 
+            time for burst ensmeble and indexing_time for lagged
+
+    """
+    f = open(infile, 'rb')
+    gid = eccodes.codes_grib_new_from_file(f)
+    key = 'indexingDate'
+    try:
+        eccodes.codes_get(gid, key)
+        st_dim_name = 'indexing_time'
+
+    except eccodes.KeyValueNotFoundError:
+        st_dim_name = 'time'
+
+    eccodes.codes_release(gid)
+    return st_dim_name
 
 
 def parse_args():
@@ -167,8 +237,7 @@ if __name__ == "__main__":
     """
     Called when this is run as a script
     Get the command line arguments using argparse
-    Call the main funciton to do the actual
-    calculation of anomalies and terciles
+    Call the main funcitons to calculate anomalies and terciles
     """
 
     # get command line args
@@ -203,8 +272,8 @@ if __name__ == "__main__":
         config['hcendy'] = 2016
 
     # TODO replace with Nick's code for determining whether lagged from Grib
-    if centre == 'ukmo':
-        config['isLagged'] = True
+    #if centre == 'ukmo':
+    #    config['isLagged'] = True
 
     ## hindcast info
     if centre == "eccc":

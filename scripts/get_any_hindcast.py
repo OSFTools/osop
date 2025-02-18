@@ -45,21 +45,10 @@ def do_cdsapi_call(
         leadtime_month(list): list of lead times for FC (int)
         area(list): 4 element list of floats with area for download
         area_str(str): colon seperated area string
+        variable(str): variable for download
         downloaddir(str):directory to use for the downloads
         years(str): years to get data for (comma separated). Optional.
                     Default is hindcast period 1993-2016.
-
-
-    TO DO:
-    1. optionally, get other variables
-    2. tests
-    mocked:
-    call with ecmwf and ecc
-    different lengths of lead time
-
-    should be failures:
-    centre = 'bob'
-    length not equal to 4
 
     """
     c = cdsapi.Client()

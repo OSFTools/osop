@@ -24,19 +24,29 @@ from lib.osop.constants import SYSTEMS
 CATNAMES=['lower tercile', 'middle tercile', 'upper tercile']
 
 def prep_titles(config):
+    """
+    Prepare titles for the plot based on the arguments in the config dictionary.
+    Currently this replicates the titles here:
+    https://confluence.ecmwf.int/display/CKB/C3S+seasonal+forecasts+verification+plots
 
-    # PREPARE STRINGS for TITLES
+    Args:
+        config (dict): A dictionary containing the configuration parameters.
+
+    Returns:
+        tuple: A tuple containing the prepared titles for the plot.
+            The first element is the first line of the title.
+            The second element is the second line of the title.
+    """
     tit_line1 = '{origin} {system}'.format(**config)
     tit_line2_base = f'Start month: {calendar.month_abbr[config["start_month"]].upper()}'
 
     if config['aggr']=='1m':
-        validmonth = config['valid_month']#config['start_month'] + (config['valid_month']-1)
+        validmonth = config['valid_month']
         validmonth = validmonth if validmonth<=12 else validmonth-12
         tit_line2 = tit_line2_base + f' - Valid month: {calendar.month_abbr[validmonth].upper()}'
     elif config['aggr'] == '3m':
-        #validmonths = [vm if vm<=12 else vm-12 for vm in [config['start_month'] + (config['valid_month']-1) - shift for shift in range(3)]]
         validmonths = [vm if vm<=12 else vm-12 for vm in [config['valid_month'] + shift for shift in range(3)]]
-        validmonths = [calendar.month_abbr[vm][0] for vm in validmonths] #reversed(validmonths)]
+        validmonths = [calendar.month_abbr[vm][0] for vm in validmonths]
         tit_line2 = tit_line2_base + f' - Valid months: {"".join(validmonths)}'
     else:
         raise BaseException(f'Unexpected aggregation')
@@ -44,7 +54,20 @@ def prep_titles(config):
 
 
 def plot_score(score_f, category, config, score, titles, datadir):
+    """
+    Plot the score on a map.
 
+    Parameters:
+    score_f (numpy.ndarray): The score data.
+    category (str): The tercile category. Set to None if not relevant for the score.
+    config (dict): Configuration parameters.
+    score (str): The name of the score.
+    titles (list): Titles for the plot.
+    datadir (str): The directory to save the plot.
+
+    Returns:
+    None
+    """
     # choose a projection and set up an axes based on that
     projection = ccrs.Mercator()
     ax = plt.axes(projection=projection)
@@ -65,7 +88,6 @@ def plot_score(score_f, category, config, score, titles, datadir):
         plt.title(f'{score} \n' + titles[0] + f' {config["var"]}\n' + titles[1], loc='left')
     elif score == 'bs':
         p = score_f[config['var']].sel(category=category)[0,:,:]
-
         lon = score_f[config['var']].sel(category=category).lon
         lat = score_f[config['var']].sel(category=category).lat
         cols = 'YlGn_r'
@@ -94,8 +116,18 @@ def plot_score(score_f, category, config, score, titles, datadir):
     plt.close()
 
 
-def plot_rel(score_f, category, config, score, datadir):
-    info = f'{config["var"]}_{config["origin"]}_{config["system"]}_fcst_start_month_{config["start_month"]}_{config["aggr"]}_cat_{category}_score_{score}'
+def plot_rel(score_f, config, score, datadir):
+    """Plot reliability diagram
+    Parameters:
+    score_f (numpy.ndarray): The reliability score data.
+    config (dict): Configuration parameters.
+    score (str): The name of the score.
+    datadir (str): The directory to save the plot.
+
+    Returns:
+    None
+    """
+    info = f'{config["var"]}_{config["origin"]}_{config["system"]}_fcst_start_month_{config["start_month"]}_{config["aggr"]}_score_{score}'
     
     for var in score_f.data_vars:
         print(score_f)
@@ -124,10 +156,21 @@ def plot_rel(score_f, category, config, score, datadir):
 
 
 def corr_plots(datadir, hcst_bname, aggr, config, titles):
+    """Plot deterministic scores
+    Parameters:
+    datadir (str): The directory to save the plot.
+    hcst_bname (str): The basename of the hindcast file.
+    aggr (str): The aggregation period.
+    config (dict): Configuration parameters.
+    titles (list): Titles for the plot.
+    
+    Returns:
+    None
+    """
     # Read the data files
     corr = xr.open_dataset(f'{datadir}/scores/{hcst_bname}.{aggr}.corr.nc')
     corr_pval = xr.open_dataset(f'{datadir}/scores/{hcst_bname}.{aggr}.corr_pval.nc')
-    # RE-ARRANGE the DATASETS longitude values for plotting purposes
+    # Rearrange the dataset longitude values for plotting purposes
     corr = corr.assign_coords(lon=(((corr.lon + 180) % 360) - 180)).sortby('lon')
     corr_pval = corr_pval.assign_coords(lon=(((corr_pval.lon + 180) % 360) - 180)).sortby('lon')
 
@@ -164,15 +207,15 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
 
 def generate_plots(config, titles, downloaddir):
     ## read in the data
-    
     score_fname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc'.format(**config)
     score_data = xr.open_dataset(os.path.join(downloaddir, 'scores', score_fname))
+
     if config['score'] == 'corr':
         score_fname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}'.format(**config)
         corr_plots(downloaddir, score_fname, config['aggr'], config, titles)
 
     elif config['score'] == 'rel':
-        plot_rel(score_data, None, config, config['score'], downloaddir)
+        plot_rel(score_data, config, config['score'], downloaddir)
     
     elif config['score'] == 'rps':
         plot_score(score_data, None, config, config['score'], titles, downloaddir)
@@ -197,7 +240,6 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
-    parser.add_argument("--aggregation", required=True, help="1m or 3m period for verification")
     parser.add_argument(
         "--variable",
         required=True,
@@ -242,7 +284,6 @@ if __name__ == '__main__':
     obs_str = "".join([str(mon-1) for mon in leadtime_month])
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")
-    aggr = args.aggregation
     fname_var = args.variable
 
     if fname_var == "2m_temperature":
@@ -262,7 +303,6 @@ if __name__ == '__main__':
         area_str = area_str,
         leads_str = leads_str,
         obs_str = obs_str,
-        aggr = aggr,
         fname_var = fname_var,
         var = var
     )
@@ -276,25 +316,27 @@ if __name__ == '__main__':
 
  
     for score in scores:
-        config['score'] = score
+        for aggr in ["1m", "3m"]:
+            config['aggr'] = aggr
+            config['score'] = score
 
-        # run for appropriate system
-        if centre == "eccc":
-            # two models aka systems are live - call twice with each system number
-            config['system'] = SYSTEMS["eccc_can"]
-            ## set titles
-            titles = prep_titles(config)
-            generate_plots(config, titles, downloaddir)
-        
-            ## repeat for second system
-            config['system'] = SYSTEMS["eccc_gem5"]
-            ## set titles
-            titles = prep_titles(config)
-            generate_plots(config, titles, downloaddir)
-        else:
-            if centre not in SYSTEMS.keys():
-                raise ValueError(f"Unknown system for C3S: {centre}")
-            config['system'] = SYSTEMS[centre]
-            ## set titles
-            titles = prep_titles(config)
-            generate_plots(config, titles, downloaddir)
+            # run for appropriate system
+            if centre == "eccc":
+                # two models aka systems are live - call twice with each system number
+                config['system'] = SYSTEMS["eccc_can"]
+                ## set titles
+                titles = prep_titles(config)
+                generate_plots(config, titles, downloaddir)
+            
+                ## repeat for second system
+                config['system'] = SYSTEMS["eccc_gem5"]
+                ## set titles
+                titles = prep_titles(config)
+                generate_plots(config, titles, downloaddir)
+            else:
+                if centre not in SYSTEMS.keys():
+                    raise ValueError(f"Unknown system for C3S: {centre}")
+                config['system'] = SYSTEMS[centre]
+                ## set titles
+                titles = prep_titles(config)
+                generate_plots(config, titles, downloaddir)

@@ -3,7 +3,7 @@ import cdsapi
 
 import os
 
-# Disable warnings for data download via API and matplotlib (do I need both???)
+# Disable warnings for data download via API
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -11,6 +11,15 @@ import argparse
 
 
 def get_obs(obs_fname, config):
+    """
+    calls cdsapi for the requested period and area
+    retrieves monthly averaged reanalysis ERA5 data
+
+    Args:
+        obs_fname(str): fname to save to, and to check not already downloaded
+        config dictionary containing necessary arguments for cdsapi
+
+    """
     c = cdsapi.Client()
     if os.path.exists(obs_fname):
         print(f'File {obs_fname} already exists')

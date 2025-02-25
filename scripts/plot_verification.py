@@ -101,7 +101,7 @@ def plot_score(score_f, category, config, score, titles, datadir):
         lon = score_f[config['var']].sel(category=category).lon
         lat = score_f[config['var']].sel(category=category).lat
         cols = 'YlGn'
-        ex_dir = 'min'
+        ex_dir = 'neither'
         under = 'lightgray'
         levels = np.linspace(0.5,1.,6)
 
@@ -204,6 +204,7 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     plt.tight_layout()
     figname = f'{datadir}/scores/{hcst_bname}.{aggr}.corr.png'
     plt.savefig(figname)
+    plt.close()
 
 def generate_plots(config, titles, downloaddir):
     ## read in the data

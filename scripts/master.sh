@@ -1,5 +1,13 @@
 #!/bin/bash -l
-
+#SBATCH --qos=normal
+#SBATCH --mem=128G
+#SBATCH --ntasks=8
+#SBATCH --output=master.txt
+#SBATCH --error=master.err
+#SBATCH --time=00-06:00:00
+#SBATCH --export=NONE
+#SBATCH --mail-user=emma.dyer@metoffice.gov.uk
+#SBATCH --mail-type=ALL
 # (C) Crown Copyright, Met Office. All rights reserved.
 #
 # This file is part of osop and is released under the BSD 3-Clause license.
@@ -18,9 +26,8 @@ set -u
 downloaddir=$SCRATCH/seafoam/data/master
 
 # set parameters
-month=12 # initialisation month
-leads="1,2,3" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
-lead_obs="0,1,2" # e.g. if month=5 and lead_obs="1,2,3", obs downloaded for JJA (6,7,8)
+month=11 # initialisation month
+leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
 variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
 
@@ -63,7 +70,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     set +e
     python get_era5.py \
         --month $month \
-        --leads_obs $lead_obs \
+        --leads $leads \
         --area $area \
         --downloaddir $downloaddir \
         --variable $variable \
@@ -81,7 +88,6 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         --centre $centre \
         --month $month \
         --leads $leads \
-        --leads_obs $lead_obs \
         --area $area \
         --downloaddir $downloaddir \
         --variable $variable \

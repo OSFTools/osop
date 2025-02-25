@@ -55,7 +55,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--month", required=True, help="start month for observations")
     parser.add_argument(
-        "--leads_obs", required=True, help="observation range in months (comma separated)"
+        "--leads", required=True, help="forecast range in months (comma separated)"
     )
     parser.add_argument(
         "--area",
@@ -87,8 +87,7 @@ if __name__ == "__main__":
     # unpack args and reformat if needed
     downloaddir = args.downloaddir
     month = int(args.month)
-    leads_obs = args.leads_obs
-    leadtime_month = [int(l) for l in args.leads_obs.split(",")]
+    leadtime_month = [int(l)-1 for l in args.leads.split(",")]
     # for filename to keep consistent with hindcast filenames
     leads_str = "".join([str(mon) for mon in leadtime_month])
     area_bounds = [float(pt) for pt in args.area.split(",")]

@@ -268,9 +268,6 @@ def parse_args():
         "--leads", required=True, help="forecast range in months (comma separated)"
     )
     parser.add_argument(
-        "--leads_obs", required=True, help="observation range in months (comma separated)"
-    )
-    parser.add_argument(
         "--area",
         required=True,
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
@@ -305,7 +302,7 @@ if __name__ == "__main__":
     leads = args.leads
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
-    obs_month = [int(l) for l in args.leads_obs.split(",")]
+    obs_month = [int(l)-1 for l in args.leads.split(",")]
     obs_str = "".join([str(mon) for mon in obs_month])
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")

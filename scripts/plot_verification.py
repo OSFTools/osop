@@ -53,7 +53,7 @@ def prep_titles(config):
     return tit_line1, tit_line2
 
 
-def plot_score(score_f, category, config, score, titles, datadir):
+def plot_score(score_f, score_fname, category, config, score, titles, datadir):
     """
     Plot the score on a map.
 
@@ -74,8 +74,8 @@ def plot_score(score_f, category, config, score, titles, datadir):
     # Specify CRS
     crs = ccrs.PlateCarree()
 
-    info = f'{config["var"]}_{config["origin"]}_{config["system"]}_fcst_start_month_{config["start_month"]}_leads_{config["leads_str"]}_{config["aggr"]}_cat_{category}_score_{score}'
-
+    #info = f'{config["var"]}_{config["origin"]}_{config["system"]}_fcst_start_month_{config["start_month"]}_leads_{config["leads_str"]}_{config["aggr"]}_cat_{category}_score_{score}'
+    info = f'{score_fname}_category_{category}'
     if score == 'rps':
         p = score_f[config['var']][0,:,:]
         lon = score_f[config['var']].lon
@@ -84,7 +84,8 @@ def plot_score(score_f, category, config, score, titles, datadir):
         ex_dir = 'max'
         under = 'purple'
         levels = np.linspace(0.,0.5,11)
-        info = f'{config["var"]}_{config["origin"]}_{config["system"]}_fcst_start_month_{config["start_month"]}_leads_{config["leads_str"]}_{config["aggr"]}_score_{score}'
+        info = score_fname
+        #info = f'{config["var"]}_{config["origin"]}_{config["system"]}_fcst_start_month_{config["start_month"]}_leads_{config["leads_str"]}_{config["aggr"]}_score_{score}'
         plt.title(f'{score} \n' + titles[0] + f' {config["var"]}\n' + titles[1], loc='left')
     elif score == 'bs':
         p = score_f[config['var']].sel(category=category)[0,:,:]
@@ -116,7 +117,7 @@ def plot_score(score_f, category, config, score, titles, datadir):
     plt.close()
 
 
-def plot_rel(score_f, config, score, datadir):
+def plot_rel(score_f, score_fname, config, score, datadir):
     """Plot reliability diagram
     Parameters:
     score_f (numpy.ndarray): The reliability score data.
@@ -127,8 +128,8 @@ def plot_rel(score_f, config, score, datadir):
     Returns:
     None
     """
-    info = f'{config["var"]}_{config["origin"]}_{config["system"]}_fcst_start_month_{config["start_month"]}_{config["aggr"]}_score_{score}'
-    
+    #info = f'{config["var"]}_{config["origin"]}_{config["system"]}_fcst_start_month_{config["start_month"]}_{config["aggr"]}_score_{score}'
+    info = score_fname
     for var in score_f.data_vars:
         print(score_f)
         p = score_f[var][0,:,:]
@@ -208,27 +209,27 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
 
 def generate_plots(config, titles, downloaddir):
     ## read in the data
-    score_fname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc'.format(**config)
-    score_data = xr.open_dataset(os.path.join(downloaddir, 'scores', score_fname))
+    score_fname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}'.format(**config)
+    score_data = xr.open_dataset(os.path.join(downloaddir, 'scores', f'{score_fname}.nc'))
 
     if config['score'] == 'corr':
         score_fname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}'.format(**config)
         corr_plots(downloaddir, score_fname, config['aggr'], config, titles)
 
     elif config['score'] == 'rel':
-        plot_rel(score_data, config, config['score'], downloaddir)
+        plot_rel(score_data, score_fname, config, config['score'], downloaddir)
     
     elif config['score'] == 'rps':
-        plot_score(score_data, None, config, config['score'], titles, downloaddir)
+        plot_score(score_data, score_fname, None, config, config['score'], titles, downloaddir)
     
     elif config['score'] == 'bs':
         for cat in [0,1,2]:
-            plot_score(score_data, cat, config, config['score'], titles, downloaddir)
+            plot_score(score_data, score_fname, cat, config, config['score'], titles, downloaddir)
 
     else:
         for cat in [0,1,2]:
             config['category'] = cat
-            plot_score(score_data, cat, config, config['score'], titles, downloaddir)
+            plot_score(score_data, score_fname, cat, config, config['score'], titles, downloaddir)
 
 def parse_args():
     """

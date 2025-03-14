@@ -8,14 +8,9 @@ import eccodes
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
 
-# Disable warnings for data download via API
-import warnings
-warnings.filterwarnings('ignore')
-
 import argparse
-import sys
 
-sys.path.append('/home/h01/edyer/IASAS/osop/')
+# Ensure the top level directory has been added to PYTHONPATH
 from lib.osop.constants import SYSTEMS
 
 
@@ -32,146 +27,170 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
 
     Returns:
     saves 1 month and 3 month anomalies to netCDF files
-    returns a tuple containing the original hindcast data and the 3-month aggregated data.
+    returns a tuple of xarray datasets containing the original hindcast data and the 3-month aggregated data.
     """
 
-    print('Reading HCST data from file')
-    hcst = xr.open_dataset(hcst_fname,engine='cfgrib', backend_kwargs=dict(time_dims=('forecastMonth', st_dim_name)))
+    print("Reading HCST data from file")
+    hcst = xr.open_dataset(
+        hcst_fname,
+        engine="cfgrib",
+        backend_kwargs=dict(time_dims=("forecastMonth", st_dim_name)),
+    )
     # force dask.array using chunks on leadtime, latitude and longitude coordinate
-    hcst = hcst.chunk({'forecastMonth':1, 'latitude':'auto', 'longitude':'auto'})
-    hcst = hcst.rename({'latitude':'lat','longitude':'lon', st_dim_name:'start_date'})
+    hcst = hcst.chunk({"forecastMonth": 1, "latitude": "auto", "longitude": "auto"})
+    hcst = hcst.rename(
+        {"latitude": "lat", "longitude": "lon", st_dim_name: "start_date"}
+    )
 
-    print ('Re-arranging time metadata in xr.Dataset object')
+    print("Re-arranging time metadata in xr.Dataset object")
     # Add start_month to the xr.Dataset
     start_month = pd.to_datetime(hcst.start_date.values[0]).month
-    hcst = hcst.assign_coords({'start_month':start_month})
+    hcst = hcst.assign_coords({"start_month": start_month})
     # Add valid_time to the xr.Dataset
-    vt = xr.DataArray(dims=('start_date','forecastMonth'), coords={'forecastMonth':hcst.forecastMonth,'start_date':hcst.start_date})
-    vt.data = [[pd.to_datetime(std)+relativedelta(months=fcmonth-1) for fcmonth in vt.forecastMonth.values] for std in vt.start_date.values]
+    vt = xr.DataArray(
+        dims=("start_date", "forecastMonth"),
+        coords={"forecastMonth": hcst.forecastMonth, "start_date": hcst.start_date},
+    )
+    vt.data = [
+        [
+            pd.to_datetime(std) + relativedelta(months=fcmonth - 1)
+            for fcmonth in vt.forecastMonth.values
+        ]
+        for std in vt.start_date.values
+    ]
     hcst = hcst.assign_coords(valid_time=vt)
 
     # CALCULATE 3-month AGGREGATIONS
     # NOTE rolling() assigns the label to the end of the N month period, so the first N-1 elements have NaN and can be dropped
-    print('Computing 3-month aggregation')
+    print("Computing 3-month aggregation")
     # rollng method defaults to look backwards
     hcst_3m = hcst.rolling(forecastMonth=3).mean()
     # Want only 3 month mean with complete 3 months
-    hcst_3m = hcst_3m.where(hcst_3m.forecastMonth>=int(config['leads'][2]),drop=True)
-    
+    hcst_3m = hcst_3m.where(hcst_3m.forecastMonth >= int(config["leads"][2]), drop=True)
+
     # CALCULATE ANOMALIES (and save to file)
-    print('Computing anomalies 1m')
-    hcmean = hcst.mean(['number','start_date'])
+    print("Computing anomalies 1m")
+    hcmean = hcst.mean(["number", "start_date"])
     anom = hcst - hcmean
-    anom = anom.assign_attrs(reference_period='{hcstarty}-{hcendy}'.format(**config))
+    anom = anom.assign_attrs(reference_period="{hcstarty}-{hcendy}".format(**config))
 
-    print('Computing anomalies 3m')
-    hcmean_3m = hcst_3m.mean(['number','start_date'])
+    print("Computing anomalies 3m")
+    hcmean_3m = hcst_3m.mean(["number", "start_date"])
     anom_3m = hcst_3m - hcmean_3m
-    anom_3m = anom_3m.assign_attrs(reference_period='{hcstarty}-{hcendy}'.format(**config))
+    anom_3m = anom_3m.assign_attrs(
+        reference_period="{hcstarty}-{hcendy}".format(**config)
+    )
 
-    print('Saving anomalies 1m/3m to netCDF files')
-    anom.to_netcdf(f'{datadir}/{hcst_bname}.1m.anom.nc')
-    anom_3m.to_netcdf(f'{datadir}/{hcst_bname}.3m.anom.nc')
+    print("Saving anomalies 1m/3m to netCDF files")
+    anom.to_netcdf(f"{datadir}/{hcst_bname}.1m.anom.nc")
+    anom_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.anom.nc")
 
     return hcst, hcst_3m
 
 
-def get_thresh(icat,quantiles,xrds,dims=['number','start_date']):
-    """ Calculate the boundaries of forecast categories defined by quantiles
+def get_thresh(icat, quantiles, xrds, dims=["number", "start_date"]):
+    """Calculate the boundaries of forecast categories defined by quantiles e.g. terciles
 
     Args:
         icat (int): The category number. 0 (lower than), 1 (normal), 2 (higher than).
-        quantiles (list): The list of quantiles. Use [1/3., 2/3.] for terciles. 
+        quantiles (list): The list of quantiles. Use [1/3., 2/3.] for terciles.
         xrds (xarray.Dataset): The dataset containing the hindcast data.
-        dims (list, optional): The dimensions to consider when calculating the quantiles. 
+        dims (list, optional): The dimensions to consider when calculating the quantiles.
             Defaults to ['number', 'start_date'].
-    
+
     Returns:
         tuple: A tuple containing the lower and upper boundaries for the forecast category.
     """
 
-    if not all(elem in xrds.dims for elem in dims):           
-        raise Exception('Some of the dimensions in {} is not present in the xr.Dataset {}'.format(dims,xrds)) 
+    if not all(elem in xrds.dims for elem in dims):
+        raise ValueError(
+            "Some of the dimensions in {} is not present in the xr.Dataset {}".format(
+                dims, xrds
+            )
+        )
     else:
         if icat == 0:
             xrds_lo = -np.inf
-            xrds_hi = xrds.quantile(quantiles[icat],dim=dims)      
-            
+            xrds_hi = xrds.quantile(quantiles[icat], dim=dims)
+
         elif icat == len(quantiles):
-            xrds_lo = xrds.quantile(quantiles[icat-1],dim=dims)
+            xrds_lo = xrds.quantile(quantiles[icat - 1], dim=dims)
             xrds_hi = np.inf
-            
+
         else:
-            xrds_lo = xrds.quantile(quantiles[icat-1],dim=dims)
-            xrds_hi = xrds.quantile(quantiles[icat],dim=dims)
-      
-    return xrds_lo,xrds_hi
+            xrds_lo = xrds.quantile(quantiles[icat - 1], dim=dims)
+            xrds_hi = xrds.quantile(quantiles[icat], dim=dims)
+
+    return xrds_lo, xrds_hi
 
 
 def prob_terc(hcst_bname, hcst, hcst_3m, datadir):
     """Calculate probabilities for tercile categories
     by counting members within each category
-    
+
     Args:
         hcst_bname (str): Basename of hincast file.
         hcst (xarray.Dataset): The dataset containing the hindcast data.
         hcst_3m (xarray.Dataset): The dataset containing the 3-month aggregated hindcast data.
         datadir (str): Directory path to save the netCDF files.
-    
+
     Returns:
         NA
-        Saves tercile forecasts to netcdf file. 
+        Saves tercile forecasts to netcdf file.
     """
 
-    print('Computing probabilities (tercile categories)')
-    quantiles = [1/3., 2/3.]
-    numcategories = len(quantiles)+1
+    print("Computing probabilities (tercile categories)")
+    quantiles = [1 / 3.0, 2 / 3.0]
+    numcategories = len(quantiles) + 1
 
-    for aggr,h in [("1m",hcst), ("3m",hcst_3m)]:
-        if os.path.isfile(f'{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc'):
+    for aggr, h in [("1m", hcst), ("3m", hcst_3m)]:
+        if os.path.isfile(f"{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc"):
             print(f"{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc exists")
         else:
-            print(f'Computing tercile probabilities {aggr}')
+            print(f"Computing tercile probabilities {aggr}")
 
-            l_probs_hcst=list()
+            l_probs_hcst = list()
             for icat in range(numcategories):
 
-                h_lo,h_hi = get_thresh(icat, quantiles, h)
-                probh = np.logical_and(h>h_lo, h<=h_hi).sum('number')/float(h.dims['number'])
+                h_lo, h_hi = get_thresh(icat, quantiles, h)
+                probh = np.logical_and(h > h_lo, h <= h_hi).sum("number") / float(
+                    h.dims["number"]
+                )
 
                 # Instead of using the coordinate 'quantile' coming from the hindcast xr.Dataset
                 # we will create a new coordinate called 'category'
-                if 'quantile' in probh:
-                    probh = probh.drop('quantile')
-                l_probs_hcst.append(probh.assign_coords({'category':icat}))
+                if "quantile" in probh:
+                    probh = probh.drop("quantile")
+                l_probs_hcst.append(probh.assign_coords({"category": icat}))
 
-            print(f'Concatenating {aggr} tercile probs categories')
-            probs = xr.concat(l_probs_hcst,dim='category')                    
-            print(f'Saving {aggr} tercile probs netCDF files')
-            probs.to_netcdf(f'{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc')
+            print(f"Concatenating {aggr} tercile probs categories")
+            probs = xr.concat(l_probs_hcst, dim="category")
+            print(f"Saving {aggr} tercile probs netCDF files")
+            probs.to_netcdf(f"{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc")
 
 
 def calc_products(config, downloaddir):
-        """ Calculate anomalies and tercile probabilities for a given hindcast dataset
-        
-        Args:
-            config (dict): Configuration parameters.
-            downloaddir (str): Directory path to save the netCDF files.
-        """
+    """Calculate anomalies and tercile probabilities for a given hindcast dataset
 
-        hcst_bname = '{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}'.format(**config)
-        hcst_fname = f'{downloaddir}/{hcst_bname}.grib'
+    Args:
+        config (dict): Configuration parameters.
+        downloaddir (str): Directory path to save the netCDF files.
+    """
 
-        # For the re-shaping of time coordinates in xarray.Dataset we need to select the right coord 
-        #  -> burst mode ensembles (e.g. ECMWF SEAS5) use "time". This is the default option
-        #  -> lagged start ensembles (e.g. MetOffice GloSea6) use "indexing_time" (see CDS documentation about nominal start date)
-        st_dim_name = get_tindex(hcst_fname)
-        #st_dim_name = 'time' if not config.get('isLagged',False) else 'indexing_time'
+    hcst_bname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
+        **config
+    )
+    hcst_fname = f"{downloaddir}/{hcst_bname}.grib"
 
-        ## calc anoms
-        hcst, hcst_3m = calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, downloaddir)
-        ## calc terc probs
-        prob_terc(hcst_bname, hcst, hcst_3m, downloaddir)
+    # For the re-shaping of time coordinates in xarray.Dataset we need to select the right coord
+    #  -> burst mode ensembles (e.g. ECMWF SEAS5) use "time". This is the default option
+    #  -> lagged start ensembles (e.g. MetOffice GloSea6) use "indexing_time" (see CDS documentation about nominal start date)
+    st_dim_name = get_tindex(hcst_fname)
+
+    ## calc anoms
+    hcst, hcst_3m = calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, downloaddir)
+    ## calc terc probs
+    prob_terc(hcst_bname, hcst, hcst_3m, downloaddir)
 
 
 def get_tindex(infile):
@@ -181,19 +200,19 @@ def get_tindex(infile):
     Input
         infile(str): name of file to check
     Returns:
-        st_dim_name (str): name of time dimension to use for indexing. 
+        st_dim_name (str): name of time dimension to use for indexing.
             time for burst ensmeble and indexing_time for lagged
 
     """
-    f = open(infile, 'rb')
+    f = open(infile, "rb")
     gid = eccodes.codes_grib_new_from_file(f)
-    key = 'indexingDate'
+    key = "indexingDate"
     try:
         eccodes.codes_get(gid, key)
-        st_dim_name = 'indexing_time'
+        st_dim_name = "indexing_time"
 
     except eccodes.KeyValueNotFoundError:
-        st_dim_name = 'time'
+        st_dim_name = "time"
 
     eccodes.codes_release(gid)
     return st_dim_name
@@ -221,7 +240,8 @@ def parse_args():
     parser.add_argument(
         "--variable",
         required=True,
-        help="variable to download, 2m_temperature, total_precipitation")
+        help="variable to download, 2m_temperature, total_precipitation",
+    )
     parser.add_argument("--downloaddir", required=True, help="location to download to")
     parser.add_argument(
         "--years",
@@ -256,36 +276,32 @@ if __name__ == "__main__":
 
     # add arguments to config
     config = dict(
-        start_month = month,
-        leads = leadtime_month,
-        origin = centre,
-        area_str = area_str,
-        leads_str = leads_str,
-        var = variable
+        start_month=month,
+        leads=leadtime_month,
+        origin=centre,
+        area_str=area_str,
+        leads_str=leads_str,
+        var=variable,
     )
 
     if args.years:
-        config['hcstarty'] = args.years[0]
-        config['hcendy'] = args.years[1]
+        config["hcstarty"] = args.years[0]
+        config["hcendy"] = args.years[1]
     else:
-        config['hcstarty'] = 1993
-        config['hcendy'] = 2016
-
-    # TODO replace with Nick's code for determining whether lagged from Grib
-    #if centre == 'ukmo':
-    #    config['isLagged'] = True
+        config["hcstarty"] = 1993
+        config["hcendy"] = 2016
 
     ## hindcast info
     if centre == "eccc":
         # two models aka systems are live - call twice with each system number
-        config['system'] = SYSTEMS["eccc_can"]
+        config["system"] = SYSTEMS["eccc_can"]
         calc_products(config, downloaddir)
-    
+
         ## repeat for second system
-        config['system'] = SYSTEMS["eccc_gem5"]
+        config["system"] = SYSTEMS["eccc_gem5"]
         calc_products(config, downloaddir)
     else:
         if centre not in SYSTEMS.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")
-        config['system'] = SYSTEMS[centre]
+        config["system"] = SYSTEMS[centre]
         calc_products(config, downloaddir)

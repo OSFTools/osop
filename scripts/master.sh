@@ -20,10 +20,12 @@ set -eu
 # can't use -u option
 set +u
 conda activate climada_2024 ## to do build osop env, error using conda main
+
+export PYTHONPATH=${PYTHONPATH}:${HOME}/IASAS/osop/
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master
+downloaddir=$SCRATCH/seafoam
 
 # set parameters
 month=11 # initialisation month

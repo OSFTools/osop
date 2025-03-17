@@ -24,9 +24,8 @@ python get_any_hindcast.py --centre <centre> --month <month> --leads <leads>
 import cdsapi
 import argparse
 import os
-import sys
 
-sys.path.append('/home/h01/edyer/IASAS/osop/')
+# Ensure the top level directory has been added to PYTHONPATH
 from lib.osop.constants import SYSTEMS
 
 

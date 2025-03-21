@@ -75,10 +75,10 @@ def get_target(month, leadtime_month):
     
     return target
 
-def get_iri_nnme(model, month, leadtime_month, l_fc, area, area_str, downloaddir, year=None):
+def get_iri_nnme(model, variable, month, leadtime_month, l_fc, area, area_str, downloaddir, year=None):
 
-    VARIABLES = ["PRCP","T2M"]
-    
+    #VARIABLES = ["PRCP","T2M"]
+    VARIABLES = variable
     if l_fc:
         if year is None:
             raise ValueError('If downloading FC, need to specify year')
@@ -189,6 +189,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True, help="model to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
+    parser.add_argument("--variable", required=True, help="variable for download PRCP or T2M")
     parser.add_argument(
         "--leads", required=True, help="forecast range in months (comma separated)"
     )
@@ -219,6 +220,7 @@ def main():
     # unpack args and reformat if needed
     model = args.model
     downloaddir = args.downloaddir
+    variable = [variable]
     leadtime_month = [int(l) for l in args.leads.split(",")]
     area = [float(pt) for pt in args.area.split(",")]
     # create a string of the area to use in filenames
@@ -235,7 +237,7 @@ def main():
     else:
         year = None
 
-    get_iri_nnme(model, month, leadtime_month, l_fc, area, area_str, 
+    get_iri_nnme(model, variable, month, leadtime_month, l_fc, area, area_str, 
                 downloaddir, year=year)
     
 if __name__ == "__main__":

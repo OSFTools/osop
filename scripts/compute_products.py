@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 import argparse
 
 # Ensure the top level directory has been added to PYTHONPATH
-from lib.osop.constants import SYSTEMS
+from osop.constants import SYSTEMS
 
 
 def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):

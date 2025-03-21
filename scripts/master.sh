@@ -6,7 +6,6 @@
 #SBATCH --error=master.err
 #SBATCH --time=00-06:00:00
 #SBATCH --export=NONE
-#SBATCH --mail-user=emma.dyer@metoffice.gov.uk
 #SBATCH --mail-type=ALL
 # (C) Crown Copyright, Met Office. All rights reserved.
 #
@@ -19,13 +18,18 @@ set -eu
 # this conda env gives an error on load, so
 # can't use -u option
 set +u
-conda activate climada_2024 ## to do build osop env, error using conda main
-
-export PYTHONPATH=${PYTHONPATH}:${HOME}/IASAS/osop/
+conda activate osop ## to do build osop env, error using conda main
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam
+downloaddir=$SCRATCH/seafoam/data/master
+mkdir -p $downloaddir
+
+# set PYTHONPATH relative to this location
+lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
+set +u
+export PYTHONPATH=$PYTHONPATH:$lib_path
+set -u
 
 # set parameters
 month=11 # initialisation month

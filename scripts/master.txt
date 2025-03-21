@@ -1,0 +1,40 @@
+meteo_france : download sucessful
+meteo_france : products generated
+meteo_france : era5 downloaded
+meteo_france : scores generated
+meteo_france : plot generation failed
+dwd : download sucessful
+dwd : products generated
+dwd : era5 downloaded
+dwd : scores generated
+dwd : plot generation failed
+cmcc : download sucessful
+cmcc : products generated
+cmcc : era5 downloaded
+cmcc : scores generated
+cmcc : plot generation failed
+ncep : download sucessful
+ncep : products generated
+ncep : era5 downloaded
+ncep : scores generated
+ncep : plot generation failed
+ukmo : download sucessful
+ukmo : products generated
+ukmo : era5 downloaded
+ukmo : scores generated
+ukmo : plot generation failed
+ecmwf : download sucessful
+ecmwf : products generated
+ecmwf : era5 downloaded
+ecmwf : scores generated
+ecmwf : plot generation failed
+jma : download sucessful
+jma : products generated
+jma : era5 downloaded
+jma : score generation failed
+jma : plot generation failed
+eccc : download sucessful
+eccc : products generated
+eccc : era5 downloaded
+eccc : scores generated
+eccc : plot generation failed

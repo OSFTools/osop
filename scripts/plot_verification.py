@@ -16,7 +16,7 @@ import calendar
 
 import argparse
 
-from lib.osop.constants import SYSTEMS
+from osop.constants import SYSTEMS
 
 CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
 
@@ -57,7 +57,7 @@ def prep_titles(config):
         tit_line2 = tit_line2_base + f' - Valid months: {"".join(validmonths)}'
     else:
         raise BaseException(f"Unexpected aggregation")
-    tit_line3 = f"Verification period: {config['years'][0]} - {config['years'][1]}"
+    tit_line3 = f"Verification period: {config['hcstarty']} - {config['hcstarty']}"
     return tit_line1, tit_line2, tit_line3
 
 
@@ -93,7 +93,7 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
         levels = np.linspace(0.0, 0.5, 11)
         info = score_fname
         plt.title(
-            f"{score} \n" + titles[0] + f" {config["var"]}\n" + titles[1] + "\n" + titles[2], loc="left"
+            f"{score} \n" + titles[0] + f" {config['var']}\n" + titles[1] + "\n" + titles[2], loc="left"
         )
     elif score == "bs":
         p = score_f[config["var"]].sel(category=category)[0, :, :]
@@ -138,7 +138,7 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
         under = 'purple'
         levels = np.linspace(0.,0.5,11)
         info = score_fname
-        
+        print(score, titles[0], config["var"], titles[1])
         plt.title(f'{score} \n' + titles[0] + f' {config["var"]}\n' + titles[1], loc='left')
     elif score == 'bs':
         p = score_f[config['var']].sel(category=category)[0,:,:]
@@ -232,8 +232,8 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     None
     """
     # Read the data files
-    corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.corr.nc")
-    corr_pval = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.corr_pval.nc")
+    corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
+    corr_pval = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
     # Rearrange the dataset longitude values for plotting purposes
     corr = corr.assign_coords(lon=(((corr.lon + 180) % 360) - 180)).sortby("lon")
     corr_pval = corr_pval.assign_coords(
@@ -301,7 +301,7 @@ def generate_plots(config, titles, downloaddir):
     )
     score_data = xr.open_dataset(os.path.join(downloaddir, "scores", score_fname))
 
-    if config["score"] == "corr":
+    if config["score"] == "spearman_corr":
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
@@ -364,7 +364,7 @@ if __name__ == "__main__":
     Get the command line arguments using argparse
     Call the plotting functions to generate verification plots
     """
-    scores = ["corr", "roc", "rocss", "rps", "rel", "bs"]
+    scores = ["spearman_corr", "roc", "rocss", "rps", "rel", "bs"]
 
     # get command line args
     args = parse_args()

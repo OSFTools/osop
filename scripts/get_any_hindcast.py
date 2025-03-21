@@ -26,7 +26,7 @@ import argparse
 import os
 
 # Ensure the top level directory has been added to PYTHONPATH
-from lib.osop.constants import SYSTEMS
+from osop.constants import SYSTEMS
 
 
 def do_cdsapi_call(

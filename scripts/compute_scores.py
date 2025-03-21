@@ -13,7 +13,7 @@ from compute_products import get_thresh
 
 import argparse
 
-from lib.osop.constants import SYSTEMS
+from osop.constants import SYSTEMS
 
 
 def read_obs(obs_fname, config):

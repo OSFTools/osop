@@ -18,7 +18,7 @@ set -eu
 # this conda env gives an error on load, so
 # can't use -u option
 set +u
-conda activate osop ## to do build osop env, error using conda main
+conda activate osop 
 set -u
 
 # pick download location
@@ -36,6 +36,23 @@ month=11 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
 variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
+
+# get ERA5 data
+set +e
+python get_era5.py \
+    --month $month \
+    --leads $leads \
+    --area $area \
+    --downloaddir $downloaddir \
+    --variable $variable \
+    > $downloaddir/era5_log_${variable}.txt 2>&1
+exitcode=$?
+set -e
+if [ $exitcode -eq 0 ]; then
+    echo era5 downloaded
+else
+    echo era5 download failed
+fi
 
 # loop over all centres of interest and get data
 for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do 
@@ -71,22 +88,6 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         echo $centre : products generated
     else
         echo $centre : product generation failed
-    fi
-    # get ERA5 data
-    set +e
-    python get_era5.py \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --downloaddir $downloaddir \
-        --variable $variable \
-        > $downloaddir/era5_log_${variable}.txt 2>&1
-    exitcode=$?
-    set -e
-    if [ $exitcode -eq 0 ]; then
-        echo $centre : era5 downloaded
-    else
-        echo $centre : era5 download failed
     fi
     # calculate verification scores
     set +e

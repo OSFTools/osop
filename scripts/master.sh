@@ -55,8 +55,7 @@ else
 fi
 
 # loop over all centres of interest and get data
-#for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do 
-for centre in meteo_france ;do 
+for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do 
     set +e
     python get_any_hindcast.py \
         --centre $centre \

@@ -233,17 +233,20 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     """
     # Read the data files
     corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
-    corr_pval = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
+    corr_pval = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
     # Rearrange the dataset longitude values for plotting purposes
     corr = corr.assign_coords(lon=(((corr.lon + 180) % 360) - 180)).sortby("lon")
     corr_pval = corr_pval.assign_coords(
         lon=(((corr_pval.lon + 180) % 360) - 180)
     ).sortby("lon")
 
+    # Set up the figure and axes
+
     fig = plt.figure(figsize=(18, 10))
     ax = plt.axes(projection=ccrs.PlateCarree())
     ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+
     corrvalues = corr[config["var"]][0, :, :].values
     corrpvalvalues = corr_pval[config["var"]][0, :, :].values
 
@@ -270,14 +273,17 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
         cmap="RdYlBu_r",
     )
     cb = plt.colorbar(shrink=0.5)
-    cb.ax.set_ylabel("Correlation", fontsize=12)
+    cb.ax.set_ylabel("Spearman Correlation", fontsize=12)
     origylim = ax.get_ylim()
+
+    # add stippling for significance 
+    # where p value > 0.05
     plt.contourf(
         corr_pval[config["var"]].lon,
         corr_pval[config["var"]].lat,
         corrpvalvalues,
-        levels=[0.05, np.inf],
-        hatches=["...", None],
+        levels=[corrpvalvalues.min(), 0.05, corrpvalvalues.max()],
+        hatches=["", "..."],
         colors="none",
     )
     # We need to ensure after running plt.contourf() the ylim hasn't changed
@@ -285,11 +291,11 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
         ax.set_ylim(origylim)
 
     plt.title(
-        f"{titles[0]} (stippling where significance below 95%)\n {titles[1]} \n {titles[2]}",
+        f"{titles[0]} (stippling where p>0.05)\n {titles[1]} \n {titles[2]}",
         loc="left",
     )
     plt.tight_layout()
-    figname = f"{datadir}/scores/{hcst_bname}.{aggr}.corr.png"
+    figname = f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.png"
     plt.savefig(figname)
     plt.close()
 

@@ -93,7 +93,8 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
         levels = np.linspace(0.0, 0.5, 11)
         info = score_fname
         plt.title(
-            f"{score} \n" + titles[0] + f" {config['var']}\n" + titles[1] + "\n" + titles[2], loc="left"
+            f"{score} \n" + titles[0] + f" {config['var']}\n" + 
+            titles[1] + "\n" + titles[2], loc="left"
         )
     elif score == "bs":
         p = score_f[config["var"]].sel(category=category)[0, :, :]
@@ -138,8 +139,8 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
         under = 'purple'
         levels = np.linspace(0.,0.5,11)
         info = score_fname
-        print(score, titles[0], config["var"], titles[1])
-        plt.title(f'{score} \n' + titles[0] + f' {config["var"]}\n' + titles[1], loc='left')
+        plt.title(f'{score} \n' + titles[0] + f' {config["var"]}\n' 
+                  + titles[1] + '\n' + titles[2], loc='left')
     elif score == 'bs':
         p = score_f[config['var']].sel(category=category)[0,:,:]
         lon = score_f[config['var']].sel(category=category).lon
@@ -147,10 +148,14 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
         cols = 'YlGn_r'
         ex_dir = 'max'
         under = 'purple'
-        plt.title(f'{score} \n' + titles[0] + f' {config["var"]}' + f' ({CATNAMES[category]})\n' + titles[1], loc='left')
+        plt.title(f'{score} \n' + titles[0] + f' {config["var"]}' 
+                  + f' ({CATNAMES[category]})\n' + titles[1]
+                  + '\n' + titles[2],  loc='left')
         levels = np.linspace(0.,0.5,11)
     elif score in ['roc', 'rocss']:
-        plt.title(f'{score} \n' + titles[0] + f' {config["var"]}' + f' ({CATNAMES[category]})\n' + titles[1], loc='left')
+        plt.title(f'{score} \n' + titles[0] + f' {config["var"]}' + 
+                  f' ({CATNAMES[category]})\n' + titles[1] +
+                  '\n' + titles[2],  loc='left')
         p = score_f[config['var']].sel(category=category)[0,:,:]
         lon = score_f[config['var']].sel(category=category).lon
         lat = score_f[config['var']].sel(category=category).lat
@@ -178,7 +183,7 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
     plt.close()
 
 
-def plot_rel(score_f, score_fname, config, score, datadir):
+def plot_rel(score_f, score_fname, config, score, datadir, titles):
     """Plot reliability diagram
     Parameters:
     score_f (numpy.ndarray): The reliability score data.
@@ -192,7 +197,6 @@ def plot_rel(score_f, score_fname, config, score, datadir):
     info = score_fname
 
     for var in score_f.data_vars:
-        print(score_f)
         p = score_f[var][0, :, :]
 
         fig, ax1 = plt.subplots(figsize=(18, 10))
@@ -213,7 +217,10 @@ def plot_rel(score_f, score_fname, config, score, datadir):
 
         ax1.legend(loc="upper left")
         # ax2.legend(loc='upper right')
-
+        plt.title(
+            titles[0] + f" {config['var']}\n" + 
+            titles[1] + "\n" + titles[2], loc="left"
+        )
         plt.tight_layout()
         plt.savefig(os.path.join(datadir, "scores", f"{score_fname}.png"))
         plt.close()
@@ -262,7 +269,6 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
         corr[config["var"]].lon.size,
     ):
         pass
-        # print('Data values matrices shapes are ok')
     else:
         raise BaseException(f"Unexpected data value matrix shape: {corrvalues.shape}")
     plt.contourf(
@@ -314,7 +320,7 @@ def generate_plots(config, titles, downloaddir):
         corr_plots(downloaddir, score_fname, config["aggr"], config, titles)
 
     elif config["score"] == "rel":
-        plot_rel(score_data, score_fname, config, config["score"], downloaddir)
+        plot_rel(score_data, score_fname, config, config["score"], downloaddir, titles)
 
     elif config["score"] == "rps":
         plot_score(score_data, score_fname, None, config, config["score"], titles, downloaddir)

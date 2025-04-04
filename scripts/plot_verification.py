@@ -174,7 +174,6 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
         extend=ex_dir,
     )
     cs.cmap.set_under(under)
-    ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
 
     print(info)
@@ -251,7 +250,6 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
 
     fig = plt.figure(figsize=(18, 10))
     ax = plt.axes(projection=ccrs.PlateCarree())
-    ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
 
     corrvalues = corr[config["var"]][0, :, :].values

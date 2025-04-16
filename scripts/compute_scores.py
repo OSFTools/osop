@@ -199,10 +199,7 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
             thisbs = xr.Dataset()
             thisrel = xr.Dataset()
             for var in thishcst.data_vars:
-                if var == "tprate":
-                    var_obs = "tp"
-                else:
-                    var_obs = var
+                var_obs = var
 
                 thisroc[var] = xs.roc(
                     thisobs[var_obs],
@@ -281,6 +278,16 @@ def calc_scores(config, downloaddir):
 
     ## read obs
     obs_ds, obs_ds_3m = read_obs(obs_fname, config)
+
+    # if the observations are ERA5, rename tprate 
+    # and convert from m/day to m/s 
+    if config["obs_name"] == 'era5' and config["hc_var"] == "total_precipitation":
+        obs_ds = obs_ds.rename({"tp": "tprate"})
+        obs_ds_3m = obs_ds_3m.rename({"tp": "tprate"})
+        obs_ds["tprate"].attrs['units'] = "m/s"
+        obs_ds["tprate"] = obs_ds["tprate"] * 3600 * 24
+        obs_ds_3m["tprate"] = obs_ds_3m["tprate"] *3600 *24
+        obs_ds_3m["tprate"].attrs['units'] = "m/s"
     ## calc scores
     scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir)
     scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir)

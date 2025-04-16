@@ -33,7 +33,7 @@ export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 month=11 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
-variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
+variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
 
 # get ERA5 data
 set +e
@@ -73,14 +73,14 @@ for centre in meteo_france ;do
     fi
     # compute terciles and anomalies
     set +e
-    #python compute_products.py \
-    #    --centre $centre \
-    #    --month $month \
-    #    --leads $leads \
-    #    --area $area \
-    #    --variable $variable \
-    #    --downloaddir $downloaddir \
-    #    > $downloaddir/product_log_${variable}_${centre}.txt 2>&1
+    python compute_products.py \
+        --centre $centre \
+        --month $month \
+        --leads $leads \
+        --area $area \
+        --variable $variable \
+        --downloaddir $downloaddir \
+        > $downloaddir/product_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
@@ -90,14 +90,14 @@ for centre in meteo_france ;do
     fi
     # calculate verification scores
     set +e
-    #python compute_scores.py \
-    #    --centre $centre \
-    #    --month $month \
-    #    --leads $leads \
-    #    --area $area \
-    #    --downloaddir $downloaddir \
-    #    --variable $variable \
-    #    > $downloaddir/verification_log_${variable}_${centre}.txt 2>&1
+    python compute_scores.py \
+        --centre $centre \
+        --month $month \
+        --leads $leads \
+        --area $area \
+        --downloaddir $downloaddir \
+        --variable $variable #\
+        > $downloaddir/verification_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
@@ -114,7 +114,7 @@ for centre in meteo_france ;do
         --area $area \
         --downloaddir $downloaddir \
         --variable $variable #\
-        #> $downloaddir/plot_log_${variable}_${centre}.txt 2>&1
+        > $downloaddir/plot_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

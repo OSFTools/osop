@@ -2,8 +2,8 @@
 #SBATCH --qos=normal
 #SBATCH --mem=128G
 #SBATCH --ntasks=8
-#SBATCH --output=master.txt
-#SBATCH --error=master.err
+#SBATCH --output=master_%A_%a.out
+#SBATCH --error=master_%A_%a.err
 #SBATCH --time=00-06:00:00
 #SBATCH --export=NONE
 #SBATCH --mail-type=ALL
@@ -14,7 +14,7 @@
 
 # Script to calculate download hindcasts, calculate terciles and plot verification measures.
 # use sbatch job array to submit 12 months at one time
-# sbatch --array=1-12 -N1 all_mons_array.sh
+# sbatch --array=1-12 -N1 all_mons_precip_array.sh
 set -eu
 
 # this conda env gives an error on load, so
@@ -36,7 +36,8 @@ set -u
 # set parameters
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
-variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
+# variable of interest, typically "2m_temperature" or "total_precipitation"
+variable="total_precipitation" 
 
 # set month from SLURM_ARRAY_TASK_ID
 month=$SLURM_ARRAY_TASK_ID

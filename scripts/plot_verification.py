@@ -240,6 +240,7 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     # Read the data files
     corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
     corr_pval = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
+
     # Rearrange the dataset longitude values for plotting purposes
     corr = corr.assign_coords(lon=(((corr.lon + 180) % 360) - 180)).sortby("lon")
     corr_pval = corr_pval.assign_coords(
@@ -282,11 +283,15 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
 
     # add stippling for significance 
     # where p value > 0.05
+    # note can get NaN values in the pval matrix
+    # where the standard deviation of one of the 
+    # fields is zero. Use nanmax not max
+    
     plt.contourf(
         corr_pval[config["var"]].lon,
         corr_pval[config["var"]].lat,
         corrpvalvalues,
-        levels=[corrpvalvalues.min(), 0.05, corrpvalvalues.max()],
+        levels=[np.nanmin(corrpvalvalues), 0.05, np.nanmax(corrpvalvalues)],
         hatches=["", "..."],
         colors="none",
     )

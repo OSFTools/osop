@@ -27,9 +27,7 @@ mkdir -p $downloaddir
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
-set +u
-export PYTHONPATH=$PYTHONPATH:$lib_path
-set -u
+export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 
 # set parameters
 month=11 # initialisation month

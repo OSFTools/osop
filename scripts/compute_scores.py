@@ -13,6 +13,9 @@ from compute_products import get_thresh
 
 import argparse
 
+import sys
+print(sys.path)
+
 from osop.constants import SYSTEMS
 
 

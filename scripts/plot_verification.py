@@ -17,9 +17,8 @@ import calendar
 import argparse
 
 from osop.constants import SYSTEMS
-from osop.test.plot_Verify import *
+from osop.plot_verify import *
 
-#CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
 
 
 

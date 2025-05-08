@@ -17,7 +17,7 @@ import calendar
 import argparse
 
 from osop.constants import SYSTEMS
-from osop.plot_verify import *
+from osop.plot_verify import generate_plots, prep_titles
 
 
 

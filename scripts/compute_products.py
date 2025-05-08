@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 
 import argparse
 
+
 # Ensure the top level directory has been added to PYTHONPATH
 from osop.constants import SYSTEMS
 

@@ -9,7 +9,7 @@ import os
 # Forecast verification metrics with xarray
 import xskillscore as xs
 
-from compute_products import get_thresh
+from osop.compute_products_func import get_thresh
 
 import argparse
 

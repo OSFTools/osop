@@ -4,16 +4,14 @@
 import xarray as xr
 import pandas as pd
 import numpy as np
-import os
+
 
 # Forecast verification metrics with xarray
 import xskillscore as xs
 
+#import needed local functions
 from osop.compute_products_func import get_thresh
 
-import argparse
-
-from osop.constants import SYSTEMS
 
 
 def read_obs(obs_fname, config):

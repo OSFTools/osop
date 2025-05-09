@@ -1,19 +1,14 @@
 # This script currently can only be used to create scores using ERA5 as the comparison dataset
-
-# Libraries for working with multi-dimensional arrays
-import xarray as xr
-import pandas as pd
-import numpy as np
 import os
 
-# Forecast verification metrics with xarray
-import xskillscore as xs
-
+#import local modules for function usage 
 from osop.compute_scores_func import calc_scores
+from osop.constants import SYSTEMS
 
+# Ensure the top level directory has been added to PYTHONPATH
 import argparse
 
-from osop.constants import SYSTEMS
+
 
 
 def parse_args():

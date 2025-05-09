@@ -1,3 +1,4 @@
+# Ensure the top level directory has been added to PYTHONPATH
 # Libraries for working with multi-dimensional arrays
 import xarray as xr
 import pandas as pd
@@ -8,11 +9,9 @@ import eccodes
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
 
-import argparse
 
 
-# Ensure the top level directory has been added to PYTHONPATH
-from osop.constants import SYSTEMS
+
 
 
 def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):

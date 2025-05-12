@@ -1,6 +1,5 @@
 # Libraries for working with multi-dimensional arrays
 import xarray as xr
-import pandas as pd
 import numpy as np
 import os
 
@@ -8,15 +7,11 @@ import os
 from matplotlib import pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-
-# Disable warnings for data download via API and matplotlib (do I need both???)
-import warnings
 from cartopy import crs as ccrs
 import calendar
 
-import argparse
 
-from osop.constants import SYSTEMS
+
 
 CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
 

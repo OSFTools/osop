@@ -1,21 +1,10 @@
-# Libraries for working with multi-dimensional arrays
-import xarray as xr
-import pandas as pd
-import numpy as np
-import os
-import eccodes
-
-# Date and calendar libraries
-from dateutil.relativedelta import relativedelta
-
+# Ensure the top level directory has been added to PYTHONPATH
 import argparse
 
 
-# Ensure the top level directory has been added to PYTHONPATH
-from osop.constants import SYSTEMS
-
 #import needed local functions
-from osop.compute_products_func import calc_products, get_thresh
+from osop.constants import SYSTEMS
+from osop.compute_products_func import calc_products
 
 
 def parse_args():

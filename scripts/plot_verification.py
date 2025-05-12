@@ -1,21 +1,6 @@
-# Libraries for working with multi-dimensional arrays
-import xarray as xr
-import pandas as pd
-import numpy as np
-import os
-
-# Libraries for plotting and geospatial data visualisation
-from matplotlib import pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-
-# Disable warnings for data download via API and matplotlib (do I need both???)
-import warnings
-from cartopy import crs as ccrs
-import calendar
-
+# Ensure the top level directory has been added to PYTHONPATH
 import argparse
-
+#import needed local functions
 from osop.constants import SYSTEMS
 from osop.plot_verify import generate_plots, prep_titles
 

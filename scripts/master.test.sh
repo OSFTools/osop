@@ -37,6 +37,15 @@ variable="total_precipitation" # variable of interest, typically "2m_temperature
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 
 
+#Query wether user wants borders 
+echo "Do you want borders? type 1 for yes and 2 for no"
+select yn in "Yes" "No"; do
+    case $yn in
+        Yes ) border="true"; echo "Borders added"; break;;
+        No ) border="false"; echo "Borders removed"; break;;
+    esac
+done
+
 # get ERA5 data
 set +e
 python get_era5.py \
@@ -110,7 +119,11 @@ for centre in meteo_france ;do
     # plot scores
         set +e
     python plot_verification.py \
+<<<<<<< HEAD
         --location $location \
+=======
+        --border $border \
+>>>>>>> 649133e (added border query)
         --centre $centre \
         --month $month \
         --leads $leads \

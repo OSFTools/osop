@@ -39,6 +39,15 @@ variable="2m_temperature" # variable of interest, typically "2m_temperature" or 
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 
 
+#Query wether user wants borders 
+echo "Do you want borders? type 1 for yes and 2 for no"
+select yn in "Yes" "No"; do
+    case $yn in
+        Yes ) border="true"; echo "Borders added"; break;;
+        No ) border="false"; echo "Borders removed"; break;;
+    esac
+done
+
 # get ERA5 data
 set +e
 python get_era5.py \
@@ -111,7 +120,11 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     # plot scores
         set +e
     python plot_verification.py \
+<<<<<<< HEAD
         --location $location \
+=======
+        --border $border \
+>>>>>>> 649133e (added border query)
         --centre $centre \
         --month $month \
         --leads $leads \

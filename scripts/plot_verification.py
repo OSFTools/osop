@@ -16,6 +16,7 @@ def parse_args():
     """
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--border", required=True)
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
     parser.add_argument(
@@ -54,6 +55,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     # unpack args and reformat if needed
+    border = args.border
     centre = args.centre
     downloaddir = args.downloaddir
     month = int(args.month)
@@ -76,6 +78,7 @@ if __name__ == "__main__":
 
     # add arguments to config
     config = dict(
+        border = border,
         start_month=month,
         valid_month=valid_month,
         origin=centre,
@@ -104,17 +107,17 @@ if __name__ == "__main__":
                 config["system"] = SYSTEMS["eccc_can"]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(config, titles, downloaddir)
+                generate_plots(border, config, titles, downloaddir)
 
                 ## repeat for second system
                 config["system"] = SYSTEMS["eccc_gem5"]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(config, titles, downloaddir)
+                generate_plots(border, config, titles, downloaddir)
             else:
                 if centre not in SYSTEMS.keys():
                     raise ValueError(f"Unknown system for C3S: {centre}")
                 config["system"] = SYSTEMS[centre]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(config, titles, downloaddir)
+                generate_plots(border, config, titles, downloaddir)

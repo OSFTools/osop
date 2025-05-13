@@ -12,7 +12,6 @@ import calendar
 
 
 
-
 CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
 
 
@@ -56,7 +55,7 @@ def prep_titles(config):
     return tit_line1, tit_line2, tit_line3
 
 
-def plot_score(score_f, score_fname, category, config, score, titles, datadir):
+def plot_score(border, score_f, score_fname, category, config, score, titles, datadir):
     """
     Plot the score on a map.
 
@@ -168,8 +167,13 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
         cmap=cols,
         extend=ex_dir,
     )
+    
+    
     cs.cmap.set_under(under)
+    if border == "true":
+        ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+
 
     print(info)
     plt.colorbar()
@@ -220,7 +224,7 @@ def plot_rel(score_f, score_fname, config, score, datadir, titles):
         plt.close()
 
 
-def corr_plots(datadir, hcst_bname, aggr, config, titles):
+def corr_plots(border, datadir, hcst_bname, aggr, config, titles):
     """Plot deterministic scores
     Parameters:
     datadir (str): The directory to save the plot.
@@ -243,10 +247,12 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     ).sortby("lon")
 
     # Set up the figure and axes
-
+    
     fig = plt.figure(figsize=(18, 10))
     ax = plt.axes(projection=ccrs.PlateCarree())
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+    if border == "true":
+        ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.5)
 
     corrvalues = corr[config["var"]][0, :, :].values
     corrpvalvalues = corr_pval[config["var"]][0, :, :].values
@@ -304,7 +310,7 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     plt.close()
 
 
-def generate_plots(config, titles, downloaddir):
+def generate_plots(border, config, titles, downloaddir):
     ## read in the data
     score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc".format(
         **config
@@ -315,19 +321,19 @@ def generate_plots(config, titles, downloaddir):
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
-        corr_plots(downloaddir, score_fname, config["aggr"], config, titles)
+        corr_plots(border, downloaddir, score_fname, config["aggr"], config, titles)
 
     elif config["score"] == "rel":
         plot_rel(score_data, score_fname, config, config["score"], downloaddir, titles)
 
     elif config["score"] == "rps":
-        plot_score(score_data, score_fname, None, config, config["score"], titles, downloaddir)
+        plot_score(border, score_data, score_fname, None, config, config["score"], titles, downloaddir)
 
     elif config["score"] == "bs":
         for cat in [0, 1, 2]:
-            plot_score(score_data, score_fname, cat, config, config["score"], titles, downloaddir)
+            plot_score(border,score_data, score_fname, cat, config, config["score"], titles, downloaddir)
 
     else:
         for cat in [0, 1, 2]:
             config["category"] = cat
-            plot_score(score_data, score_fname, cat, config, config["score"], titles, downloaddir)
+            plot_score(border, score_data, score_fname, cat, config, config["score"], titles, downloaddir)

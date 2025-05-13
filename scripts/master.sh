@@ -37,6 +37,15 @@ leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
 variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
 
+#Query wether user wants borders 
+echo "Do you want borders? type 1 for yes and 2 for no"
+select yn in "Yes" "No"; do
+    case $yn in
+        Yes ) border="true"; echo "Borders added"; break;;
+        No ) border="false"; echo "Borders removed"; break;;
+    esac
+done
+
 # get ERA5 data
 set +e
 python get_era5.py \
@@ -109,6 +118,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     # plot scores
         set +e
     python plot_verification.py \
+        --border $border \
         --centre $centre \
         --month $month \
         --leads $leads \

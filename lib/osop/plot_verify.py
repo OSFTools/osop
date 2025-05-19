@@ -7,12 +7,51 @@ import os
 from matplotlib import pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import cartopy.io.shapereader as shpreader
 from cartopy import crs as ccrs
 import calendar
 
 
 
 CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
+
+border_opt={'Morocco':'admin_0_countries_mar',
+            'UK':'admin_0_countries_gbr',
+           'SAU':'admin_0_countries_sau'
+           }
+
+def location(config):
+    """
+    Prepares location specific POV borders for plots based on arguments in the config dictonary
+    Args:
+        config (dict): A dictionary containing the configuration parameters.
+    Returns:
+        A Natural Earth data set name to go into the axis plot that's downloaded based on location; if no location set 
+        i.e. Global or is misspelt False is returned to set no borders on the returned plot.
+    Redundancy:
+        Natural Earth has a download issue that searches for a file that dosnt exist; a partial import is managed regardless
+        On second run - as this file is not used and download has already happened -  the plot will work fine.
+        To avoid a second run each time a new data set is imported the try/except does the import for no reason and then the finally is used after 
+        to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed. 
+    """
+    if config['border'] in border_opt:
+        border_set = border_opt[config['border']]
+        try:
+            shpfilename = shpreader.natural_earth(resolution='10m', category='cultural', name=border_set)
+        except KeyError:
+            shpfilename = shpreader.natural_earth(resolution='10m', category='cultural', name=border_set)
+        finally:
+            local = cfeature.NaturalEarthFeature(
+                category='cultural',
+                name=border_set,
+                scale='10m',
+                facecolor='none')
+            return local
+    else:
+        local = 'False'
+        return local
+        
+    
 
 
 def prep_titles(config):
@@ -55,7 +94,7 @@ def prep_titles(config):
     return tit_line1, tit_line2, tit_line3
 
 
-def plot_score(border, score_f, score_fname, category, config, score, titles, datadir):
+def plot_score(score_f, score_fname, category, config, score, titles, datadir):
     """
     Plot the score on a map.
 
@@ -170,9 +209,13 @@ def plot_score(border, score_f, score_fname, category, config, score, titles, da
     
     
     cs.cmap.set_under(under)
-    if border == "true":
-        ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.5)
-    ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+
+    map_setting = location(config)
+    if map_setting == "False":
+        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+    else:
+        ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
+        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
 
 
     print(info)
@@ -224,7 +267,7 @@ def plot_rel(score_f, score_fname, config, score, datadir, titles):
         plt.close()
 
 
-def corr_plots(border, datadir, hcst_bname, aggr, config, titles):
+def corr_plots(datadir, hcst_bname, aggr, config, titles):
     """Plot deterministic scores
     Parameters:
     datadir (str): The directory to save the plot.
@@ -250,9 +293,14 @@ def corr_plots(border, datadir, hcst_bname, aggr, config, titles):
     
     fig = plt.figure(figsize=(18, 10))
     ax = plt.axes(projection=ccrs.PlateCarree())
-    ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
-    if border == "true":
-        ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=0.5)
+    map_setting = location(config)
+    if map_setting == "False":
+        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+    else:
+        ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
+        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+
+        
 
     corrvalues = corr[config["var"]][0, :, :].values
     corrpvalvalues = corr_pval[config["var"]][0, :, :].values
@@ -310,7 +358,7 @@ def corr_plots(border, datadir, hcst_bname, aggr, config, titles):
     plt.close()
 
 
-def generate_plots(border, config, titles, downloaddir):
+def generate_plots(config, titles, downloaddir):
     ## read in the data
     score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc".format(
         **config
@@ -321,19 +369,19 @@ def generate_plots(border, config, titles, downloaddir):
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
-        corr_plots(border, downloaddir, score_fname, config["aggr"], config, titles)
+        corr_plots(downloaddir, score_fname, config["aggr"], config, titles)
 
     elif config["score"] == "rel":
         plot_rel(score_data, score_fname, config, config["score"], downloaddir, titles)
 
     elif config["score"] == "rps":
-        plot_score(border, score_data, score_fname, None, config, config["score"], titles, downloaddir)
+        plot_score(score_data, score_fname, None, config, config["score"], titles, downloaddir)
 
     elif config["score"] == "bs":
         for cat in [0, 1, 2]:
-            plot_score(border,score_data, score_fname, cat, config, config["score"], titles, downloaddir)
+            plot_score(score_data, score_fname, cat, config, config["score"], titles, downloaddir)
 
     else:
         for cat in [0, 1, 2]:
             config["category"] = cat
-            plot_score(border, score_data, score_fname, cat, config, config["score"], titles, downloaddir)
+            plot_score(score_data, score_fname, cat, config, config["score"], titles, downloaddir)

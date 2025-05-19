@@ -107,17 +107,17 @@ if __name__ == "__main__":
                 config["system"] = SYSTEMS["eccc_can"]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(border, config, titles, downloaddir)
+                generate_plots(config, titles, downloaddir)
 
                 ## repeat for second system
                 config["system"] = SYSTEMS["eccc_gem5"]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(border, config, titles, downloaddir)
+                generate_plots(config, titles, downloaddir)
             else:
                 if centre not in SYSTEMS.keys():
                     raise ValueError(f"Unknown system for C3S: {centre}")
                 config["system"] = SYSTEMS[centre]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(border, config, titles, downloaddir)
+                generate_plots(config, titles, downloaddir)

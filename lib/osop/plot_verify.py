@@ -28,12 +28,14 @@ def location(config):
         config (dict): A dictionary containing the configuration parameters.
     Returns:
         A Natural Earth data set name to go into the axis plot that's downloaded based on location; if no location set 
-        i.e. Global or is misspelt False is returned to set no borders on the returned plot.
+        i.e. None - no borders will plot.
+        If the name is misspelt then a key error will raise suggesting a check of locaiton entry in the shell script. 
     Redundancy:
         Natural Earth has a download issue that searches for a file that dosnt exist; a partial import is managed regardless
         On second run - as this file is not used and download has already happened -  the plot will work fine.
         To avoid a second run each time a new data set is imported the try/except does the import for no reason and then the finally is used after 
-        to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed. 
+        to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed.
+        Relevent to Cartopy issue #2319 , #2477 amd #2534 - when resolved can be removed 
     """
     if config['border'] in border_opt:
         border_set = border_opt[config['border']]
@@ -48,9 +50,12 @@ def location(config):
                 scale='10m',
                 facecolor='none')
             return local
-    else:
+    elif config['border'] == 'None':
         local = 'False'
         return local
+    else:
+        raise KeyError("Location Name does not exist in dictionary. Please check spelling of location input or type None for no borders.")
+    
         
     
 

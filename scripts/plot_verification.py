@@ -16,11 +16,7 @@ def parse_args():
     """
 
     parser = argparse.ArgumentParser()
-<<<<<<< HEAD
     parser.add_argument("--location", required=True)
-=======
-    parser.add_argument("--border", required=True)
->>>>>>> 649133e (added border query)
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
     parser.add_argument(
@@ -59,11 +55,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     # unpack args and reformat if needed
-<<<<<<< HEAD
     border = args.location
-=======
-    border = args.border
->>>>>>> 649133e (added border query)
     centre = args.centre
     downloaddir = args.downloaddir
     month = int(args.month)

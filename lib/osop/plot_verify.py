@@ -7,13 +7,56 @@ import os
 from matplotlib import pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import cartopy.io.shapereader as shpreader
 from cartopy import crs as ccrs
 import calendar
 
 
 
-
 CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
+
+BORDER_OPT={'Morocco':'admin_0_countries_mar',
+            'UK':'admin_0_countries_gbr',
+           'SAU':'admin_0_countries_sau'
+           }
+
+def location(config):
+    """
+    Prepares location specific POV borders for plots based on arguments in the config dictonary
+    Args:
+        config (dict): A dictionary containing the configuration parameters.
+    Returns:
+        A Natural Earth data set name to go into the axis plot that's downloaded based on location; if no location set 
+        i.e. None - no borders will plot.
+        If the name is misspelt then a key error will raise suggesting a check of locaiton entry in the shell script. 
+    Redundancy:
+        Natural Earth has a download issue that searches for a file that dosnt exist; a partial import is managed regardless
+        On second run - as this file is not used and download has already happened -  the plot will work fine.
+        To avoid a second run each time a new data set is imported the try/except does the import for no reason and then the finally is used after 
+        to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed.
+        Relevent to Cartopy issue #2319 , #2477 amd #2534 - when resolved can be removed 
+    """
+    if config['border'] in BORDER_OPT:
+        border_set = BORDER_OPT[config['border']]
+        try:
+            shpfilename = shpreader.natural_earth(resolution='10m', category='cultural', name=border_set)
+        except KeyError:
+            shpfilename = shpreader.natural_earth(resolution='10m', category='cultural', name=border_set)
+        finally:
+            local = cfeature.NaturalEarthFeature(
+                category='cultural',
+                name=border_set,
+                scale='10m',
+                facecolor='none')
+            return local
+    elif config['border'] == 'None':
+        local = 'False'
+        return local
+    else:
+        raise KeyError("Location Name does not exist in dictionary. Please check spelling of location input or type None for no borders.")
+    
+        
+    
 
 
 def prep_titles(config):
@@ -168,8 +211,15 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
         cmap=cols,
         extend=ex_dir,
     )
+    
+    
     cs.cmap.set_under(under)
+
+    map_setting = location(config)
+    if map_setting != "False":
+        ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+
 
     print(info)
     plt.colorbar()
@@ -243,10 +293,15 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     ).sortby("lon")
 
     # Set up the figure and axes
-
+    
     fig = plt.figure(figsize=(18, 10))
     ax = plt.axes(projection=ccrs.PlateCarree())
+    map_setting = location(config)
+    if map_setting != "False":
+        ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+
+        
 
     corrvalues = corr[config["var"]][0, :, :].values
     corrpvalvalues = corr_pval[config["var"]][0, :, :].values

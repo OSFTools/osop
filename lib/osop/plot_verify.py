@@ -15,7 +15,7 @@ import calendar
 
 CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
 
-border_opt={'Morocco':'admin_0_countries_mar',
+BORDER_OPT={'Morocco':'admin_0_countries_mar',
             'UK':'admin_0_countries_gbr',
            'SAU':'admin_0_countries_sau'
            }
@@ -36,8 +36,8 @@ def location(config):
         to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed.
         Relevent to Cartopy issue #2319 , #2477 amd #2534 - when resolved can be removed 
     """
-    if config['border'] in border_opt:
-        border_set = border_opt[config['border']]
+    if config['border'] in BORDER_OPT:
+        border_set = BORDER_OPT[config['border']]
         try:
             shpfilename = shpreader.natural_earth(resolution='10m', category='cultural', name=border_set)
         except KeyError:
@@ -216,11 +216,9 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
     cs.cmap.set_under(under)
 
     map_setting = location(config)
-    if map_setting == "False":
-        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
-    else:
+    if map_setting != "False":
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
-        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+    ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
 
 
     print(info)
@@ -299,11 +297,9 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     fig = plt.figure(figsize=(18, 10))
     ax = plt.axes(projection=ccrs.PlateCarree())
     map_setting = location(config)
-    if map_setting == "False":
-        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
-    else:
+    if map_setting != "False":
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
-        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+    ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
 
         
 

@@ -121,8 +121,11 @@ def get_thresh(icat, quantiles, xrds, dims=["number", "start_date"]):
 
 
 def prob_terc(hcst_bname, hcst, hcst_3m, datadir):
-    """Calculate probabilities for tercile categories
-    by counting members within each category
+    """
+    Calculate probabilities for tercile categories
+    by counting members within each category and save them to netCDF files.
+    This function computes the tercile probabilities for both 1-month and 3-month aggregated hindcast data.
+    Also saves the tercile probabilities to netCDF files.
 
     Args:
         hcst_bname (str): Basename of hincast file.
@@ -146,6 +149,7 @@ def prob_terc(hcst_bname, hcst, hcst_3m, datadir):
             print(f"Computing tercile probabilities {aggr}")
 
             l_probs_hcst = list()
+            # Loop over the categories and calculate the probabilities
             for icat in range(numcategories):
 
                 h_lo, h_hi = get_thresh(icat, quantiles, h)
@@ -159,10 +163,21 @@ def prob_terc(hcst_bname, hcst, hcst_3m, datadir):
                     probh = probh.drop("quantile")
                 l_probs_hcst.append(probh.assign_coords({"category": icat}))
 
+                # on second iteration the values of h_lo and h_hi are the 
+                # quantiles we wish to save
+                if icat == 1:
+                    tercs = xr.concat( [h_lo, h_hi], dim="category")
+                    if "quantile" in tercs:
+                        tercs = tercs.drop("quantile")
+                    l_probs_hcst.append(tercs.assign_coords({"category": icat}))
+
             print(f"Concatenating {aggr} tercile probs categories")
             probs = xr.concat(l_probs_hcst, dim="category")
             print(f"Saving {aggr} tercile probs netCDF files")
             probs.to_netcdf(f"{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc")
+
+            print(f"Saving tercile thresholds {aggr} netCDF files")
+            tercs.to_netcdf(f"{datadir}/{hcst_bname}.{aggr}.tercile_thresholds.nc")
 
 
 def calc_products(config, downloaddir):

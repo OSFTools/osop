@@ -22,14 +22,14 @@ conda activate osop
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master
+downloaddir=$SCRATCH/seafoam_terc/data/master
 mkdir -p $downloaddir
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
 export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 
-# set parameters
+# set parameters 
 month=11 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
@@ -98,7 +98,7 @@ for centre in meteo_france ;do
         --leads $leads \
         --area $area \
         --downloaddir $downloaddir \
-        --variable $variable #\
+        --variable $variable \
         > $downloaddir/verification_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
@@ -116,7 +116,7 @@ for centre in meteo_france ;do
         --leads $leads \
         --area $area \
         --downloaddir $downloaddir \
-        --variable $variable #\
+        --variable $variable \
         > $downloaddir/plot_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e

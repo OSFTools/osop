@@ -10,10 +10,6 @@ import eccodes
 from dateutil.relativedelta import relativedelta
 
 
-
-
-
-
 def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
     """
     Calculate anomalies and save them to netCDF files.

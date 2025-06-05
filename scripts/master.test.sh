@@ -22,7 +22,7 @@ conda activate osop
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam_terc/data/master
+downloaddir=$SCRATCH/seafoam/data/master
 mkdir -p $downloaddir
 
 # set PYTHONPATH relative to this location
@@ -81,8 +81,8 @@ for centre in meteo_france ;do
         --leads $leads \
         --area $area \
         --variable $variable \
-        --downloaddir $downloaddir \
-        > $downloaddir/product_log_${variable}_${centre}.txt 2>&1
+        --downloaddir $downloaddir #\
+        #> $downloaddir/product_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

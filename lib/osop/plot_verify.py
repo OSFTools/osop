@@ -365,6 +365,99 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     plt.savefig(figname)
     plt.close()
 
+def p_corr_plots(datadir, hcst_bname, aggr, config, titles):
+    """Plot deterministic scores
+    Parameters:
+    datadir (str): The directory to save the plot.
+    hcst_bname (str): The basename of the hindcast file.
+    aggr (str): The aggregation period.
+    config (dict): Configuration parameters.
+    titles (list): Titles for the plot.
+
+    Returns:
+    None
+    """
+    # Read the data files
+    corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.pearson_corr.nc")
+    corr_pval = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.pearson_corr_pval.nc")
+
+    # Rearrange the dataset longitude values for plotting purposes
+    corr = corr.assign_coords(lon=(((corr.lon + 180) % 360) - 180)).sortby("lon")
+    corr_pval = corr_pval.assign_coords(
+        lon=(((corr_pval.lon + 180) % 360) - 180)
+    ).sortby("lon")
+
+    # Set up the figure and axes
+    
+    fig = plt.figure(figsize=(18, 10))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    map_setting = location(config)
+    if map_setting == "False":
+        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+    else:
+        ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
+        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+
+        
+
+    corrvalues = corr[config["var"]][0, :, :].values
+    corrpvalvalues = corr_pval[config["var"]][0, :, :].values
+
+    if corrvalues.T.shape == (
+        corr[config["var"]].lat.size,
+        corr[config["var"]].lon.size,
+    ):
+        print("Data values matrices need to be transposed")
+        corrvalues = corrvalues.T
+        corrpvalvalues = corrpvalvalues.T
+    elif corrvalues.shape == (
+        corr[config["var"]].lat.size,
+        corr[config["var"]].lon.size,
+    ):
+        pass
+    else:
+        raise BaseException(f"Unexpected data value matrix shape: {corrvalues.shape}")
+    plt.contourf(
+        corr[config["var"]].lon,
+        corr[config["var"]].lat,
+        corrvalues,
+        levels=np.linspace(-1.0, 1.0, 11),
+        cmap="RdYlBu_r",
+    )
+    cb = plt.colorbar(shrink=0.5)
+    cb.ax.set_ylabel("Pearson Correlation", fontsize=12)
+    origylim = ax.get_ylim()
+
+    # add stippling for significance 
+    # where p value > 0.05
+    # note can get NaN values in the pval matrix
+    # where the standard deviation of one of the 
+    # fields is zero. Use nanmax not max
+    
+    plt.contourf(
+        corr_pval[config["var"]].lon,
+        corr_pval[config["var"]].lat,
+        corrpvalvalues,
+        levels=[np.nanmin(corrpvalvalues), 0.05, np.nanmax(corrpvalvalues)],
+        hatches=["", "..."],
+        colors="none",
+    )
+    # We need to ensure after running plt.contourf() the ylim hasn't changed
+    if ax.get_ylim() != origylim:
+        ax.set_ylim(origylim)
+
+    plt.title(
+        f"{titles[0]} (stippling where p>0.05)\n {titles[1]} \n {titles[2]}",
+        loc="left",
+    )
+    plt.tight_layout()
+    figname = f"{datadir}/scores/{hcst_bname}.{aggr}.pearson_corr.png"
+    plt.savefig(figname)
+    plt.close()
+
+
+
+
 
 def generate_plots(config, titles, downloaddir):
     ## read in the data
@@ -378,6 +471,12 @@ def generate_plots(config, titles, downloaddir):
             **config
         )
         corr_plots(downloaddir, score_fname, config["aggr"], config, titles)
+        
+    elif config["score"] == "pearson_corr":
+        score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
+            **config
+        )
+        p_corr_plots(downloaddir, score_fname, config["aggr"], config, titles)
 
     elif config["score"] == "rel":
         plot_rel(score_data, score_fname, config, config["score"], downloaddir, titles)

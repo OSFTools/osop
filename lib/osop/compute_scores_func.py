@@ -102,6 +102,8 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
         # create empty list to store correlations and p-values to be concatenated after looping over months
         l_corr = list()
         l_corr_pval = list()
+        r_corr = list() #r Pearson correlation - remove note later
+        r_corr_pval = list() 
 
         for this_fcmonth in h.forecastMonth.values:
             print(f"forecastMonth={this_fcmonth}")
@@ -114,17 +116,22 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
             thisobs = o.where(o.valid_time == thishcst.valid_time, drop=True)
             thishcst_em = thishcst if not is_fullensemble else thishcst.mean("number")
             l_corr.append(xs.spearman_r(thishcst_em, thisobs, dim="valid_time"))
-            l_corr_pval.append(
-                xs.spearman_r_p_value(thishcst_em, thisobs, dim="valid_time")
-            )
+            l_corr_pval.append(xs.spearman_r_p_value(thishcst_em, thisobs, dim="valid_time"))
+            r_corr.append(xs.pearson_r(thishcst_em, thisobs, dim="valid_time"))
+            r_corr_pval.append(xs.pearson_r_p_value(thishcst_em, thisobs, dim="valid_time"))
+            
         
         # concatenate correlations and p-values
         corr = xr.concat(l_corr, dim="forecastMonth")
         corr_pval = xr.concat(l_corr_pval, dim="forecastMonth")
+        r_corr_con = xr.concat(r_corr, dim="forecastMonth")
+        r_corr_pval_con = xr.concat(r_corr_pval, dim="forecastMonth")
 
         print(f"Saving to netCDF file correlation for {aggr}-aggregation")
         corr.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
         corr_pval.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
+        r_corr_con.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.pearson_corr.nc")
+        r_corr_pval_con.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.pearson_corr_pval.nc") 
 
 
 def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):

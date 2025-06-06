@@ -81,6 +81,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
     Returns:
     None
     Saves spearman correlation and p-value to netCDF files.
+    Saves pearson correlation and p-value to netCDF files.
     """
 
     # Loop over aggregations
@@ -102,7 +103,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
         # create empty list to store correlations and p-values to be concatenated after looping over months
         l_corr = list()
         l_corr_pval = list()
-        r_corr = list() #r Pearson correlation - remove note later
+        r_corr = list()
         r_corr_pval = list() 
 
         for this_fcmonth in h.forecastMonth.values:

@@ -277,6 +277,7 @@ def corr_plots(datadir, hcst_bname, aggr, config, score, titles):
     hcst_bname (str): The basename of the hindcast file.
     aggr (str): The aggregation period.
     config (dict): Configuration parameters.
+    score (str): The relevant verfication measure
     titles (list): Titles for the plot.
 
     Returns:

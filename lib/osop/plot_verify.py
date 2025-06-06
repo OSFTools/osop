@@ -297,11 +297,9 @@ def corr_plots(datadir, hcst_bname, aggr, config, score, titles):
     fig = plt.figure(figsize=(18, 10))
     ax = plt.axes(projection=ccrs.PlateCarree())
     map_setting = location(config)
-    if map_setting == "False":
-        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
-    else:
+    if map_setting != "False":
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
-        ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+    ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
 
         
 

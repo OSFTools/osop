@@ -98,7 +98,7 @@ for centre in meteo_france ;do
         --leads $leads \
         --area $area \
         --downloaddir $downloaddir \
-        --variable $variable #\
+        --variable $variable \
         > $downloaddir/verification_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
@@ -116,7 +116,7 @@ for centre in meteo_france ;do
         --leads $leads \
         --area $area \
         --downloaddir $downloaddir \
-        --variable $variable #\
+        --variable $variable \
         > $downloaddir/plot_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e

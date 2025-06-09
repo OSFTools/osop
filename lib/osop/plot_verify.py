@@ -306,16 +306,15 @@ def corr_plots(datadir, hcst_bname, aggr, config, score, titles):
     hcst_bname (str): The basename of the hindcast file.
     aggr (str): The aggregation period.
     config (dict): Configuration parameters.
-    score (str): The relevant verfication measure
     titles (list): Titles for the plot.
 
     Returns:
     None
     """
     # Read the data files
-    corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
+    corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.{score}.nc")
     corr_pval = xr.open_dataset(
-        f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
+        f"{datadir}/scores/{hcst_bname}.{aggr}.{score}_pval.nc"
     )
 
     # Rearrange the dataset longitude values for plotting purposes

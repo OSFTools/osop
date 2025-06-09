@@ -61,7 +61,9 @@ def season_stats(dataset, start_year, end_year, stats=["mean"]):
         elif stat == "seas_ts":
             ds_stats["seas_ts"] = seasonal_ds
         elif stat == "terciles":
-            ds_stats["terciles"] = seasonal_ds.groupby("time.season").quantile([1./3.,2./3.])
+            ds_stats["terciles"] = seasonal_ds.groupby("time.season").quantile(
+                [1.0 / 3.0, 2.0 / 3.0]
+            )
         else:
             raise ValueError(f"Unknown stat {stat}")
 

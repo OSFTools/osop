@@ -34,6 +34,7 @@ def test_season_stats_mean(dataset: xr.Dataset):
     expected = [56103.76940133, 74532.95535082, 65300.0, 83650.0]
     assert np.allclose(seasonal_mean["mean"].data[:, 0, 0].data, expected)
 
+
 def test_season_stats_ts(dataset: xr.Dataset):
     """
     Test the season_stats function for seasonal time-series
@@ -42,10 +43,19 @@ def test_season_stats_ts(dataset: xr.Dataset):
     seasonal_ts = util.season_stats(dataset, 2000, 2002, stats=["seas_ts"])
 
     assert seasonal_ts["seas_ts"].data.shape == (8, 10, 10)
-    expected = [ 37853.76940133, 47050., 56282.95535082, 65400.,
-                 74353.76940133, 83550., 92782.95535082, 101900.]
+    expected = [
+        37853.76940133,
+        47050.0,
+        56282.95535082,
+        65400.0,
+        74353.76940133,
+        83550.0,
+        92782.95535082,
+        101900.0,
+    ]
 
     assert np.allclose(seasonal_ts["seas_ts"].data[:, 0, 0].data, expected)
+
 
 def test_season_tercile(dataset: xr.Dataset):
     """
@@ -59,8 +69,8 @@ def test_season_tercile(dataset: xr.Dataset):
 
     assert np.allclose(terciles["terciles"].data[0, :, 0, 0].data, expected)
 
-    dims=[key for key in terciles["terciles"].sizes]
-    assert dims == ['season', 'quantile', 'lat', 'lon']
+    dims = [key for key in terciles["terciles"].sizes]
+    assert dims == ["season", "quantile", "lat", "lon"]
 
 
 def test_season_stats_foo(dataset: xr.Dataset):
@@ -73,6 +83,7 @@ def test_season_stats_foo(dataset: xr.Dataset):
         util.season_stats(dataset, 2000, 2002, stats=["foo"])
 
     assert str(exc_info.value) == "Unknown stat foo"
+
 
 @pytest.fixture
 def dataset():

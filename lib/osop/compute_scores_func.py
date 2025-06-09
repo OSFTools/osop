@@ -9,9 +9,8 @@ import numpy as np
 # Forecast verification metrics with xarray
 import xskillscore as xs
 
-#import needed local functions
+# import needed local functions
 from osop.compute_products_func import get_thresh
-
 
 
 def read_obs(obs_fname, config):
@@ -117,14 +116,16 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
             l_corr_pval.append(
                 xs.spearman_r_p_value(thishcst_em, thisobs, dim="valid_time")
             )
-        
+
         # concatenate correlations and p-values
         corr = xr.concat(l_corr, dim="forecastMonth")
         corr_pval = xr.concat(l_corr_pval, dim="forecastMonth")
 
         print(f"Saving to netCDF file correlation for {aggr}-aggregation")
         corr.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
-        corr_pval.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
+        corr_pval.to_netcdf(
+            f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
+        )
 
 
 def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
@@ -277,15 +278,15 @@ def calc_scores(config, downloaddir):
     ## read obs
     obs_ds, obs_ds_3m = read_obs(obs_fname, config)
 
-    # if the observations are ERA5, rename tprate 
-    # and convert from m/day to m/s 
-    if config["obs_name"] == 'era5' and config["hc_var"] == "total_precipitation":
+    # if the observations are ERA5, rename tprate
+    # and convert from m/day to m/s
+    if config["obs_name"] == "era5" and config["hc_var"] == "total_precipitation":
         obs_ds = obs_ds.rename({"tp": "tprate"})
         obs_ds_3m = obs_ds_3m.rename({"tp": "tprate"})
-        obs_ds["tprate"].attrs['units'] = "m/s"
+        obs_ds["tprate"].attrs["units"] = "m/s"
         obs_ds["tprate"] = obs_ds["tprate"] * 3600 * 24
-        obs_ds_3m["tprate"] = obs_ds_3m["tprate"] *3600 *24
-        obs_ds_3m["tprate"].attrs['units'] = "m/s"
+        obs_ds_3m["tprate"] = obs_ds_3m["tprate"] * 3600 * 24
+        obs_ds_3m["tprate"].attrs["units"] = "m/s"
     ## calc scores
     scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir)
     scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir)

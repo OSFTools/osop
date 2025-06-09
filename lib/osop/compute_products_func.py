@@ -10,10 +10,6 @@ import eccodes
 from dateutil.relativedelta import relativedelta
 
 
-
-
-
-
 def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
     """
     Calculate anomalies and save them to netCDF files.
@@ -124,9 +120,12 @@ def get_thresh(icat, quantiles, xrds, dims=["number", "start_date"]):
     return xrds_lo, xrds_hi
 
 
-def prob_terc(hcst_bname, hcst, hcst_3m, datadir):
-    """Calculate probabilities for tercile categories
-    by counting members within each category
+def prob_terc(config, hcst_bname, hcst, hcst_3m, datadir):
+    """
+    Calculate probabilities for tercile categories
+    by counting members within each category and save them to netCDF files.
+    This function computes the tercile thresholds for both 1-month and 3-month aggregated hindcast data.
+    and saves them to netCDF files.
 
     Args:
         hcst_bname (str): Basename of hincast file.
@@ -150,6 +149,7 @@ def prob_terc(hcst_bname, hcst, hcst_3m, datadir):
             print(f"Computing tercile probabilities {aggr}")
 
             l_probs_hcst = list()
+            # Loop over the categories and calculate the probabilities
             for icat in range(numcategories):
 
                 h_lo, h_hi = get_thresh(icat, quantiles, h)
@@ -163,10 +163,23 @@ def prob_terc(hcst_bname, hcst, hcst_3m, datadir):
                     probh = probh.drop("quantile")
                 l_probs_hcst.append(probh.assign_coords({"category": icat}))
 
+                # on second iteration the values of h_lo and h_hi are the 
+                # quantiles we wish to save
+                if icat == 1:
+                    tercs = xr.concat( [h_lo, h_hi], dim="category")
+                    if "quantile" in tercs:
+                        tercs = tercs.drop("quantile")
+                    # include metadata about the reference period and start month
+                    tercs = tercs.assign_attrs(reference_period="{hcstarty}-{hcendy}".format(**config))
+                    tercs = tercs.assign_attrs(start_month=f"{config['start_month']}")
+
             print(f"Concatenating {aggr} tercile probs categories")
             probs = xr.concat(l_probs_hcst, dim="category")
             print(f"Saving {aggr} tercile probs netCDF files")
             probs.to_netcdf(f"{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc")
+
+            print(f"Saving tercile thresholds {aggr} netCDF files")
+            tercs.to_netcdf(f"{datadir}/{hcst_bname}.{aggr}.tercile_thresholds.nc")
 
 
 def calc_products(config, downloaddir):
@@ -189,8 +202,8 @@ def calc_products(config, downloaddir):
 
     ## calc anoms
     hcst, hcst_3m = calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, downloaddir)
-    ## calc terc probs
-    prob_terc(hcst_bname, hcst, hcst_3m, downloaddir)
+    ## calc terc probs and thresholds
+    prob_terc(config, hcst_bname, hcst, hcst_3m, downloaddir)
 
 
 def get_tindex(infile):

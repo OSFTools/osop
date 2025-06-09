@@ -29,7 +29,7 @@ mkdir -p $downloaddir
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
 export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 
-# set parameters
+# set parameters 
 month=11 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
@@ -81,8 +81,8 @@ for centre in meteo_france ;do
         --leads $leads \
         --area $area \
         --variable $variable \
-        --downloaddir $downloaddir \
-        > $downloaddir/product_log_${variable}_${centre}.txt 2>&1
+        --downloaddir $downloaddir #\
+        #> $downloaddir/product_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

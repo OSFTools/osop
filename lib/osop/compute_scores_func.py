@@ -103,8 +103,8 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         print(f"Computing deterministic scores for {aggr}-aggregation")
 
         # Read anomalies file
-        h = xr.open_dataset(f"{productsdir}/{hcst_bname}.{aggr}.anom.nc")
-        is_fullensemble = "number" in h.dims
+        h = xr.open_dataset(f"{productsdir}/{hcst_bname}.{aggr}.mean.nc")
+        #is_fullensemble = "number" in h.dims
 
         # create empty list to store correlations and p-values to be concatenated after looping over months
         l_corr = list()
@@ -119,7 +119,8 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
             print(thishcst["valid_time"])
             print(o["valid_time"])
             thisobs = o.where(o.valid_time == thishcst.valid_time, drop=True)
-            thishcst_em = thishcst if not is_fullensemble else thishcst.mean("number")
+            thishcst_em = thishcst
+            #thishcst_em = thishcst if not is_fullensemble else thishcst.mean("number")
             l_corr.append(xs.spearman_r(thishcst_em, thisobs, dim="valid_time"))
             l_corr_pval.append(
                 xs.spearman_r_p_value(thishcst_em, thisobs, dim="valid_time")

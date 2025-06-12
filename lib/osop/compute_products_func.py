@@ -93,19 +93,6 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, productsdir):
     hcmean2.to_netcdf(f"{datadir}/{hcst_bname}.1m.mean.nc")
     hcmean2_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.mean.nc")
 
-    #plot_test=hcmean2.isel(forecastMonth=0,start_date=0)  #edit plots as appropriate
-    #plot_test=anom.isel(forecastMonth=0,start_date=0,number=1)
-    
-    # plot_test.tprate.plot(x='lon', y='lat', cmap='viridis')
-
-    # # Add title and labels
-    # plt.title('TPRate at Longitude and Latitude')
-    # plt.xlabel('Longitude')
-    # plt.ylabel('Latitude')
-    # plt.show()
-    
-
-    
 
     return hcst, hcst_3m
 

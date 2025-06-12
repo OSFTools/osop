@@ -140,10 +140,14 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         r_corr = list()
         r_corr_pval = list()
 
-        
+        #match dimensions and calculate obs anomalies 
         thishcst_em_mean, this_obs_mean = swap_dims(h,o)
         thishcst_em_anom, this_obs_anom = swap_dims(ha,o)
+        obsmean = this_obs_anom.mean()
+        this_obs_anom = this_obs_anom - obsmean
         thishcst_em_anom = thishcst_em_anom if not is_fullensemble else thishcst_em_anom.mean("number")
+
+        #calculate measures 
         l_corr.append(xs.spearman_r(thishcst_em_mean, this_obs_mean, dim="valid_time"))
         l_corr_pval.append(xs.spearman_r_p_value(thishcst_em_mean, this_obs_mean, dim="valid_time"))
         r_corr.append(xs.pearson_r(thishcst_em_anom, this_obs_anom, dim="valid_time"))

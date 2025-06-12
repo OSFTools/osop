@@ -310,7 +310,7 @@ def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
         plt.close()
 
 
-def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, titles):
+def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles):
     """Plot deterministic scores
     Parameters:
     scoresdir (str): The directory to fetch the input files from.
@@ -324,9 +324,9 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, titles):
     None
     """
     # Read the data files
-    corr = xr.open_dataset(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
+    corr = xr.open_dataset(f"{scoresdir}/{hcst_bname}.{aggr}.{score}.nc")
     corr_pval = xr.open_dataset(
-        f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
+        f"{scoresdir}/{hcst_bname}.{aggr}.{score}_pval.nc"
     )
 
     # Rearrange the dataset longitude values for plotting purposes
@@ -369,7 +369,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, titles):
         cmap="RdYlBu_r",
     )
     cb = plt.colorbar(shrink=0.5)
-    cb.ax.set_ylabel("Spearman Correlation", fontsize=12)
+    cb.ax.set_ylabel('{}'.format(score), fontsize=12)
     origylim = ax.get_ylim()
 
     # add stippling for significance
@@ -395,7 +395,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, titles):
         loc="left",
     )
     plt.tight_layout()
-    figname = f"{plotdir}/{hcst_bname}.{aggr}.spearman_corr.png"
+    figname = f"{plotdir}/{hcst_bname}.{aggr}.{score}.png"
     plt.savefig(figname)
     plt.close()
 
@@ -414,7 +414,13 @@ def generate_plots(config, titles, scoresdir, plotdir):
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
-        corr_plots(scoresdir, plotdir, score_fname, config["aggr"], config, titles)
+        corr_plots(scoresdir, plotdir, score_fname, config["aggr"], config, config["score"], titles)
+    
+    elif config["score"] == "pearson_corr":
+        score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
+            **config
+        )
+        corr_plots(downloaddir, score_fname, config["aggr"], config, config["score"], titles)
 
     elif config["score"] == "rel":
         plot_rel(

@@ -57,7 +57,7 @@ if __name__ == "__main__":
     Get the command line arguments using argparse
     Call the plotting functions to generate verification plots
     """
-    scores = ["spearman_corr", "roc", "rocss", "rps", "rel", "bs"]
+    scores = ["spearman_corr","pearson_corr", "roc", "rocss", "rps", "rel", "bs"]
 
     # get command line args
     args = parse_args()

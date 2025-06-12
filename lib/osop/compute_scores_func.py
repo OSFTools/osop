@@ -67,16 +67,28 @@ def read_obs(obs_fname, config):
     return obs_ds, obs_ds_3m
 
 def swap_dims(hcst, obs):
+    """
+    Swaps dimensions appropriately and alligns hindcast with observed dataset
+    for deterministic verification measures. 
 
-        for this_fcmonth in hcst.forecastMonth.values:
-            print(f"forecastMonth={this_fcmonth}")
-            thishcst = hcst.sel(forecastMonth=this_fcmonth).swap_dims({"start_date": "valid_time"})
-            thishcst["valid_time"] = thishcst.valid_time.dt.strftime("%Y-%m")
-            print(thishcst["valid_time"])
-            print(obs["valid_time"])
-            thisobs = obs.where(obs.valid_time == thishcst.valid_time, drop=True)
+    Parameters:
+    hcst: the hindcast dataset. 
+    obs: the matching observed dataset.
 
-            return thishcst, thisobs
+    Returns:
+    thishcst: the alligned hindcast dataset.
+    thisobs: the alligned observed dataset. 
+    """
+
+    for this_fcmonth in hcst.forecastMonth.values:
+        print(f"forecastMonth={this_fcmonth}")
+        thishcst = hcst.sel(forecastMonth=this_fcmonth).swap_dims({"start_date": "valid_time"})
+        thishcst["valid_time"] = thishcst.valid_time.dt.strftime("%Y-%m")
+        print(thishcst["valid_time"])
+        print(obs["valid_time"])
+        thisobs = obs.where(obs.valid_time == thishcst.valid_time, drop=True)
+
+        return thishcst, thisobs
 
 
 
@@ -92,7 +104,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
 
     Returns:
     None
-    Saves spearman correlation and p-value to netCDF files.
+    Saves spearman and pearson correlation and p-value to netCDF files.
     """
 
     # Loop over aggregations
@@ -112,6 +124,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
         # Reading anomalies file
         ha = xr.open_dataset(f"{downloaddir}/{hcst_bname}.{aggr}.anom.nc")
         is_fullensemble = "number" in ha.dims
+
 
         # create empty list to store correlations and p-values to be concatenated after looping over months
         l_corr = list()

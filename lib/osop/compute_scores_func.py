@@ -66,6 +66,19 @@ def read_obs(obs_fname, config):
     obs_ds_3m["valid_time"] = obs_ds_3m.valid_time.dt.strftime("%Y-%m")
     return obs_ds, obs_ds_3m
 
+def swap_dims(hcst, obs):
+
+        for this_fcmonth in hcst.forecastMonth.values:
+            print(f"forecastMonth={this_fcmonth}")
+            thishcst = hcst.sel(forecastMonth=this_fcmonth).swap_dims({"start_date": "valid_time"})
+            thishcst["valid_time"] = thishcst.valid_time.dt.strftime("%Y-%m")
+            print(thishcst["valid_time"])
+            print(obs["valid_time"])
+            thisobs = obs.where(obs.valid_time == thishcst.valid_time, drop=True)
+
+            return thishcst, thisobs
+
+
 
 def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
     """
@@ -94,29 +107,25 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
 
         print(f"Computing deterministic scores for {aggr}-aggregation")
 
-        # Read anomalies file
+        # Reading mean file
         h = xr.open_dataset(f"{downloaddir}/{hcst_bname}.{aggr}.mean.nc")
-        #is_fullensemble = "number" in h.dims
+        # Reading anomalies file
+        ha = xr.open_dataset(f"{downloaddir}/{hcst_bname}.{aggr}.anom.nc")
+        is_fullensemble = "number" in ha.dims
 
         # create empty list to store correlations and p-values to be concatenated after looping over months
         l_corr = list()
         l_corr_pval = list()
+        r_corr = list()
+        r_corr_pval = list()
 
-        for this_fcmonth in h.forecastMonth.values:
-            print(f"forecastMonth={this_fcmonth}")
-            thishcst = h.sel(forecastMonth=this_fcmonth).swap_dims(
-                {"start_date": "valid_time"}
-            )
-            thishcst["valid_time"] = thishcst.valid_time.dt.strftime("%Y-%m")
-            print(thishcst["valid_time"])
-            print(o["valid_time"])
-            thisobs = o.where(o.valid_time == thishcst.valid_time, drop=True)
-            thishcst_em = thishcst
-            #thishcst_em = thishcst if not is_fullensemble else thishcst.mean("number")
-            l_corr.append(xs.spearman_r(thishcst_em, thisobs, dim="valid_time"))
-            l_corr_pval.append(
-                xs.spearman_r_p_value(thishcst_em, thisobs, dim="valid_time")
-            )
+        
+        thishcst_em_mean, this_obs_mean = swap_dims(h,o)
+        thishcst_em_anom, this_obs_anom = swap_dims(ha,o)
+        thishcst_em_anom = thishcst_em_anom if not is_fullensemble else thishcst_em_anom.mean("number")
+        l_corr.append(xs.spearman_r(thishcst_em_mean, this_obs_mean, dim="valid_time"))
+        l_corr_pval.append(xs.spearman_r_p_value(thishcst_em_mean, this_obs_mean, dim="valid_time"))
+        r_corr.append(xs.pearson_r(thishcst_em_anom,))
 
         # concatenate correlations and p-values
         corr = xr.concat(l_corr, dim="forecastMonth")

@@ -68,6 +68,7 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
     # CALCULATE ANOMALIES (and save to file)
     print("Computing anomalies 1m")
     hcmean = hcst.mean(["number", "start_date"])
+    # CALCULATE MEAN ACROSS ALL SERVICES
     hcmean2 = hcst.mean(["number"])
     anom = hcst - hcmean
     anom = anom.assign_attrs(reference_period="{hcstarty}-{hcendy}".format(**config))
@@ -75,18 +76,17 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
     print("Computing anomalies 3m")
     hcmean_3m = hcst_3m.mean(["number", "start_date"])
     hcmean2_3m = hcst_3m.mean(["number"])
-    print("this is hcmean2",hcmean2)
+    print("this is hcmean2", hcmean2)
     anom_3m = hcst_3m - hcmean_3m
     anom_3m = anom_3m.assign_attrs(
         reference_period="{hcstarty}-{hcendy}".format(**config)
     )
 
-    print("Saving anomalies 1m/3m to netCDF files")
+    print("Saving mean and anomalies 1m/3m to netCDF files")
     anom.to_netcdf(f"{datadir}/{hcst_bname}.1m.anom.nc")
     anom_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.anom.nc")
     hcmean2.to_netcdf(f"{datadir}/{hcst_bname}.1m.mean.nc")
     hcmean2_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.mean.nc")
-
 
     return hcst, hcst_3m
 
@@ -170,14 +170,16 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, datadir):
                     probh = probh.drop("quantile")
                 l_probs_hcst.append(probh.assign_coords({"category": icat}))
 
-                # on second iteration the values of h_lo and h_hi are the 
+                # on second iteration the values of h_lo and h_hi are the
                 # quantiles we wish to save
                 if icat == 1:
-                    tercs = xr.concat( [h_lo, h_hi], dim="category")
+                    tercs = xr.concat([h_lo, h_hi], dim="category")
                     if "quantile" in tercs:
                         tercs = tercs.drop("quantile")
                     # include metadata about the reference period and start month
-                    tercs = tercs.assign_attrs(reference_period="{hcstarty}-{hcendy}".format(**config))
+                    tercs = tercs.assign_attrs(
+                        reference_period="{hcstarty}-{hcendy}".format(**config)
+                    )
                     tercs = tercs.assign_attrs(start_month=f"{config['start_month']}")
 
             print(f"Concatenating {aggr} tercile probs categories")

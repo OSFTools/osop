@@ -313,9 +313,7 @@ def corr_plots(datadir, hcst_bname, aggr, config, score, titles):
     """
     # Read the data files
     corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.{score}.nc")
-    corr_pval = xr.open_dataset(
-        f"{datadir}/scores/{hcst_bname}.{aggr}.{score}_pval.nc"
-    )
+    corr_pval = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.{score}_pval.nc")
 
     # Rearrange the dataset longitude values for plotting purposes
     corr = corr.assign_coords(lon=(((corr.lon + 180) % 360) - 180)).sortby("lon")
@@ -357,7 +355,7 @@ def corr_plots(datadir, hcst_bname, aggr, config, score, titles):
         cmap="RdYlBu_r",
     )
     cb = plt.colorbar(shrink=0.5)
-    cb.ax.set_ylabel('{}'.format(score), fontsize=12)
+    cb.ax.set_ylabel("{}".format(score), fontsize=12)
     origylim = ax.get_ylim()
 
     # add stippling for significance
@@ -399,13 +397,17 @@ def generate_plots(config, titles, downloaddir):
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
-        corr_plots(downloaddir, score_fname, config["aggr"], config, config["score"], titles)
-    
+        corr_plots(
+            downloaddir, score_fname, config["aggr"], config, config["score"], titles
+        )
+
     elif config["score"] == "pearson_corr":
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
-        corr_plots(downloaddir, score_fname, config["aggr"], config, config["score"], titles)
+        corr_plots(
+            downloaddir, score_fname, config["aggr"], config, config["score"], titles
+        )
 
     elif config["score"] == "rel":
         plot_rel(score_data, score_fname, config, config["score"], downloaddir, titles)

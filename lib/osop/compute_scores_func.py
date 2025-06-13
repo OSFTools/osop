@@ -73,30 +73,32 @@ def read_obs(obs_fname, config):
     obs_ds_3m["valid_time"] = obs_ds_3m.valid_time.dt.strftime("%Y-%m")
     return obs_ds, obs_ds_3m
 
+
 def swap_dims(hcst, obs):
     """
     Swaps dimensions appropriately and alligns hindcast with observed dataset
-    for deterministic verification measures. 
+    for deterministic verification measures.
 
     Parameters:
-    hcst: the hindcast dataset. 
+    hcst: the hindcast dataset.
     obs: the matching observed dataset.
 
     Returns:
     thishcst: the alligned hindcast dataset.
-    thisobs: the alligned observed dataset. 
+    thisobs: the alligned observed dataset.
     """
 
     for this_fcmonth in hcst.forecastMonth.values:
         print(f"forecastMonth={this_fcmonth}")
-        thishcst = hcst.sel(forecastMonth=this_fcmonth).swap_dims({"start_date": "valid_time"})
+        thishcst = hcst.sel(forecastMonth=this_fcmonth).swap_dims(
+            {"start_date": "valid_time"}
+        )
         thishcst["valid_time"] = thishcst.valid_time.dt.strftime("%Y-%m")
         print(thishcst["valid_time"])
         print(obs["valid_time"])
         thisobs = obs.where(obs.valid_time == thishcst.valid_time, drop=True)
 
         return thishcst, thisobs
-
 
 
 def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
@@ -133,25 +135,32 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         ha = xr.open_dataset(f"{downloaddir}/{hcst_bname}.{aggr}.anom.nc")
         is_fullensemble = "number" in ha.dims
 
-
         # create empty list to store correlations and p-values to be concatenated after looping over months
         l_corr = list()
         l_corr_pval = list()
         r_corr = list()
         r_corr_pval = list()
 
-        #match dimensions and calculate obs anomalies 
-        thishcst_em_mean, this_obs_mean = swap_dims(h,o)
-        thishcst_em_anom, this_obs_anom = swap_dims(ha,o)
-        obsmean = this_obs_anom.mean()
-        this_obs_anom = this_obs_anom - obsmean
-        thishcst_em_anom = thishcst_em_anom if not is_fullensemble else thishcst_em_anom.mean("number")
+        # match dimensions and calculate obs anomalies
+        thishcst_em_mean, this_obs_m_match = swap_dims(h, o)
+        thishcst_em_anom, this_obs_a_match = swap_dims(ha, o)
+        obsmean = this_obs_a_match.mean()
+        this_obs_anom = this_obs_a_match - obsmean
+        thishcst_em_anom = (
+            thishcst_em_anom if not is_fullensemble else thishcst_em_anom.mean("number")
+        )
 
-        #calculate measures 
-        l_corr.append(xs.spearman_r(thishcst_em_mean, this_obs_mean, dim="valid_time"))
-        l_corr_pval.append(xs.spearman_r_p_value(thishcst_em_mean, this_obs_mean, dim="valid_time"))
+        # calculate measures
+        l_corr.append(
+            xs.spearman_r(thishcst_em_mean, this_obs_m_match, dim="valid_time")
+        )
+        l_corr_pval.append(
+            xs.spearman_r_p_value(thishcst_em_mean, this_obs_m_match, dim="valid_time")
+        )
         r_corr.append(xs.pearson_r(thishcst_em_anom, this_obs_anom, dim="valid_time"))
-        r_corr_pval.append(xs.pearson_r_p_value(thishcst_em_anom, this_obs_anom, dim="valid_time"))
+        r_corr_pval.append(
+            xs.pearson_r_p_value(thishcst_em_anom, this_obs_anom, dim="valid_time")
+        )
 
         # concatenate correlations and p-values
         corr = xr.concat(l_corr, dim="forecastMonth")
@@ -161,9 +170,13 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
         print(f"Saving to netCDF file correlation for {aggr}-aggregation")
         corr.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
-        corr_pval.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
+        corr_pval.to_netcdf(
+            f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
+        )
         r_corr.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.pearson_corr.nc")
-        r_corr_pval.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.pearson_corr_pval.nc")
+        r_corr_pval.to_netcdf(
+            f"{downloaddir}/scores/{hcst_bname}.{aggr}.pearson_corr_pval.nc"
+        )
 
 
 def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):

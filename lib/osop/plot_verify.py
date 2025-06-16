@@ -187,7 +187,7 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir, s
         ex_dir = "max"
         under = "purple"
         levels = np.linspace(0.0, 0.5, 11)
-        info = score_fname
+        info = score_title
         plt.title(
             f"{score} \n"
             + titles[0]

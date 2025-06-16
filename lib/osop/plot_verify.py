@@ -97,7 +97,7 @@ def prep_titles(config):
         tit_line2 = tit_line2_base + f' - Valid months: {"".join(validmonths)}'
     else:
         raise BaseException(f"Unexpected aggregation")
-    tit_line3 = f"Verification period: {config['hcstarty']} - {config['hcstarty']}"
+    tit_line3 = f"Verification period: {config['hcstarty']} - {config['hcendy']}"
     return tit_line1, tit_line2, tit_line3
 
 
@@ -381,7 +381,7 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
         ax.set_ylim(origylim)
 
     plt.title(
-        f"{titles[0]} (stippling where p>0.05)\n {titles[1]} \n {titles[2]}",
+        f"{titles[0]}\n {config['var']}\n {config['score']} (stippling where p>0.05)\n {titles[1]} \n {titles[2]}",
         loc="left",
     )
     plt.tight_layout()

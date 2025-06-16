@@ -101,7 +101,7 @@ def prep_titles(config):
     return tit_line1, tit_line2, tit_line3
 
 
-def plot_score(score_f, score_fname, category, config, score, titles, datadir):
+def plot_score(score_f, score_fname, category, config, score, titles, datadir, score_title):
     """
     Plot the score on a map.
 
@@ -122,7 +122,7 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
     # Specify CRS
     crs = ccrs.PlateCarree()
 
-    info = f"{score_fname}_category_{category}"
+    info = f"{score_title}_category_{category}"
     if score == "rps":
         p = score_f[config["var"]][0, :, :]
         lon = score_f[config["var"]].lon
@@ -178,7 +178,7 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
         under = "lightgray"
         levels = np.linspace(0.5, 1.0, 6)
 
-    info = f"{score_fname}_category_{category}"
+    info = f"{score_title}_category_{category}"
     if score == "rps":
         p = score_f[config["var"]][0, :, :]
         lon = score_f[config["var"]].lon
@@ -257,7 +257,7 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir):
     plt.close()
 
 
-def plot_rel(score_f, score_fname, config, score, datadir, titles):
+def plot_rel(score_f, score_fname, config, score, datadir, titles, score_title):
     """Plot reliability diagram
     Parameters:
     score_f (numpy.ndarray): The reliability score data.
@@ -295,7 +295,7 @@ def plot_rel(score_f, score_fname, config, score, datadir, titles):
             titles[0] + f" {config['var']}\n" + titles[1] + "\n" + titles[2], loc="left"
         )
         plt.tight_layout()
-        plt.savefig(os.path.join(datadir, "scores", f"{score_fname}.png"))
+        plt.savefig(os.path.join(datadir, "scores", f"{score_title}.png"))
         plt.close()
 
 
@@ -394,6 +394,9 @@ def generate_plots(config, titles, downloaddir):
         **config
     )
     score_data = xr.open_dataset(os.path.join(downloaddir, "scores", score_fname))
+    score_title = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}".format(
+        **config
+    )
 
     if config["score"] == "spearman_corr":
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
@@ -402,11 +405,11 @@ def generate_plots(config, titles, downloaddir):
         corr_plots(downloaddir, score_fname, config["aggr"], config, titles)
 
     elif config["score"] == "rel":
-        plot_rel(score_data, score_fname, config, config["score"], downloaddir, titles)
+        plot_rel(score_data, score_fname, config, config["score"], downloaddir, titles, score_title)
 
     elif config["score"] == "rps":
         plot_score(
-            score_data, score_fname, None, config, config["score"], titles, downloaddir
+            score_data, score_fname, None, config, config["score"], titles, downloaddir, score_title
         )
 
     elif config["score"] == "bs":
@@ -419,6 +422,7 @@ def generate_plots(config, titles, downloaddir):
                 config["score"],
                 titles,
                 downloaddir,
+                score_title
             )
 
     else:
@@ -432,4 +436,5 @@ def generate_plots(config, titles, downloaddir):
                 config["score"],
                 titles,
                 downloaddir,
+                score_title
             )

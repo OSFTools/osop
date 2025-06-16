@@ -101,7 +101,9 @@ def prep_titles(config):
     return tit_line1, tit_line2, tit_line3
 
 
-def plot_score(score_f, score_fname, category, config, score, titles, datadir, score_title):
+def plot_score(
+    score_f, score_fname, category, config, score, titles, datadir, score_title
+):
     """
     Plot the score on a map.
 
@@ -405,11 +407,26 @@ def generate_plots(config, titles, downloaddir):
         corr_plots(downloaddir, score_fname, config["aggr"], config, titles)
 
     elif config["score"] == "rel":
-        plot_rel(score_data, score_fname, config, config["score"], downloaddir, titles, score_title)
+        plot_rel(
+            score_data,
+            score_fname,
+            config,
+            config["score"],
+            downloaddir,
+            titles,
+            score_title,
+        )
 
     elif config["score"] == "rps":
         plot_score(
-            score_data, score_fname, None, config, config["score"], titles, downloaddir, score_title
+            score_data,
+            score_fname,
+            None,
+            config,
+            config["score"],
+            titles,
+            downloaddir,
+            score_title,
         )
 
     elif config["score"] == "bs":
@@ -422,7 +439,7 @@ def generate_plots(config, titles, downloaddir):
                 config["score"],
                 titles,
                 downloaddir,
-                score_title
+                score_title,
             )
 
     else:
@@ -436,5 +453,5 @@ def generate_plots(config, titles, downloaddir):
                 config["score"],
                 titles,
                 downloaddir,
-                score_title
+                score_title,
             )

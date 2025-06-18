@@ -114,6 +114,7 @@ def plot_score(
     score (str): The name of the score.
     titles (list): Titles for the plot.
     datadir (str): The directory to save the plot.
+    score_title (str): The name for the plot in the file directory.
 
     Returns:
     None
@@ -266,7 +267,8 @@ def plot_rel(score_f, score_fname, config, score, datadir, titles, score_title):
     config (dict): Configuration parameters.
     score (str): The name of the score.
     datadir (str): The directory to save the plot.
-
+    score_title (str): The name for the plot in the file directory.
+    
     Returns:
     None
     """

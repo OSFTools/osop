@@ -191,20 +191,20 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
 
             thisobs = xr.concat(l_probs_obs, dim="category")
 
-            #interpolate if the hindcast basename starts with "jma"
+            # interpolate if the hindcast basename starts with "jma"
             if isinstance(hcst_bname, str) and hcst_bname.lower().startswith("jma"):
                 try:
-                    #Diffrent Interpolation methods: Reindex moves coords to matching where possible and replaces the remaining with NaNs
-                    #Interp_like and interp are for all intese and purposes the same. Method can be changed. 
+                    # Diffrent Interpolation methods: Reindex moves coords to matching where possible and replaces the remaining with NaNs
+                    # Interp_like and interp are for all intese and purposes the same. Method can be changed.
 
-                    #thishcst = thishcst.reindex(lat=thisobs.lat, lon=thisobs.lon, method='nearest')
-                    #thishcst = thishcst.interp_like(thisobs)
-                    thishcst = thishcst.interp(lat=thisobs.lat, lon=thisobs.lon, method='nearest')
+                    # thishcst = thishcst.reindex(lat=thisobs.lat, lon=thisobs.lon, method='nearest')
+                    # thishcst = thishcst.interp_like(thisobs)
+                    thishcst = thishcst.interp(
+                        lat=thisobs.lat, lon=thisobs.lon, method="nearest"
+                    )
                 except Exception as e:
                     print(f"Interpolation failed for {hcst_bname}: {e}")
                     raise KeyError("Interpolation failed: please check dataset entry")
-                    
-
 
             # Calculate the probabilistic scores
             thisroc = xr.Dataset()

@@ -67,7 +67,7 @@ def read_obs(obs_fname, config):
     return obs_ds, obs_ds_3m
 
 
-def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir, scoresdir, productsdir):
+def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
     """
     Compute deterministic scores.
 
@@ -75,7 +75,8 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir, scoresdir, produ
     obs_ds (xarray.Dataset): Observation / reanalysis data, monthly resolution.
     obs_ds_3m (xarray.Dataset): Observation / reanalysis 3-month aggregated data.
     hcst_bname (str): Basename of the hindcast data.
-    downloaddir (str): Directory to save the output files.
+    scoresdir (str): Directory to save the output files.
+    productsdir (str): Directory to fetch files from.
 
     Returns:
     None
@@ -123,12 +124,10 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir, scoresdir, produ
 
         print(f"Saving to netCDF file correlation for {aggr}-aggregation")
         corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
-        corr_pval.to_netcdf(
-            f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
-        )
+        corr_pval.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
 
 
-def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir, scoresdir, productsdir):
+def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
     """
     Compute probabilistic scores and save the results to NetCDF files.
 
@@ -136,7 +135,8 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir, scoresdir, produc
     obs_ds(xarray.Dataset): Observation / Reanalysis monthly data.
     obs_ds_3m (xarray.Dataset): Observation / Reanalysis 3-month aggregated data.
     hcst_bname (str): Basename of the hindcast probabilities file.
-    downloaddir (str): Directory to save the output NetCDF files.
+    scoresdir (str): Directory to save the output NetCDF files.
+    productsdir (str): Directory to fetch input files from.
 
     Returns:
     None
@@ -288,5 +288,5 @@ def calc_scores(config, downloaddir, scoresdir, productsdir):
         obs_ds_3m["tprate"] = obs_ds_3m["tprate"] * 3600 * 24
         obs_ds_3m["tprate"].attrs["units"] = "m/s"
     ## calc scores
-    scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir,scoresdir, productsdir)
-    scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir, scoresdir, productsdir)
+    scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir)
+    scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir)

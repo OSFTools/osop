@@ -126,7 +126,6 @@ for centre in meteo_france ;do
         --month $month \
         --leads $leads \
         --area $area \
-        --downloaddir $downloaddir \
         --scoresdir $scoresdir \
         --plotdir $plotdir \
         --variable $variable \

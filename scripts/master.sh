@@ -127,7 +127,6 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         --month $month \
         --leads $leads \
         --area $area \
-        --downloaddir $downloaddir \
         --scoresdir $scoresdir \
         --plotdir $plotdir \
         --variable $variable \

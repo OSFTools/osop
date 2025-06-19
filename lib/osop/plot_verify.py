@@ -101,7 +101,7 @@ def prep_titles(config):
     return tit_line1, tit_line2, tit_line3
 
 
-def plot_score(score_f, score_fname, category, config, score, titles, datadir, plotdir):
+def plot_score(score_f, score_fname, category, config, score, titles, datadir, scoresdir, plotdir):
     """
     Plot the score on a map.
 
@@ -257,7 +257,7 @@ def plot_score(score_f, score_fname, category, config, score, titles, datadir, p
     plt.close()
 
 
-def plot_rel(score_f, score_fname, config, score, datadir,plotdir, titles):
+def plot_rel(score_f, score_fname, config, score, datadir, scoresdir, plotdir, titles):
     """Plot reliability diagram
     Parameters:
     score_f (numpy.ndarray): The reliability score data.
@@ -299,7 +299,7 @@ def plot_rel(score_f, score_fname, config, score, datadir,plotdir, titles):
         plt.close()
 
 
-def corr_plots(datadir,plotdir, hcst_bname, aggr, config, titles):
+def corr_plots(datadir,scoresdir, plotdir, hcst_bname, aggr, config, titles):
     """Plot deterministic scores
     Parameters:
     datadir (str): The directory to save the plot.
@@ -312,9 +312,9 @@ def corr_plots(datadir,plotdir, hcst_bname, aggr, config, titles):
     None
     """
     # Read the data files
-    corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
+    corr = xr.open_dataset(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
     corr_pval = xr.open_dataset(
-        f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
+        f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
     )
 
     # Rearrange the dataset longitude values for plotting purposes
@@ -388,25 +388,25 @@ def corr_plots(datadir,plotdir, hcst_bname, aggr, config, titles):
     plt.close()
 
 
-def generate_plots(config, titles, downloaddir, plotdir):
+def generate_plots(config, titles, downloaddir,scoresdir, plotdir):
     ## read in the data
     score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc".format(
         **config
     )
-    score_data = xr.open_dataset(os.path.join(downloaddir, "scores", score_fname))
+    score_data = xr.open_dataset(os.path.join(scoresdir, score_fname))
 
     if config["score"] == "spearman_corr":
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
-        corr_plots(downloaddir, plotdir, score_fname, config["aggr"], config, titles)
+        corr_plots(downloaddir,scoresdir, plotdir, score_fname, config["aggr"], config, titles)
 
     elif config["score"] == "rel":
-        plot_rel(score_data, score_fname, config, config["score"], downloaddir, plotdir, titles)
+        plot_rel(score_data, score_fname, config, config["score"], downloaddir,scoresdir, plotdir, titles)
 
     elif config["score"] == "rps":
         plot_score(
-            score_data, score_fname, None, config, config["score"], titles, downloaddir, plotdir
+            score_data, score_fname, None, config, config["score"], titles, downloaddir,scoresdir, plotdir
         )
 
     elif config["score"] == "bs":
@@ -419,6 +419,7 @@ def generate_plots(config, titles, downloaddir, plotdir):
                 config["score"],
                 titles,
                 downloaddir,
+                scoresdir,
                 plotdir,
             )
 
@@ -433,5 +434,6 @@ def generate_plots(config, titles, downloaddir, plotdir):
                 config["score"],
                 titles,
                 downloaddir,
+                scoresdir,
                 plotdir,
             )

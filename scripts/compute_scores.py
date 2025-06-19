@@ -36,7 +36,9 @@ def parse_args():
         required=True,
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
-    parser.add_argument("--downloaddir", required=True, help="location to download to")
+    parser.add_argument("--downloaddir", required=True, help="location to get grib from")
+    parser.add_argument("--scoresdir", required=True, help="location to download to")
+    parser.add_argument("--productsdir", required=True, help="location to get products from")
     parser.add_argument(
         "--years",
         required=False,
@@ -62,6 +64,8 @@ if __name__ == "__main__":
     # unpack args and reformat if needed
     centre = args.centre
     downloaddir = args.downloaddir
+    scoresdir = args.scoresdir
+    productsdir = args.productsdir
     month = int(args.month)
     leads = args.leads
     leadtime_month = [int(l) for l in args.leads.split(",")]
@@ -103,22 +107,18 @@ if __name__ == "__main__":
     else:
         config['obs_name'] = 'era5'
 
-    # creat directory for verification scores
-    scores_dir = os.path.join(downloaddir, "scores")
-    if not os.path.exists(scores_dir):
-        os.makedirs(scores_dir)
 
     # hindcast info
     if centre == "eccc":
         # two models aka systems are live - call twice with each system number
         config["system"] = SYSTEMS["eccc_can"]
-        calc_scores(config, downloaddir)
+        calc_scores(config, downloaddir, scoresdir, productsdir)
 
         ## repeat for second system
         config["system"] = SYSTEMS["eccc_gem5"]
-        calc_scores(config, downloaddir)
+        calc_scores(config, downloaddir, scoresdir, productsdir)
     else:
         if centre not in SYSTEMS.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")
         config["system"] = SYSTEMS[centre]
-        calc_scores(config, downloaddir)
+        calc_scores(config, downloaddir, scoresdir, productsdir)

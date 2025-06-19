@@ -31,7 +31,8 @@ def parse_args():
         required=True,
         help="variable to download, 2m_temperature, total_precipitation",
     )
-    parser.add_argument("--downloaddir", required=True, help="location to download to")
+    parser.add_argument("--downloaddir", required=True, help="location to get from")
+    parser.add_argument("--productsdir", required=True, help="location to download to")
     parser.add_argument(
         "--years",
         required=False,
@@ -55,6 +56,7 @@ if __name__ == "__main__":
     # unpack args and reformat if needed
     centre = args.centre
     downloaddir = args.downloaddir
+    productsdir = args.productsdir
     month = int(args.month)
     leads = args.leads
     leadtime_month = [int(l) for l in args.leads.split(",")]
@@ -84,13 +86,13 @@ if __name__ == "__main__":
     if centre == "eccc":
         # two models aka systems are live - call twice with each system number
         config["system"] = SYSTEMS["eccc_can"]
-        calc_products(config, downloaddir)
+        calc_products(config, downloaddir, productsdir)
 
         ## repeat for second system
         config["system"] = SYSTEMS["eccc_gem5"]
-        calc_products(config, downloaddir)
+        calc_products(config, downloaddir, productsdir)
     else:
         if centre not in SYSTEMS.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")
         config["system"] = SYSTEMS[centre]
-        calc_products(config, downloaddir)
+        calc_products(config, downloaddir, productsdir)

@@ -10,7 +10,7 @@ import eccodes
 from dateutil.relativedelta import relativedelta
 
 
-def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
+def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir, productsdir):
     """
     Calculate anomalies and save them to netCDF files.
 
@@ -78,8 +78,8 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
     )
 
     print("Saving anomalies 1m/3m to netCDF files")
-    anom.to_netcdf(f"{datadir}/{hcst_bname}.1m.anom.nc")
-    anom_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.anom.nc")
+    anom.to_netcdf(f"{productsdir}/{hcst_bname}.1m.anom.nc")
+    anom_3m.to_netcdf(f"{productsdir}/{hcst_bname}.3m.anom.nc")
 
     return hcst, hcst_3m
 
@@ -120,7 +120,7 @@ def get_thresh(icat, quantiles, xrds, dims=["number", "start_date"]):
     return xrds_lo, xrds_hi
 
 
-def prob_terc(config, hcst_bname, hcst, hcst_3m, datadir):
+def prob_terc(config, hcst_bname, hcst, hcst_3m, datadir, productsdir):
     """
     Calculate probabilities for tercile categories
     by counting members within each category and save them to netCDF files.
@@ -143,8 +143,8 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, datadir):
     numcategories = len(quantiles) + 1
 
     for aggr, h in [("1m", hcst), ("3m", hcst_3m)]:
-        if os.path.isfile(f"{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc"):
-            print(f"{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc exists")
+        if os.path.isfile(f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc"):
+            print(f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc exists")
         else:
             print(f"Computing tercile probabilities {aggr}")
 
@@ -176,13 +176,13 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, datadir):
             print(f"Concatenating {aggr} tercile probs categories")
             probs = xr.concat(l_probs_hcst, dim="category")
             print(f"Saving {aggr} tercile probs netCDF files")
-            probs.to_netcdf(f"{datadir}/{hcst_bname}.{aggr}.tercile_probs.nc")
+            probs.to_netcdf(f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc")
 
             print(f"Saving tercile thresholds {aggr} netCDF files")
-            tercs.to_netcdf(f"{datadir}/{hcst_bname}.{aggr}.tercile_thresholds.nc")
+            tercs.to_netcdf(f"{productsdir}/{hcst_bname}.{aggr}.tercile_thresholds.nc")
 
 
-def calc_products(config, downloaddir):
+def calc_products(config, downloaddir, productsdir):
     """Calculate anomalies and tercile probabilities for a given hindcast dataset
 
     Args:
@@ -201,9 +201,9 @@ def calc_products(config, downloaddir):
     st_dim_name = get_tindex(hcst_fname)
 
     ## calc anoms
-    hcst, hcst_3m = calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, downloaddir)
+    hcst, hcst_3m = calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, downloaddir, productsdir)
     ## calc terc probs and thresholds
-    prob_terc(config, hcst_bname, hcst, hcst_3m, downloaddir)
+    prob_terc(config, hcst_bname, hcst, hcst_3m, downloaddir, productsdir)
 
 
 def get_tindex(infile):

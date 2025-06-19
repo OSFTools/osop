@@ -32,7 +32,8 @@ def parse_args():
         required=True,
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
-    parser.add_argument("--downloaddir", required=True, help="location to download to")
+    parser.add_argument("--downloaddir", required=True, help="location for grab files")
+    parser.add_argument("--plotdir", required=True, help="location to download output to")
     parser.add_argument(
         "--years",
         required=False,
@@ -58,6 +59,7 @@ if __name__ == "__main__":
     border = args.location
     centre = args.centre
     downloaddir = args.downloaddir
+    plotdir = args.plotdir
     month = int(args.month)
     leads = args.leads
     leadtime_month = [int(l) for l in args.leads.split(",")]
@@ -107,17 +109,17 @@ if __name__ == "__main__":
                 config["system"] = SYSTEMS["eccc_can"]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(config, titles, downloaddir)
+                generate_plots(config, titles, downloaddir, plotdir)
 
                 ## repeat for second system
                 config["system"] = SYSTEMS["eccc_gem5"]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(config, titles, downloaddir)
+                generate_plots(config, titles, downloaddir, plotdir)
             else:
                 if centre not in SYSTEMS.keys():
                     raise ValueError(f"Unknown system for C3S: {centre}")
                 config["system"] = SYSTEMS[centre]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(config, titles, downloaddir)
+                generate_plots(config, titles, downloaddir, plotdir)

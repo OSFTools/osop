@@ -23,7 +23,11 @@ set -u
 
 # pick download location
 downloaddir=$SCRATCH/seafoam/data/master
+plotdir=$SCRATCH/seafoam/data/master/plots
+logdir=$SCRATCH/seafoam/data/master/logfiles
 mkdir -p $downloaddir
+mkdir -p $plotdir
+mkdir -p $logdir
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
@@ -45,7 +49,7 @@ python get_era5.py \
     --area $area \
     --downloaddir $downloaddir \
     --variable $variable \
-    > $downloaddir/era5_log_${variable}.txt 2>&1
+    > $logdir/era5_log_${variable}.txt 2>&1
 exitcode=$?
 set -e
 if [ $exitcode -eq 0 ]; then
@@ -65,7 +69,7 @@ for centre in meteo_france ;do
         --area $area \
         --variable $variable\
         --downloaddir $downloaddir \
-        > $downloaddir/download_log_${variable}_${centre}.txt 2>&1
+        > $logdir/download_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
@@ -99,7 +103,7 @@ for centre in meteo_france ;do
         --area $area \
         --downloaddir $downloaddir \
         --variable $variable \
-        > $downloaddir/verification_log_${variable}_${centre}.txt 2>&1
+        > $logdir/verification_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
@@ -116,8 +120,9 @@ for centre in meteo_france ;do
         --leads $leads \
         --area $area \
         --downloaddir $downloaddir \
+        --plotdir $plotdir \
         --variable $variable \
-        > $downloaddir/plot_log_${variable}_${centre}.txt 2>&1
+        > $logdir/plot_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

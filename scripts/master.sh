@@ -22,12 +22,16 @@ conda activate osop
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master
+downloaddir=$SCRATCH/seafoam/data/master/downloads
+productsdir=$SCRATCH/seafoam/data/master/products
+scoresdir=$SCRATCH/seafoam/data/master/scores
 plotdir=$SCRATCH/seafoam/data/master/plots
 logdir=$SCRATCH/seafoam/data/master/logfiles
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir
+mkdir -p $productsdir
+mkdir -p $scoresdir
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
@@ -87,6 +91,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         --area $area \
         --variable $variable \
         --downloaddir $downloaddir \
+        --productsdir $productsdir \
         > $logdir/product_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
@@ -103,6 +108,8 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         --leads $leads \
         --area $area \
         --downloaddir $downloaddir \
+        --scoresdir $scoresdir \
+        --productsdir $productsdir \
         --variable $variable \
         > $logdir/verification_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
@@ -121,6 +128,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         --leads $leads \
         --area $area \
         --downloaddir $downloaddir \
+        --scoresdir $scoresdir \
         --plotdir $plotdir \
         --variable $variable \
         > $logdir/plot_log_${variable}_${centre}.txt 2>&1

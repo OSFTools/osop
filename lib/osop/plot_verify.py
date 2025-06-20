@@ -102,7 +102,7 @@ def prep_titles(config):
 
 
 def plot_score(
-    score_f, score_fname, category, config, score, titles, datadir, score_title
+    score_f, score_fname, category, config, score, titles, plotdir, score_title
 ):
     """
     Plot the score on a map.
@@ -113,7 +113,7 @@ def plot_score(
     config (dict): Configuration parameters.
     score (str): The name of the score.
     titles (list): Titles for the plot.
-    datadir (str): The directory to save the plot.
+    plotdir (str): The directory to save the plot.
     score_title (str): The name for the plot in the file directory.
 
     Returns:
@@ -256,17 +256,17 @@ def plot_score(
 
     print(info)
     plt.colorbar()
-    plt.savefig(os.path.join(datadir, "scores", f"{info}.png"))
+    plt.savefig(os.path.join(plotdir, f"{info}.png"))
     plt.close()
 
 
-def plot_rel(score_f, score_fname, config, score, datadir, titles, score_title):
+def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
     """Plot reliability diagram
     Parameters:
     score_f (numpy.ndarray): The reliability score data.
     config (dict): Configuration parameters.
     score (str): The name of the score.
-    datadir (str): The directory to save the plot.
+    plotdir (str): The directory to save the plot.
     score_title (str): The name for the plot in the file directory.
     
     Returns:
@@ -299,14 +299,15 @@ def plot_rel(score_f, score_fname, config, score, datadir, titles, score_title):
             titles[0] + f" {config['var']}\n" + titles[1] + "\n" + titles[2], loc="left"
         )
         plt.tight_layout()
-        plt.savefig(os.path.join(datadir, "scores", f"{score_title}.png"))
+        plt.savefig(os.path.join(plotdir, f"{score_title}.png"))
         plt.close()
 
 
-def corr_plots(datadir, hcst_bname, aggr, config, titles):
+def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, titles):
     """Plot deterministic scores
     Parameters:
-    datadir (str): The directory to save the plot.
+    scoresdir (str): The directory to fetch the input files from.
+    plotdir (str): The directory to save the plot.
     hcst_bname (str): The basename of the hindcast file.
     aggr (str): The aggregation period.
     config (dict): Configuration parameters.
@@ -316,9 +317,9 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
     None
     """
     # Read the data files
-    corr = xr.open_dataset(f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
+    corr = xr.open_dataset(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
     corr_pval = xr.open_dataset(
-        f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
+        f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
     )
 
     # Rearrange the dataset longitude values for plotting purposes
@@ -387,17 +388,17 @@ def corr_plots(datadir, hcst_bname, aggr, config, titles):
         loc="left",
     )
     plt.tight_layout()
-    figname = f"{datadir}/scores/{hcst_bname}.{aggr}.spearman_corr.png"
+    figname = f"{plotdir}/{hcst_bname}.{aggr}.spearman_corr.png"
     plt.savefig(figname)
     plt.close()
 
 
-def generate_plots(config, titles, downloaddir):
+def generate_plots(config, titles, scoresdir, plotdir):
     ## read in the data
     score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc".format(
         **config
     )
-    score_data = xr.open_dataset(os.path.join(downloaddir, "scores", score_fname))
+    score_data = xr.open_dataset(os.path.join(scoresdir, score_fname))
     score_title = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}".format(
         **config
     )
@@ -406,7 +407,7 @@ def generate_plots(config, titles, downloaddir):
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
-        corr_plots(downloaddir, score_fname, config["aggr"], config, titles)
+        corr_plots(scoresdir, plotdir, score_fname, config["aggr"], config, titles)
 
     elif config["score"] == "rel":
         plot_rel(
@@ -414,7 +415,7 @@ def generate_plots(config, titles, downloaddir):
             score_fname,
             config,
             config["score"],
-            downloaddir,
+            plotdir,
             titles,
             score_title,
         )
@@ -427,7 +428,7 @@ def generate_plots(config, titles, downloaddir):
             config,
             config["score"],
             titles,
-            downloaddir,
+            plotdir,
             score_title,
         )
 
@@ -440,7 +441,7 @@ def generate_plots(config, titles, downloaddir):
                 config,
                 config["score"],
                 titles,
-                downloaddir,
+                plotdir,
                 score_title,
             )
 
@@ -454,6 +455,6 @@ def generate_plots(config, titles, downloaddir):
                 config,
                 config["score"],
                 titles,
-                downloaddir,
+                plotdir,
                 score_title,
             )

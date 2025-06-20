@@ -67,7 +67,7 @@ def read_obs(obs_fname, config):
     return obs_ds, obs_ds_3m
 
 
-def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
+def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
     """
     Compute deterministic scores.
 
@@ -75,7 +75,8 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
     obs_ds (xarray.Dataset): Observation / reanalysis data, monthly resolution.
     obs_ds_3m (xarray.Dataset): Observation / reanalysis 3-month aggregated data.
     hcst_bname (str): Basename of the hindcast data.
-    downloaddir (str): Directory to save the output files.
+    scoresdir (str): Directory to save the output files.
+    productsdir (str): Directory to fetch files from.
 
     Returns:
     None
@@ -95,7 +96,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
         print(f"Computing deterministic scores for {aggr}-aggregation")
 
         # Read anomalies file
-        h = xr.open_dataset(f"{downloaddir}/{hcst_bname}.{aggr}.anom.nc")
+        h = xr.open_dataset(f"{productsdir}/{hcst_bname}.{aggr}.anom.nc")
         is_fullensemble = "number" in h.dims
 
         # create empty list to store correlations and p-values to be concatenated after looping over months
@@ -122,13 +123,11 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
         corr_pval = xr.concat(l_corr_pval, dim="forecastMonth")
 
         print(f"Saving to netCDF file correlation for {aggr}-aggregation")
-        corr.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
-        corr_pval.to_netcdf(
-            f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
-        )
+        corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
+        corr_pval.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
 
 
-def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
+def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
     """
     Compute probabilistic scores and save the results to NetCDF files.
 
@@ -136,7 +135,8 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
     obs_ds(xarray.Dataset): Observation / Reanalysis monthly data.
     obs_ds_3m (xarray.Dataset): Observation / Reanalysis 3-month aggregated data.
     hcst_bname (str): Basename of the hindcast probabilities file.
-    downloaddir (str): Directory to save the output NetCDF files.
+    scoresdir (str): Directory to save the output NetCDF files.
+    productsdir (str): Directory to fetch input files from.
 
     Returns:
     None
@@ -158,7 +158,7 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
 
         # Read hindcast probabilities file
         probs_hcst = xr.open_dataset(
-            f"{downloaddir}/{hcst_bname}.{aggr}.tercile_probs.nc"
+            f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc"
         )
 
         l_roc = list()
@@ -247,14 +247,14 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
         rel = xr.concat(l_rel, dim="forecastMonth")
 
         print("writing scores to netcdf")
-        rps.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.rps.nc")
-        bs.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.bs.nc")
-        roc.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.roc.nc")
-        rocss.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.rocss.nc")
-        rel.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.rel.nc")
+        rps.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.rps.nc")
+        bs.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.bs.nc")
+        roc.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.roc.nc")
+        rocss.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.rocss.nc")
+        rel.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.rel.nc")
 
 
-def calc_scores(config, downloaddir):
+def calc_scores(config, downloaddir, scoresdir, productsdir):
     """
     Calls code to calculate deterministic and probabilistic verification scores.
 
@@ -288,5 +288,5 @@ def calc_scores(config, downloaddir):
         obs_ds_3m["tprate"] = obs_ds_3m["tprate"] * 3600 * 24
         obs_ds_3m["tprate"].attrs["units"] = "m/s"
     ## calc scores
-    scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir)
-    scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir)
+    scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir)
+    scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir)

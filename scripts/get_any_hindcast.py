@@ -26,7 +26,7 @@ import argparse
 import os
 
 # Ensure the top level directory has been added to PYTHONPATH
-from osop.constants import SYSTEMS
+from osop.constants import SYSTEMS, SYSTEMSFC
 
 
 def do_cdsapi_call(
@@ -164,45 +164,85 @@ def main():
         years = [int(yr) for yr in args.years.split(",")]
     else:
         years = "hc"
-
-    if centre == "eccc":
+    
+    if years == "hc":
+        if centre == "eccc":
         # two models aka systems are live - call twice with each system number
-        do_cdsapi_call(
-            "eccc",
-            SYSTEMS["eccc_can"],
-            month,
-            leadtime_month,
-            area,
-            area_str,
-            variable,
-            downloaddir,
-            years,
-        )
-        do_cdsapi_call(
-            "eccc",
-            SYSTEMS["eccc_gem5"],
-            month,
-            leadtime_month,
-            area,
-            area_str,
-            variable,
-            downloaddir,
-            years,
-        )
+            do_cdsapi_call(
+                "eccc",
+                SYSTEMS["eccc_can"],
+                month,
+                leadtime_month,
+                area,
+                area_str,
+                variable,
+                downloaddir,
+                years,
+            )
+            do_cdsapi_call(
+             "eccc",
+                SYSTEMS["eccc_gem5"],
+                month,
+                leadtime_month,
+                area,
+                area_str,
+                variable,
+                downloaddir,
+                years,
+            )
+        else:
+            if centre not in SYSTEMS.keys():
+                raise ValueError(f"Unknown system for C3S: {centre}")
+            do_cdsapi_call(
+                centre,
+                SYSTEMS[centre],
+                month,
+                leadtime_month,
+                area,
+                area_str,
+                variable,
+                downloaddir,
+                years,
+            )
     else:
-        if centre not in SYSTEMS.keys():
-            raise ValueError(f"Unknown system for C3S: {centre}")
-        do_cdsapi_call(
-            centre,
-            SYSTEMS[centre],
-            month,
-            leadtime_month,
-            area,
-            area_str,
-            variable,
-            downloaddir,
-            years,
-        )
+        if centre == "eccc":
+        # two models aka systems are live - call twice with each system number
+            do_cdsapi_call(
+                "eccc",
+                SYSTEMSFC["eccc_can"],
+                month,
+                leadtime_month,
+                area,
+                area_str,
+                variable,
+                downloaddir,
+                years,
+            )
+            do_cdsapi_call(
+             "eccc",
+                SYSTEMSFC["eccc_gem5"],
+                month,
+                leadtime_month,
+                area,
+                area_str,
+                variable,
+                downloaddir,
+                years,
+            )
+        else:
+            if centre not in SYSTEMS.keys():
+                raise ValueError(f"Unknown system for C3S: {centre}")
+            do_cdsapi_call(
+                centre,
+                SYSTEMSFC[centre],
+                month,
+                leadtime_month,
+                area,
+                area_str,
+                variable,
+                downloaddir,
+                years,
+            )
 
 
 if __name__ == "__main__":

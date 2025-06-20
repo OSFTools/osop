@@ -105,8 +105,8 @@ if __name__ == "__main__":
     )
 
     if args.years:
-        config['hcstarty'] = args.years[0]
-        config['hcendy'] = args.years[1]
+        config['hcstarty'] = int(args.years[0])
+        config['hcendy'] = int(args.years[1])
     else:
         config['hcstarty'] = 1993
         config['hcendy'] = 2016

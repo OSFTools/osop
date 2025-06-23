@@ -1,24 +1,22 @@
 """
-# (C) Crown Copyright, Met Office. All rights reserved.
-#
-# This file is part of osop and is released under the BSD 3-Clause license.
-# See LICENSE in the root of the repository for full licensing details.
+(C) Crown Copyright, Met Office. All rights reserved.
 
-Script to download monthly mean seasonal data
+This file is part of osop and is released under the BSD 3-Clause license.
+See LICENSE in the root of the repository for full licensing details.
+
+Script to download monthly mean seasonal data 
 from C3S for the common period of hindcasts 
 1993-2016 or for any arbitrary period.
 
 Usage:
-python get_any_hindcast.py --centre <centre> --month <month> --leads <leads> 
-                           --area <area> --downloaddir <downloaddir> --years <years>
+    python get_any_hindcast.py --centre <centre> --month <month> --leads <leads> \
+        --area <area> --downloaddir <downloaddir> --years <years>
     centre: modelling centre
     month: start month of forecast
     leads: forecast range in months (comma separated)
     area: sub-area in degrees for retrieval (comma separated N,W,S,E)
     downloaddir: location to download to
-    years: Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.
-
-(C) Crown Copyright, Met Office. All rights reserved.
+    years: Years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.
 """
 
 import cdsapi

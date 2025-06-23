@@ -65,18 +65,17 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
     # Want only 3 month mean with complete 3 months
     hcst_3m = hcst_3m.where(hcst_3m.forecastMonth >= int(config["leads"][2]), drop=True)
 
-    # CALCULATE ANOMALIES (and save to file)
+    # Calculate Anomalies (and save to file)
     print("Computing anomalies 1m")
     hcmean = hcst.mean(["number", "start_date"])
-    # CALCULATE MEAN ACROSS ALL SERVICES
-    hcmean2 = hcst.mean(["number"])
+        # Calculate Mean across all ensemble members 
+    hc_ens_mean = hcst.mean(["number"])
     anom = hcst - hcmean
     anom = anom.assign_attrs(reference_period="{hcstarty}-{hcendy}".format(**config))
 
     print("Computing anomalies 3m")
     hcmean_3m = hcst_3m.mean(["number", "start_date"])
-    hcmean2_3m = hcst_3m.mean(["number"])
-    print("this is hcmean2", hcmean2)
+    hc_ens_mean_3m = hcst_3m.mean(["number"])
     anom_3m = hcst_3m - hcmean_3m
     anom_3m = anom_3m.assign_attrs(
         reference_period="{hcstarty}-{hcendy}".format(**config)
@@ -85,8 +84,8 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, datadir):
     print("Saving mean and anomalies 1m/3m to netCDF files")
     anom.to_netcdf(f"{datadir}/{hcst_bname}.1m.anom.nc")
     anom_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.anom.nc")
-    hcmean2.to_netcdf(f"{datadir}/{hcst_bname}.1m.mean.nc")
-    hcmean2_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.mean.nc")
+    hc_ens_mean.to_netcdf(f"{datadir}/{hcst_bname}.1m.mean.nc")
+    hc_ens_mean_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.mean.nc")
 
     return hcst, hcst_3m
 

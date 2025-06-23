@@ -122,7 +122,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
         print(f"Computing deterministic scores for {aggr}-aggregation")
 
         # Reading mean file
-        h = xr.open_dataset(f"{downloaddir}/{hcst_bname}.{aggr}.mean.nc")
+        h = xr.open_dataset(f"{downloaddir}/{hcst_bname}.{aggr}.ensmean.nc")
         # Reading anomalies file
         ha = xr.open_dataset(f"{downloaddir}/{hcst_bname}.{aggr}.anom.nc")
         is_fullensemble = "number" in ha.dims

@@ -1,3 +1,10 @@
+"""
+(C) Crown Copyright, Met Office. All rights reserved.
+
+This file is part of osop and is released under the BSD 3-Clause license.
+See LICENSE in the root of the repository for full licensing details.
+"""
+
 # Libraries for working with multi-dimensional arrays
 import xarray as xr
 import numpy as np

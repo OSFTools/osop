@@ -1,8 +1,8 @@
 """
-# (C) Crown Copyright, Met Office. All rights reserved.
-#
-# This file is part of osop and is released under the BSD 3-Clause license.
-# See LICENSE in the root of the repository for full licensing details.
+(C) Crown Copyright, Met Office. All rights reserved.
+
+This file is part of osop and is released under the BSD 3-Clause license.
+See LICENSE in the root of the repository for full licensing details.
 
 Python script to get NMME models not avialable from C3S
 Using an interface as close to get_any_hc as possible

@@ -90,8 +90,8 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, productsdir):
     print("Saving mean and anomalies 1m/3m to netCDF files")
     anom.to_netcdf(f"{productsdir}/{hcst_bname}.1m.anom.nc")
     anom_3m.to_netcdf(f"{productsdir}/{hcst_bname}.3m.anom.nc")
-    hc_ens_mean.to_netcdf(f"{datadir}/{hcst_bname}.1m.mean.nc")
-    hc_ens_mean_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.mean.nc")
+    hc_ens_mean.to_netcdf(f"{datadir}/{hcst_bname}.1m.ensmean.nc")
+    hc_ens_mean_3m.to_netcdf(f"{datadir}/{hcst_bname}.3m.ensmean.nc")
 
     return hcst, hcst_3m
 

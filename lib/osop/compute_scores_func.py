@@ -15,6 +15,8 @@ import numpy as np
 
 # Forecast verification metrics with xarray
 import xskillscore as xs
+# Regridding packages needed for JMA
+import xesmf as xe
 
 # import needed local functions
 from osop.compute_products_func import get_thresh
@@ -206,9 +208,9 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
                     # thishcst = thishcst.reindex(lat=thisobs.lat, lon=thisobs.lon, method='nearest')
                     # thishcst = thishcst.interp_like(thisobs)
-                    thishcst = thishcst.interp(
-                        lat=thisobs.lat, lon=thisobs.lon, method="nearest"
-                    )
+                    #thishcst = thishcst.interp(lat=thisobs.lat, lon=thisobs.lon, method="nearest")
+                    regridder =  xe.Regridder(thishcst, thisobs, "bilinear")
+                    thishcst = regridder(thishcst, keep_attrs=True)
                 except Exception as e:
                     print(f"Interpolation failed for {hcst_bname}: {e}")
                     raise KeyError("Interpolation failed: please check dataset entry")

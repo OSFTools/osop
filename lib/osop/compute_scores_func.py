@@ -194,14 +194,8 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, downloaddir):
             thisobs = xr.concat(l_probs_obs, dim="category")
 
             # interpolate if the hindcast basename starts with "jma"
-            if isinstance(hcst_bname, str) and hcst_bname.lower().startswith("jma"):
+            if not thishcst['lat'].equals(thisobs['lat']) or not thishcst['lon'].equals(thisobs['lon']):
                 try:
-                    # Diffrent Interpolation methods: Reindex moves coords to matching where possible and replaces the remaining with NaNs
-                    # Interp_like and interp are for all intese and purposes the same. Method can be changed.
-
-                    # thishcst = thishcst.reindex(lat=thisobs.lat, lon=thisobs.lon, method='nearest')
-                    # thishcst = thishcst.interp_like(thisobs)
-                    #thishcst = thishcst.interp(lat=thisobs.lat, lon=thisobs.lon, method="nearest")
                     regridder =  xe.Regridder(thishcst, thisobs, "bilinear")
                     thishcst = regridder(thishcst, keep_attrs=True)
                 except Exception as e:

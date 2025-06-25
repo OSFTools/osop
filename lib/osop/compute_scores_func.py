@@ -15,6 +15,8 @@ import numpy as np
 
 # Forecast verification metrics with xarray
 import xskillscore as xs
+# Regridding packages needed for JMA
+import xesmf as xe
 
 # import needed local functions
 from osop.compute_products_func import get_thresh
@@ -242,6 +244,15 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
                 l_probs_obs.append(probo.assign_coords({"category": icat}))
 
             thisobs = xr.concat(l_probs_obs, dim="category")
+
+            # Regrid if lattitude or longitude on a varied resolution or grid. 
+            if not thishcst['lat'].equals(thisobs['lat']) or not thishcst['lon'].equals(thisobs['lon']):
+                try:
+                    regridder =  xe.Regridder(thishcst, thisobs, "bilinear")
+                    thishcst = regridder(thishcst, keep_attrs=True)
+                except Exception as e:
+                    print(f"Alignment failed for {hcst_bname}: {e}")
+                    raise KeyError("Alignment failed: please check dataset entry")
 
             # Calculate the probabilistic scores
             thisroc = xr.Dataset()

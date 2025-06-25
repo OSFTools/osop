@@ -200,14 +200,14 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
             thisobs = xr.concat(l_probs_obs, dim="category")
 
-            # interpolate if the hindcast basename starts with "jma"
+            # Regrid if lattitude or longitude on a varied resolution or grid. 
             if not thishcst['lat'].equals(thisobs['lat']) or not thishcst['lon'].equals(thisobs['lon']):
                 try:
                     regridder =  xe.Regridder(thishcst, thisobs, "bilinear")
                     thishcst = regridder(thishcst, keep_attrs=True)
                 except Exception as e:
-                    print(f"Interpolation failed for {hcst_bname}: {e}")
-                    raise KeyError("Interpolation failed: please check dataset entry")
+                    print(f"Alignment failed for {hcst_bname}: {e}")
+                    raise KeyError("Alignment failed: please check dataset entry")
 
             # Calculate the probabilistic scores
             thisroc = xr.Dataset()

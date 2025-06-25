@@ -72,8 +72,11 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, productsdir):
     hcst_3m = hcst_3m.where(hcst_3m.forecastMonth >= int(config["leads"][2]), drop=True)
 
     # Calculate Anomalies (and save to file)
+    # Calculate Anomalies (and save to file)
     print("Computing anomalies 1m")
     hcmean = hcst.mean(["number", "start_date"])
+        # Calculate Mean across all ensemble members 
+    hc_ens_mean = hcst.mean(["number"])
         # Calculate Mean across all ensemble members 
     hc_ens_mean = hcst.mean(["number"])
     anom = hcst - hcmean
@@ -81,6 +84,7 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, productsdir):
 
     print("Computing anomalies 3m")
     hcmean_3m = hcst_3m.mean(["number", "start_date"])
+    hc_ens_mean_3m = hcst_3m.mean(["number"])
     hc_ens_mean_3m = hcst_3m.mean(["number"])
     anom_3m = hcst_3m - hcmean_3m
     anom_3m = anom_3m.assign_attrs(
@@ -176,12 +180,17 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir):
                 l_probs_hcst.append(probh.assign_coords({"category": icat}))
 
                 # on second iteration the values of h_lo and h_hi are the
+                # on second iteration the values of h_lo and h_hi are the
                 # quantiles we wish to save
                 if icat == 1:
+                    tercs = xr.concat([h_lo, h_hi], dim="category")
                     tercs = xr.concat([h_lo, h_hi], dim="category")
                     if "quantile" in tercs:
                         tercs = tercs.drop("quantile")
                     # include metadata about the reference period and start month
+                    tercs = tercs.assign_attrs(
+                        reference_period="{hcstarty}-{hcendy}".format(**config)
+                    )
                     tercs = tercs.assign_attrs(
                         reference_period="{hcstarty}-{hcendy}".format(**config)
                     )

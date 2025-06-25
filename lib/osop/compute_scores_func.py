@@ -132,7 +132,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         # Reading mean file
         h = xr.open_dataset(f"{productsdir}/{hcst_bname}.{aggr}.ensmean.nc")
         # Reading anomalies file
-        ha = xr.open_dataset(f"{downloaddir}/{hcst_bname}.{aggr}.anom.nc")
+        ha = xr.open_dataset(f"{productsdir}/{hcst_bname}.{aggr}.anom.nc")
         is_fullensemble = "number" in ha.dims
 
         # create empty list to store correlations and p-values to be concatenated after looping over months
@@ -169,13 +169,13 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         r_corr_pval = xr.concat(r_corr_pval, dim="forecastMonth")
 
         print(f"Saving to netCDF file correlation for {aggr}-aggregation")
-        corr.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr.nc")
+        corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
         corr_pval.to_netcdf(
-            f"{downloaddir}/scores/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
+            f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
         )
-        r_corr.to_netcdf(f"{downloaddir}/scores/{hcst_bname}.{aggr}.pearson_corr.nc")
+        r_corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr.nc")
         r_corr_pval.to_netcdf(
-            f"{downloaddir}/scores/{hcst_bname}.{aggr}.pearson_corr_pval.nc"
+            f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr_pval.nc"
         )
 
 

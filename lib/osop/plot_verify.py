@@ -421,7 +421,7 @@ def generate_plots(config, titles, scoresdir, plotdir):
             **config
         )
         corr_plots(
-            downloaddir, score_fname, config["aggr"], config, config["score"], titles
+            scoresdir, plotdir, score_fname, config["aggr"], config, config["score"], titles
         )
 
     elif config["score"] == "rel":

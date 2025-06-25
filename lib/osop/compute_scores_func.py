@@ -155,33 +155,14 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         l_corr.append(
             xs.spearman_r(thishcst_em_mean, this_obs_m_match, dim="valid_time")
         )
+        print("this is l_corr")
+        print(type(l_corr))
         l_corr_pval.append(
             xs.spearman_r_p_value(thishcst_em_mean, this_obs_m_match, dim="valid_time")
         )
         r_corr.append(xs.pearson_r(thishcst_em_anom, this_obs_anom, dim="valid_time"))
-        r_corr_pval.append(
-            xs.pearson_r_p_value(thishcst_em_anom, this_obs_anom, dim="valid_time")
-        )
-        r_corr = list()
-        r_corr_pval = list()
-
-        # match dimensions and calculate obs anomalies
-        thishcst_em_mean, this_obs_m_match = swap_dims(h, o)
-        thishcst_em_anom, this_obs_a_match = swap_dims(ha, o)
-        obsmean = this_obs_a_match.mean()
-        this_obs_anom = this_obs_a_match - obsmean
-        thishcst_em_anom = (
-            thishcst_em_anom if not is_fullensemble else thishcst_em_anom.mean("number")
-        )
-
-        # calculate measures
-        l_corr.append(
-            xs.spearman_r(thishcst_em_mean, this_obs_m_match, dim="valid_time")
-        )
-        l_corr_pval.append(
-            xs.spearman_r_p_value(thishcst_em_mean, this_obs_m_match, dim="valid_time")
-        )
-        r_corr.append(xs.pearson_r(thishcst_em_anom, this_obs_anom, dim="valid_time"))
+        print("this is r_corr")
+        print(type(r_corr))
         r_corr_pval.append(
             xs.pearson_r_p_value(thishcst_em_anom, this_obs_anom, dim="valid_time")
         )
@@ -189,8 +170,6 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         # concatenate correlations and p-values
         corr = xr.concat(l_corr, dim="forecastMonth")
         corr_pval = xr.concat(l_corr_pval, dim="forecastMonth")
-        r_corr = xr.concat(r_corr, dim="forecastMonth")
-        r_corr_pval = xr.concat(r_corr_pval, dim="forecastMonth")
         r_corr = xr.concat(r_corr, dim="forecastMonth")
         r_corr_pval = xr.concat(r_corr_pval, dim="forecastMonth")
 

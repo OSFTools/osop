@@ -72,11 +72,8 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, productsdir):
     hcst_3m = hcst_3m.where(hcst_3m.forecastMonth >= int(config["leads"][2]), drop=True)
 
     # Calculate Anomalies (and save to file)
-    # Calculate Anomalies (and save to file)
     print("Computing anomalies 1m")
     hcmean = hcst.mean(["number", "start_date"])
-        # Calculate Mean across all ensemble members 
-    hc_ens_mean = hcst.mean(["number"])
         # Calculate Mean across all ensemble members 
     hc_ens_mean = hcst.mean(["number"])
     anom = hcst - hcmean
@@ -84,7 +81,6 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, productsdir):
 
     print("Computing anomalies 3m")
     hcmean_3m = hcst_3m.mean(["number", "start_date"])
-    hc_ens_mean_3m = hcst_3m.mean(["number"])
     hc_ens_mean_3m = hcst_3m.mean(["number"])
     anom_3m = hcst_3m - hcmean_3m
     anom_3m = anom_3m.assign_attrs(

@@ -24,6 +24,8 @@ python get_any_hindcast.py --centre <centre> --month <month> --leads <leads>
 import cdsapi
 import argparse
 import os
+import yaml
+from yaml.loader import SafeLoader
 
 # Ensure the top level directory has been added to PYTHONPATH
 from osop.constants import SYSTEMS, SYSTEMSFC
@@ -147,7 +149,7 @@ def main():
 
     # get command line args
     args = parse_args()
-
+ 
     # unpack args and reformat if needed
     centre = args.centre
     downloaddir = args.downloaddir
@@ -156,6 +158,17 @@ def main():
     area_str = args.area.replace(",", ":")
     month = int(args.month)
     variable = str(args.variable)
+
+    # get remaning arguments from yml file
+    ymllocation=os.path.join(downloaddir,"parseyml.yml")
+
+    with open(ymllocation, 'r') as stream:
+        try:
+            # Converts yaml document to python object
+            services=yaml.load(stream, Loader=SafeLoader) 
+            Services=services["Services"] 
+        except yaml.YAMLError as e:
+            print(e)
 
     area = [float(pt) for pt in args.area.split(",")]
     if len(area) != 4:
@@ -203,13 +216,13 @@ def main():
                 variable,
                 downloaddir,
                 years,
-            )
+            ) #####here is where the systemsFC comes in 
     else:
         if centre == "eccc":
         # two models aka systems are live - call twice with each system number
             do_cdsapi_call(
                 "eccc",
-                SYSTEMSFC["eccc_can"],
+                Services["eccc_can"],
                 month,
                 leadtime_month,
                 area,
@@ -220,7 +233,7 @@ def main():
             )
             do_cdsapi_call(
              "eccc",
-                SYSTEMSFC["eccc_gem5"],
+                Services["eccc_gem5"],
                 month,
                 leadtime_month,
                 area,
@@ -234,7 +247,7 @@ def main():
                 raise ValueError(f"Unknown system for C3S: {centre}")
             do_cdsapi_call(
                 centre,
-                SYSTEMSFC[centre],
+                Services[centre],
                 month,
                 leadtime_month,
                 area,

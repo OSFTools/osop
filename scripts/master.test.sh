@@ -22,11 +22,11 @@ conda activate osop
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master/downloads
-productsdir=$SCRATCH/seafoam/data/master/products
-scoresdir=$SCRATCH/seafoam/data/master/scores
-plotdir=$SCRATCH/seafoam/data/master/plots
-logdir=$SCRATCH/seafoam/data/master/logfiles
+downloaddir=$SCRATCH/seafoam/data/master/hindcast/downloads
+productsdir=$SCRATCH/seafoam/data/master/hindcast/products
+scoresdir=$SCRATCH/seafoam/data/master/hindcast/scores
+plotdir=$SCRATCH/seafoam/data/master/hindcast/plots
+logdir=$SCRATCH/seafoam/data/master/hindcast/logfiles
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir

@@ -26,8 +26,6 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Ensure the top level directory has been added to PYTHONPATH
-#from osop.constants import SYSTEMS, SYSTEMSFC
-
 
 def do_cdsapi_call(
     centre,

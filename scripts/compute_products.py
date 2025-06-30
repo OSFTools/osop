@@ -8,10 +8,15 @@ See LICENSE in the root of the repository for full licensing details.
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
 
+#import functions 
+import os
+import yaml
+from yaml.loader import SafeLoader
+
 
 #import needed local functions
-from osop.constants import SYSTEMS
 from osop.compute_products_func import calc_products
+
 
 
 def parse_args():
@@ -72,6 +77,18 @@ if __name__ == "__main__":
     area_str = args.area.replace(",", ":")
     variable = args.variable
 
+    # get remaning arguments from yml file
+    ymllocation = os.path.join(downloaddir, "parseyml.yml")
+
+    with open(ymllocation, "r") as stream:
+        try:
+            # Converts yaml document to python object
+            services = yaml.load(stream, Loader=SafeLoader)
+            # Converts contents to useable dictionary
+            Services = services["Services"]
+        except yaml.YAMLError as e:
+            print(e)
+
     # add arguments to config
     config = dict(
         start_month=month,
@@ -92,14 +109,14 @@ if __name__ == "__main__":
     ## hindcast info
     if centre == "eccc":
         # two models aka systems are live - call twice with each system number
-        config["system"] = SYSTEMS["eccc_can"]
+        config["system"] = Services["eccc_can"]
         calc_products(config, downloaddir, productsdir)
 
         ## repeat for second system
-        config["system"] = SYSTEMS["eccc_gem5"]
+        config["system"] = Services["eccc_gem5"]
         calc_products(config, downloaddir, productsdir)
     else:
-        if centre not in SYSTEMS.keys():
+        if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")
-        config["system"] = SYSTEMS[centre]
+        config["system"] = Services[centre]
         calc_products(config, downloaddir, productsdir)

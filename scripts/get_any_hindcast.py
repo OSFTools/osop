@@ -28,11 +28,19 @@ import yaml
 from yaml.loader import SafeLoader
 
 # Ensure the top level directory has been added to PYTHONPATH
-from osop.constants import SYSTEMS, SYSTEMSFC
+#from osop.constants import SYSTEMS, SYSTEMSFC
 
 
 def do_cdsapi_call(
-    centre, system, month, leadtime_month, area, area_str, variable, downloaddir, years="hc"
+    centre,
+    system,
+    month,
+    leadtime_month,
+    area,
+    area_str,
+    variable,
+    downloaddir,
+    years="hc",
 ):
     """
     calls cdsapi for the requested period and area
@@ -86,7 +94,7 @@ def do_cdsapi_call(
         ]
     fname = f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
     if os.path.exists(fname):
-        print(f'File {fname} already exists')
+        print(f"File {fname} already exists")
     else:
         c.retrieve(
             "seasonal-monthly-single-levels",
@@ -97,7 +105,7 @@ def do_cdsapi_call(
                 "variable": [variable],
                 "product_type": "monthly_mean",
                 "year": years,
-                "month": '{:02d}'.format(month),
+                "month": "{:02d}".format(month),
                 "leadtime_month": leadtime_month,
                 "area": area,
             },
@@ -127,7 +135,8 @@ def parse_args():
     parser.add_argument(
         "--variable",
         required=True,
-        help="variable to download, 2m_temperature, total_precipitation")
+        help="variable to download, 2m_temperature, total_precipitation",
+    )
     parser.add_argument("--downloaddir", required=True, help="location to download to")
     parser.add_argument(
         "--years",
@@ -149,7 +158,7 @@ def main():
 
     # get command line args
     args = parse_args()
- 
+
     # unpack args and reformat if needed
     centre = args.centre
     downloaddir = args.downloaddir
@@ -160,13 +169,14 @@ def main():
     variable = str(args.variable)
 
     # get remaning arguments from yml file
-    ymllocation=os.path.join(downloaddir,"parseyml.yml")
+    ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
-    with open(ymllocation, 'r') as stream:
+    with open(ymllocation, "r") as stream:
         try:
             # Converts yaml document to python object
-            services=yaml.load(stream, Loader=SafeLoader) 
-            Services=services["Services"] 
+            services = yaml.load(stream, Loader=SafeLoader)
+            # Converts contents to useable dictionary
+            Services = services["Services"]
         except yaml.YAMLError as e:
             print(e)
 
@@ -177,85 +187,45 @@ def main():
         years = [int(yr) for yr in args.years.split(",")]
     else:
         years = "hc"
-    
-    if years == "hc":
-        if centre == "eccc":
+
+    if centre == "eccc":
         # two models aka systems are live - call twice with each system number
-            do_cdsapi_call(
-                "eccc",
-                SYSTEMS["eccc_can"],
-                month,
-                leadtime_month,
-                area,
-                area_str,
-                variable,
-                downloaddir,
-                years,
-            )
-            do_cdsapi_call(
-             "eccc",
-                SYSTEMS["eccc_gem5"],
-                month,
-                leadtime_month,
-                area,
-                area_str,
-                variable,
-                downloaddir,
-                years,
-            )
-        else:
-            if centre not in SYSTEMS.keys():
-                raise ValueError(f"Unknown system for C3S: {centre}")
-            do_cdsapi_call(
-                centre,
-                SYSTEMS[centre],
-                month,
-                leadtime_month,
-                area,
-                area_str,
-                variable,
-                downloaddir,
-                years,
-            ) #####here is where the systemsFC comes in 
+        do_cdsapi_call(
+            "eccc",
+            Services["eccc_can"],
+            month,
+            leadtime_month,
+            area,
+            area_str,
+            variable,
+            downloaddir,
+            years,
+        )
+        do_cdsapi_call(
+            "eccc",
+            Services["eccc_gem5"],
+            month,
+            leadtime_month,
+            area,
+            area_str,
+            variable,
+            downloaddir,
+            years,
+        )
     else:
-        if centre == "eccc":
-        # two models aka systems are live - call twice with each system number
-            do_cdsapi_call(
-                "eccc",
-                Services["eccc_can"],
-                month,
-                leadtime_month,
-                area,
-                area_str,
-                variable,
-                downloaddir,
-                years,
-            )
-            do_cdsapi_call(
-             "eccc",
-                Services["eccc_gem5"],
-                month,
-                leadtime_month,
-                area,
-                area_str,
-                variable,
-                downloaddir,
-                years,
-            )
-        else:
-            if centre not in SYSTEMS.keys():
-                raise ValueError(f"Unknown system for C3S: {centre}")
-            do_cdsapi_call(
-                centre,
-                Services[centre],
-                month,
-                leadtime_month,
-                area,
-                area_str,
-                variable,
-                downloaddir,
-                years,
-            )
+        if centre not in Services.keys():
+            raise ValueError(f"Unknown system for C3S: {centre}")
+        do_cdsapi_call(
+            centre,
+            Services[centre],
+            month,
+            leadtime_month,
+            area,
+            area_str,
+            variable,
+            downloaddir,
+            years,
+        )
 
 
 if __name__ == "__main__":

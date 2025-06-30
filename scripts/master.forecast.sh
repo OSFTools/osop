@@ -37,7 +37,7 @@ mkdir -p $scoresdir
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
 export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 
-#create a yml file to pass dictionary parameters
+#create a yml file to pass dictionary parameters (being used for centers/systems)
 parseyml="$downloaddir/parseyml.yml"
 
 # set parameters 
@@ -47,7 +47,9 @@ area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separate
 variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 years="2025"
-# Services in use:
+
+# Services in use: 
+# edit as approprite to the most up to date systems. 
 cat <<EOF > "$parseyml"
 Services:
     ecmwf: 51

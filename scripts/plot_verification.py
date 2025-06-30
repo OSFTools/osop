@@ -1,7 +1,12 @@
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
+
+# Import functions 
+import os
+import yaml
+from yaml.loader import SafeLoader
+
 #import needed local functions
-from osop.constants import SYSTEMS
 from osop.plot_verify import generate_plots, prep_titles
 
 
@@ -32,6 +37,7 @@ def parse_args():
         required=True,
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
+    parser.add_argument("--downloaddir", required=True, help="location to get grib from")
     parser.add_argument("--scoresdir", required=True, help="location for grab files")
     parser.add_argument("--plotdir", required=True, help="location to download output to")
     parser.add_argument(
@@ -58,6 +64,7 @@ if __name__ == "__main__":
     # unpack args and reformat if needed
     border = args.location
     centre = args.centre
+    downloaddir = args.downloaddir
     scoresdir = args.scoresdir
     plotdir = args.plotdir
     month = int(args.month)
@@ -91,6 +98,18 @@ if __name__ == "__main__":
         var=var,
     )
 
+    # get remaning arguments from yml file
+    ymllocation = os.path.join(downloaddir, "parseyml.yml")
+
+    with open(ymllocation, "r") as stream:
+        try:
+            # Converts yaml document to python object
+            services = yaml.load(stream, Loader=SafeLoader)
+            # Converts contents to useable dictionary
+            Services = services["Services"]
+        except yaml.YAMLError as e:
+            print(e)
+
     if args.years:
         config["hcstarty"] = args.years[0]
         config["hcendy"] = args.years[1]
@@ -106,20 +125,20 @@ if __name__ == "__main__":
             # run for appropriate system
             if centre == "eccc":
                 # two models aka systems are live - call twice with each system number
-                config["system"] = SYSTEMS["eccc_can"]
+                config["system"] = Services["eccc_can"]
                 ## set titles
                 titles = prep_titles(config)
                 generate_plots(config, titles, scoresdir, plotdir)
 
                 ## repeat for second system
-                config["system"] = SYSTEMS["eccc_gem5"]
+                config["system"] = Services["eccc_gem5"]
                 ## set titles
                 titles = prep_titles(config)
                 generate_plots(config, titles, scoresdir, plotdir)
             else:
-                if centre not in SYSTEMS.keys():
+                if centre not in Services.keys():
                     raise ValueError(f"Unknown system for C3S: {centre}")
-                config["system"] = SYSTEMS[centre]
+                config["system"] = Services[centre]
                 ## set titles
                 titles = prep_titles(config)
                 generate_plots(config, titles, scoresdir, plotdir)

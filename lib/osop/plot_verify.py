@@ -121,6 +121,7 @@ def plot_score(
     score (str): The name of the score.
     titles (list): Titles for the plot.
     plotdir (str): The directory to save the plot.
+    plotdir (str): The directory to save the plot.
     score_title (str): The name for the plot in the file directory.
 
     Returns:
@@ -264,6 +265,7 @@ def plot_score(
     print(info)
     plt.colorbar()
     plt.savefig(os.path.join(plotdir, f"{info}.png"))
+    plt.savefig(os.path.join(plotdir, f"{info}.png"))
     plt.close()
 
 
@@ -306,6 +308,7 @@ def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
             titles[0] + f" {config['var']}\n" + titles[1] + "\n" + titles[2], loc="left"
         )
         plt.tight_layout()
+        plt.savefig(os.path.join(plotdir, f"{score_title}.png"))
         plt.savefig(os.path.join(plotdir, f"{score_title}.png"))
         plt.close()
 
@@ -401,10 +404,12 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles):
 
 
 def generate_plots(config, titles, scoresdir, plotdir):
+def generate_plots(config, titles, scoresdir, plotdir):
     ## read in the data
     score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc".format(
         **config
     )
+    score_data = xr.open_dataset(os.path.join(scoresdir, score_fname))
     score_data = xr.open_dataset(os.path.join(scoresdir, score_fname))
     score_title = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}".format(
         **config
@@ -431,6 +436,7 @@ def generate_plots(config, titles, scoresdir, plotdir):
             config,
             config["score"],
             plotdir,
+            plotdir,
             titles,
             score_title,
         )
@@ -443,6 +449,7 @@ def generate_plots(config, titles, scoresdir, plotdir):
             config,
             config["score"],
             titles,
+            plotdir,
             plotdir,
             score_title,
         )
@@ -457,6 +464,7 @@ def generate_plots(config, titles, scoresdir, plotdir):
                 config["score"],
                 titles,
                 plotdir,
+                plotdir,
                 score_title,
             )
 
@@ -470,6 +478,7 @@ def generate_plots(config, titles, scoresdir, plotdir):
                 config,
                 config["score"],
                 titles,
+                plotdir,
                 plotdir,
                 score_title,
             )

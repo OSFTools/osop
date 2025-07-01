@@ -331,6 +331,10 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles):
     corr_pval = xr.open_dataset(
         f"{scoresdir}/{hcst_bname}.{aggr}.{score}_pval.nc"
     )
+    print("this is corr")
+    print(corr)
+    print("this is pval")
+    print(corr_pval)
 
     # Rearrange the dataset longitude values for plotting purposes
     corr = corr.assign_coords(lon=(((corr.lon + 180) % 360) - 180)).sortby("lon")
@@ -403,13 +407,12 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles):
     plt.close()
 
 
-def generate_plots(config, titles, scoresdir, plotdir):
+
 def generate_plots(config, titles, scoresdir, plotdir):
     ## read in the data
     score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc".format(
         **config
     )
-    score_data = xr.open_dataset(os.path.join(scoresdir, score_fname))
     score_data = xr.open_dataset(os.path.join(scoresdir, score_fname))
     score_title = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}".format(
         **config
@@ -436,7 +439,6 @@ def generate_plots(config, titles, scoresdir, plotdir):
             config,
             config["score"],
             plotdir,
-            plotdir,
             titles,
             score_title,
         )
@@ -449,7 +451,6 @@ def generate_plots(config, titles, scoresdir, plotdir):
             config,
             config["score"],
             titles,
-            plotdir,
             plotdir,
             score_title,
         )
@@ -464,7 +465,6 @@ def generate_plots(config, titles, scoresdir, plotdir):
                 config["score"],
                 titles,
                 plotdir,
-                plotdir,
                 score_title,
             )
 
@@ -478,7 +478,6 @@ def generate_plots(config, titles, scoresdir, plotdir):
                 config,
                 config["score"],
                 titles,
-                plotdir,
                 plotdir,
                 score_title,
             )

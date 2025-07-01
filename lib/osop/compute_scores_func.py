@@ -107,21 +107,21 @@ def regrid_data(input_ds, target_ds):
     Regrids the dataset appropriatley for its type (planned expansion for percipertation)
 
     Parameters:
-    thishcst (xarray.Dataset): Hindcast data for regrid
-    thisobs (xarray.Dataset): Matching obs dataset to be set as the target
+    input_ds (xarray.Dataset): Data to be re-gridded
+    target_ds (xarray.Dataset): Data set with the target grid
 
     Returns:
-    thishcst (xarray.Dataset): Regridded dataset to be used for analysis
-    thisobs (xarray.Dataset): Matching obs dataset (no changes)
+    output_ds (xarray.Dataset): Regridded dataset to be used for analysis
+    target_ds (xarray.Dataset): Matching target dataset (no changes)
     """
     try:
         regridder =  xe.Regridder(input_ds, target_ds, "bilinear")
-        input_ds = regridder(input_ds, keep_attrs=True)
+        output_ds = regridder(input_ds, keep_attrs=True)
     except Exception as e:
                 print(f"Alignment failed {e}: {e}")
                 raise KeyError("Alignment failed: please check dataset entry")    
     
-    return input_ds, target_ds
+    return output_ds, target_ds
 
 
 

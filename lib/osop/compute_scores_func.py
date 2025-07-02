@@ -102,6 +102,28 @@ def swap_dims(hcst, obs):
 
         return thishcst, thisobs
 
+def regrid_data(input_ds, target_ds):
+    """
+    Regrids the dataset appropriatley for its type (planned expansion for percipertation)
+
+    Parameters:
+    input_ds (xarray.Dataset): Data to be re-gridded
+    target_ds (xarray.Dataset): Data set with the target grid
+
+    Returns:
+    output_ds (xarray.Dataset): Regridded dataset to be used for analysis
+    target_ds (xarray.Dataset): Matching target dataset (no changes)
+    """
+    try:
+        regridder =  xe.Regridder(input_ds, target_ds, "bilinear")
+        output_ds = regridder(input_ds, keep_attrs=True)
+    except Exception as e:
+                print(f"Alignment failed {e}: {e}")
+                raise KeyError("Alignment failed: please check dataset entry")    
+    
+    return output_ds, target_ds
+
+
 
 def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
     """
@@ -151,6 +173,12 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         thishcst_em_anom = (
             thishcst_em_anom if not is_fullensemble else thishcst_em_anom.mean("number")
         )
+         # Regrid if lattitude or longitude on a varied resolution or grid. 
+        if not thishcst_em_mean['lat'].equals(this_obs_m_match['lat']) or not thishcst_em_mean['lon'].equals(this_obs_m_match['lon']):
+            thishcst_em_mean, this_obs_m_match = regrid_data(thishcst_em_mean, this_obs_m_match)
+        if not thishcst_em_anom['lat'].equals(this_obs_anom['lat']) or not thishcst_em_anom['lon'].equals(this_obs_anom['lon']):
+            thishcst_em_anom, this_obs_anom = regrid_data(thishcst_em_anom, this_obs_anom)
+
 
         # calculate measures
         l_corr.append(
@@ -247,12 +275,7 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
             # Regrid if lattitude or longitude on a varied resolution or grid. 
             if not thishcst['lat'].equals(thisobs['lat']) or not thishcst['lon'].equals(thisobs['lon']):
-                try:
-                    regridder =  xe.Regridder(thishcst, thisobs, "bilinear")
-                    thishcst = regridder(thishcst, keep_attrs=True)
-                except Exception as e:
-                    print(f"Alignment failed for {hcst_bname}: {e}")
-                    raise KeyError("Alignment failed: please check dataset entry")
+               thishcst, thisobs = regrid_data(thishcst,thisobs)
 
             # Calculate the probabilistic scores
             thisroc = xr.Dataset()

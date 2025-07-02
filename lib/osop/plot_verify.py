@@ -121,6 +121,7 @@ def plot_score(
     score (str): The name of the score.
     titles (list): Titles for the plot.
     plotdir (str): The directory to save the plot.
+    plotdir (str): The directory to save the plot.
     score_title (str): The name for the plot in the file directory.
 
     Returns:
@@ -261,7 +262,6 @@ def plot_score(
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
 
-    print(info)
     plt.colorbar()
     plt.savefig(os.path.join(plotdir, f"{info}.png"))
     plt.close()
@@ -398,6 +398,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles):
     figname = f"{plotdir}/{hcst_bname}.{aggr}.{score}.png"
     plt.savefig(figname)
     plt.close()
+
 
 
 def generate_plots(config, titles, scoresdir, plotdir):

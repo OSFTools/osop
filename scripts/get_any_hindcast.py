@@ -22,13 +22,22 @@ Usage:
 import cdsapi
 import argparse
 import os
+import yaml
+from yaml.loader import SafeLoader
 
 # Ensure the top level directory has been added to PYTHONPATH
-from osop.constants import SYSTEMS
 
 
 def do_cdsapi_call(
-    centre, system, month, leadtime_month, area, area_str, variable, downloaddir, years="hc"
+    centre,
+    system,
+    month,
+    leadtime_month,
+    area,
+    area_str,
+    variable,
+    downloaddir,
+    years="hc",
 ):
     """
     calls cdsapi for the requested period and area
@@ -82,7 +91,7 @@ def do_cdsapi_call(
         ]
     fname = f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
     if os.path.exists(fname):
-        print(f'File {fname} already exists')
+        print(f"File {fname} already exists")
     else:
         c.retrieve(
             "seasonal-monthly-single-levels",
@@ -93,7 +102,7 @@ def do_cdsapi_call(
                 "variable": [variable],
                 "product_type": "monthly_mean",
                 "year": years,
-                "month": '{:02d}'.format(month),
+                "month": "{:02d}".format(month),
                 "leadtime_month": leadtime_month,
                 "area": area,
             },
@@ -123,7 +132,8 @@ def parse_args():
     parser.add_argument(
         "--variable",
         required=True,
-        help="variable to download, 2m_temperature, total_precipitation")
+        help="variable to download, 2m_temperature, total_precipitation",
+    )
     parser.add_argument("--downloaddir", required=True, help="location to download to")
     parser.add_argument(
         "--years",
@@ -155,6 +165,18 @@ def main():
     month = int(args.month)
     variable = str(args.variable)
 
+    # get remaning arguments from yml file
+    ymllocation = os.path.join(downloaddir, "parseyml.yml")
+
+    with open(ymllocation, "r") as stream:
+        try:
+            # Converts yaml document to python object
+            services = yaml.load(stream, Loader=SafeLoader)
+            # Converts contents to useable dictionary
+            Services = services["Services"]
+        except yaml.YAMLError as e:
+            print(e)
+
     area = [float(pt) for pt in args.area.split(",")]
     if len(area) != 4:
         raise ValueError(f"Need 4 points for area: {area}")
@@ -167,7 +189,7 @@ def main():
         # two models aka systems are live - call twice with each system number
         do_cdsapi_call(
             "eccc",
-            SYSTEMS["eccc_can"],
+            Services["eccc_can"],
             month,
             leadtime_month,
             area,
@@ -178,7 +200,7 @@ def main():
         )
         do_cdsapi_call(
             "eccc",
-            SYSTEMS["eccc_gem5"],
+            Services["eccc_gem5"],
             month,
             leadtime_month,
             area,
@@ -188,11 +210,11 @@ def main():
             years,
         )
     else:
-        if centre not in SYSTEMS.keys():
+        if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")
         do_cdsapi_call(
             centre,
-            SYSTEMS[centre],
+            Services[centre],
             month,
             leadtime_month,
             area,

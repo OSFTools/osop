@@ -22,11 +22,11 @@ conda activate osop
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master/downloads
-productsdir=$SCRATCH/seafoam/data/master/products
-scoresdir=$SCRATCH/seafoam/data/master/scores
-plotdir=$SCRATCH/seafoam/data/master/plots
-logdir=$SCRATCH/seafoam/data/master/logfiles
+downloaddir=$SCRATCH/seafoam/data/master/hindcast/downloads
+productsdir=$SCRATCH/seafoam/data/master/hindcast/products
+scoresdir=$SCRATCH/seafoam/data/master/hindcast/scores
+plotdir=$SCRATCH/seafoam/data/master/hindcast/plots
+logdir=$SCRATCH/seafoam/data/master/hindcast/logfiles
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir
@@ -37,12 +37,30 @@ mkdir -p $scoresdir
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
 export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 
+#create a yml file to pass dictionary parameters
+parseyml="$downloaddir/parseyml.yml"
+
 # set parameters 
 month=11 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
 variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
+
+# Services in use:
+cat <<EOF > "$parseyml"
+Services:
+    ecmwf: 51
+    meteo_france: 8
+    dwd: 21
+    cmcc: 35
+    ncep: 2
+    jma: 3
+    eccc_can: 2
+    eccc_gem5: 3
+    ukmo: 602
+EOF
+echo "YML file created: $parseyml"
 
 
 # get ERA5 data
@@ -126,6 +144,7 @@ for centre in meteo_france ;do
         --month $month \
         --leads $leads \
         --area $area \
+        --downloaddir $downloaddir \
         --scoresdir $scoresdir \
         --plotdir $plotdir \
         --variable $variable \

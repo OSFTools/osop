@@ -9,10 +9,13 @@ This script currently can only be used to create scores using ERA5 as the compar
 """
 
 import os
+import yaml
+from yaml.loader import SafeLoader
+
 
 #import local modules for function usage 
 from osop.compute_scores_func import calc_scores
-from osop.constants import SYSTEMS
+
 
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
@@ -103,6 +106,17 @@ if __name__ == "__main__":
         var=var,
         hc_var=hc_var,
     )
+    # get remaning arguments from yml file
+    ymllocation = os.path.join(downloaddir, "parseyml.yml")
+
+    with open(ymllocation, "r") as stream:
+        try:
+            # Converts yaml document to python object
+            services = yaml.load(stream, Loader=SafeLoader)
+            # Converts contents to useable dictionary
+            Services = services["Services"]
+        except yaml.YAMLError as e:
+            print(e)
 
     if args.years:
         config["hcstarty"] = args.years[0]
@@ -120,14 +134,14 @@ if __name__ == "__main__":
     # hindcast info
     if centre == "eccc":
         # two models aka systems are live - call twice with each system number
-        config["system"] = SYSTEMS["eccc_can"]
+        config["system"] = Services["eccc_can"]
         calc_scores(config, downloaddir, scoresdir, productsdir)
 
         ## repeat for second system
-        config["system"] = SYSTEMS["eccc_gem5"]
+        config["system"] = Services["eccc_gem5"]
         calc_scores(config, downloaddir, scoresdir, productsdir)
     else:
-        if centre not in SYSTEMS.keys():
+        if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")
-        config["system"] = SYSTEMS[centre]
+        config["system"] = Services[centre]
         calc_scores(config, downloaddir, scoresdir, productsdir)

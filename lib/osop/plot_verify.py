@@ -262,7 +262,6 @@ def plot_score(
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
 
-    print(info)
     plt.colorbar()
     plt.savefig(os.path.join(plotdir, f"{info}.png"))
     plt.savefig(os.path.join(plotdir, f"{info}.png"))
@@ -309,7 +308,6 @@ def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
         )
         plt.tight_layout()
         plt.savefig(os.path.join(plotdir, f"{score_title}.png"))
-        plt.savefig(os.path.join(plotdir, f"{score_title}.png"))
         plt.close()
 
 
@@ -331,10 +329,6 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles):
     corr_pval = xr.open_dataset(
         f"{scoresdir}/{hcst_bname}.{aggr}.{score}_pval.nc"
     )
-    print("this is corr")
-    print(corr)
-    print("this is pval")
-    print(corr_pval)
 
     # Rearrange the dataset longitude values for plotting purposes
     corr = corr.assign_coords(lon=(((corr.lon + 180) % 360) - 180)).sortby("lon")

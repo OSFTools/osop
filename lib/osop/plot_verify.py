@@ -264,7 +264,6 @@ def plot_score(
 
     plt.colorbar()
     plt.savefig(os.path.join(plotdir, f"{info}.png"))
-    plt.savefig(os.path.join(plotdir, f"{info}.png"))
     plt.close()
 
 

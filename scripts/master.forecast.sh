@@ -44,11 +44,14 @@ export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 #create a yml file to pass dictionary parameters (being used for centers/systems)
 parseyml="$downloaddir/parseyml.yml"
 
+
+## NOTE: TO SUCCESSFULLY RUN THIS SCRIPT; MASTER.SH MUST BE RUN IN FULL FIRST WITH THE SAME "SET PARAMETERS".
+
 # set parameters 
 month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
-variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
+variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 years=2025
 
@@ -107,6 +110,6 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     if [ $exitcode -eq 0 ]; then
         echo $centre : forecast products generated
     else
-        echo $centre : forecast products failed
+        echo $centre : forecast products failed -  check master.sh has been run correctly
     fi
 done   

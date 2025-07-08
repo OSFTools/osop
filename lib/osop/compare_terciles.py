@@ -104,8 +104,9 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
         fc_one_month = forecast_data.isel(forecastMonth=i)
         hctt = hindcast_terciles.isel(forecastMonth=i)
 
-        
+        fc_append_name = f'month_{i}'
 
+        
         #Select for variable
         data_var = list(fc_one_month.data_vars)[0]
         fc_one_month = fc_one_month[data_var]
@@ -143,7 +144,7 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
             'middle':percentage_middle
         })
 
-        total_percentage.to_netcdf(f"{products_forecast}/{forecast_fname}.forecast_percentages.nc")
+        total_percentage.to_netcdf(f"{products_forecast}/{forecast_fname}.i{fc_append_name}.forecast_percentages.nc")
 
 
 def compute_forecast(config, downloaddir, products_hindcast, products_forecast):

@@ -91,7 +91,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     else
         echo $centre : download failed
     fi
-    # calculate verification scores
+    # calculate products 
     set +e
     python forecast_products.py \
         --centre $centre \
@@ -111,5 +111,24 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         echo $centre : forecast products generated
     else
         echo $centre : forecast products failed -  check master.sh has been run correctly
+    fi
+    set +e
+    python forecast_plots.py \
+        --centre $centre \
+        --month $month \
+        --variable $variable \
+        --leads $leads \
+        --area $area \
+        --downloaddir $downloaddir \
+        --productsfcdir $productsdir \
+        --plotsdir $plotdir \
+        --yearsfc $years \
+        > $logdir/plots_log_${variable}_${centre}.txt 2>&1
+    exitcode=$?
+    set -e
+    if [ $exitcode -eq 0 ]; then
+        echo $centre : forecast plots generated
+    else
+        echo $centre : forecast plots failed 
     fi
 done   

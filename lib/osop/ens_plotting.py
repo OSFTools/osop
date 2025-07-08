@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
 import matplotlib.colors as colors
 import numpy as np
-
+import xarray as xr
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
     """
@@ -211,3 +211,57 @@ def plot_tercile_fc(mme, atitle, l_borders=True, var="precipitation", mask=None)
 
     # return figure for plotting or saving
     return plt.gcf()
+
+
+
+
+def plot_forecasts(productdir,plotsdir, config):
+    # hindcast data set info 
+    
+    # forecast data set info
+    forecast_local = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}.forecast_percentages.nc".format(
+        fpath=productdir, **config
+    )
+
+    forecast_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
+        fpath=productdir, **config
+    )
+    variable = "{hc_var}".format(**config)
+    if variable == "2m_temperature":
+        varaible = "temperature"
+    elif varaible == "total_precipitation":
+        varaible = "precipitation"
+
+    data = xr.open_dataset(forecast_local)
+
+    #Stack the three layers into a new dimension C
+    values = np.stack([
+        data['lower'].values,
+        data['middle'].values,
+        data['higher'].values
+    ], axis=0)
+
+    # Define new coordinates
+    C = [1, 2, 3]  # 1: lower, 2: middle, 3: higher
+    Y = data['lat'].values
+    X = data['lon'].values
+
+    # Create the new dataset
+    new_dataset = xr.Dataset(
+        {
+            variable: (("C", "Y", "X"), values)
+        },
+        coords={
+         "C": C,
+         "Y": Y,
+         "X": X
+        }
+    )
+
+    title = "Tercile Summary:{origin}_{systemfc}_{fcstarty} \n startmonth:{start_month} forecast:{i} \n Variable: {hc_var}".format(**config)
+    save_fig = "{origin}_{systemfc}_{fcstarty}_startmonth_{start_month} forecast_{i}_variable_{hc_var}".format(**config)
+    output = plot_tercile_fc(new_dataset, title, l_borders=True, var=variable, mask=None)
+    output.savefig(f'{plotsdir}/{save_fig}')
+    
+
+    

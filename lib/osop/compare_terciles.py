@@ -27,53 +27,81 @@ def get_tindex(infile):
     eccodes.codes_release(gid)
     return st_dim_name
 
-def index(hcst_fname, st_dim_name):
+def index(forecast_local, st_dim_name):
     """
-    Calculate anomalies and save them to netCDF files.
+    Reindex and restyle the forcast grib so that the data layout is consistent
+    and compatiable with hindcast terciles. 
 
     Parameters:
-    hcst_fname (str): File path of the hindcast grib file.
-    hcst_bname (str): Base name of the hindcast grib file.
-    config (dict): Configuration parameters.
+    forecast_local (str): File location for the grib file.
     st_dim_name (str): Name of the start date dimension (important for lagged models)
-    productsdir (str): Directory path to save the netCDF files.
 
     Returns:
-    saves 1 month and 3 month anomalies to netCDF files
-    returns a tuple of xarray datasets containing the original hindcast data and the 3-month aggregated data.
+    A re-indexed x-array for forecast data. 
     """
 
-    ##print("Reading HCST data from file")
-    hcst = xr.open_dataset(
-        hcst_fname,
+    print("Reading Forecast data from file")
+    forecast_data = xr.open_dataset(
+        forecast_local,
         engine="cfgrib",
         backend_kwargs=dict(time_dims=("forecastMonth", st_dim_name)),
     )
     # force dask.array using chunks on leadtime, latitude and longitude coordinate
-    hcst = hcst.chunk({"forecastMonth": 1, "latitude": "auto", "longitude": "auto"})
-    hcst = hcst.rename(
+    forecast_data = forecast_data.chunk({"forecastMonth": 1, "latitude": "auto", "longitude": "auto"})
+    forecast_data = forecast_data.rename(
         {"latitude": "lat", "longitude": "lon", st_dim_name: "start_date"}
     )
 
-    ##print("Re-arranging time metadata in xr.Dataset object")
+    print("Re-arranging time metadata in xr.Dataset object")
     # Add start_month to the xr.Dataset
-    start_month = pd.to_datetime(hcst.start_date.values).month
-    hcst = hcst.assign_coords({"start_month": start_month})
+    start_month = pd.to_datetime(forecast_data.start_date.values).month
+    forecast_indexed = forecast_data.assign_coords({"start_month": start_month})
     # Add valid_time to the xr.Dataset
-    return(hcst)
+    return(forecast_indexed)
 
+def percentage(array):
+    """
+    Takes a boolean mask for a forecast dataset and returns the percentage of Trues
+
+    Parameters: 
+    array (x-array): The input boolean mask
+
+    Returns: 
+    array_percentage (x-array): The percentage values
+    """
+    array_concact = xr.concat(array, dim='number')
+    array_sum = array_concact.sum(dim='number')
+    array_percentage = (array_sum / array_concact.sizes['number']) * 100
+
+    return array_percentage
+    
 
 def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fname):
+    """
+    Produces the one month tercile forecast data in the form of 
+    an x-array that contains the month, the percentage and the lat-lon coordinates. 
+
+    Parameters:
+    forecast_data (x-array): The re-indexed forecast data.
+    hindcast_terciles (x-array): The x-array that contains the matching tercile catagories.
+    products_forecast (str): The location for the files to output too. 
+    forcast_fname (str): The name of the forecast data. 
+
+    Returns:
+    None 
+    Saves output data-array that contains the percent values for each tercile and co-ord. 
+    
+    """
     for i in range(forecast_data.sizes['forecastMonth']):
         #Select for each forecast Month
-        fc = forecast_data.isel(forecastMonth=i)
+        fc_one_month = forecast_data.isel(forecastMonth=i)
         hctt = hindcast_terciles.isel(forecastMonth=i)
 
         
 
         #Select for variable
-        data_var = list(fc.data_vars)[0]
-        t2mfc = fc[data_var]
+        data_var = list(fc_one_month.data_vars)[0]
+        fc_one_month = fc_one_month[data_var]
 
         data_var = list(hctt.data_vars)[0]
 
@@ -87,32 +115,28 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
         cat_middle_masks = []
 
         #for each member - assign catagory
-        for i in range(t2mfc.sizes['number']):
-            t2m_slice = t2mfc.isel(number=i)
-            mask = t2m_slice < cat_lower_thresh
+        for i in range(fc_one_month.sizes['number']):
+            fc_one_month_slice = fc_one_month.isel(number=i)
+            mask = fc_one_month_slice < cat_lower_thresh
             cat_lower_masks.append(mask)
-            mask1 = t2m_slice > cat_higher_thresh
+            mask1 = fc_one_month_slice > cat_higher_thresh
             cat_higher_masks.append(mask1)
-            mask3 = (t2m_slice > cat_lower_thresh) & (t2m_slice < cat_higher_thresh)
+            mask3 = (fc_one_month_slice > cat_lower_thresh) & (fc_one_month_slice < cat_higher_thresh)
             cat_middle_masks.append(mask3)
     
-        #reassmeble
-        cat_lower_mask_array = xr.concat(cat_lower_masks, dim='number')
-        cat_higher_mask_array = xr.concat(cat_higher_masks, dim='number')
-        cat_middle_mask_array = xr.concat(cat_middle_masks, dim='number')
+        #"Percentagise" the boolean masks
+        percentage_lower= percentage(cat_lower_masks)
+        percentage_higher = percentage(cat_higher_masks)
+        percentage_middle = percentage(cat_middle_masks)
 
-        #create counts
-        true_counts_lower = cat_lower_mask_array.sum(dim='number')
-        true_counts_higher = cat_higher_mask_array.sum(dim='number')
-        true_counts_middle = cat_middle_mask_array.sum(dim='number')
+        #Reorganise to one dataset for ease
+        total_percentage = xr.Dataset({
+            'lower':percentage_lower,
+            'higher':percentage_higher,
+            'middle':percentage_middle
+        })
 
-        #create percentages
-        percentage_true_lower = (true_counts_lower / cat_lower_mask_array.sizes['number']) * 100
-        percentage_true_higher = (true_counts_higher / cat_higher_mask_array.sizes['number']) * 100
-        percentage_true_middle = (true_counts_middle / cat_middle_mask_array.sizes['number']) * 100
-
-        print("this is percentage_true_lower:",percentage_true_lower)
-        percentage_true_lower.to_netcdf(f"{products_forecast}/{forecast_fname}.forecast_lower.nc")
+        total_percentage.to_netcdf(f"{products_forecast}/{forecast_fname}.forecast_percentages.nc")
 
 
 def compute_forecast(config, downloaddir, products_hindcast, products_forecast):

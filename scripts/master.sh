@@ -53,14 +53,14 @@ location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' 
 cat <<EOF > "$parseyml"
 Services:
     ecmwf: 51
-    meteo_france: 8
-    dwd: 21
+    meteo_france: 9
+    dwd: 22
     cmcc: 35
     ncep: 2
     jma: 3
-    eccc_can: 2
-    eccc_gem5: 3
-    ukmo: 602
+    eccc_can: 4
+    eccc_gem5: 5
+    ukmo: 604
 EOF
 echo "YML file created: $parseyml"
 

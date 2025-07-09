@@ -14,6 +14,7 @@ from matplotlib.colors import BoundaryNorm
 import matplotlib.colors as colors
 import numpy as np
 import xarray as xr
+from osop.plot_verify import location
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
     """
@@ -74,7 +75,7 @@ def get_cmap(precip_cs=False, wmo_cs=True):
     return cmap_below, cmap_normal, cmap_above
 
 
-def plot_tercile_fc(mme, config, plotsdir, l_borders=True, var="precipitation", mask=None,):
+def plot_tercile_fc(mme, config, plotsdir, var="precipitation", mask=None,):
     """
     Function to plot a tercile forecast with differet colormaps
     for each of three terciles. Uses a threshold of 40%
@@ -161,8 +162,10 @@ def plot_tercile_fc(mme, config, plotsdir, l_borders=True, var="precipitation", 
 
     ax.coastlines()
 
-    if l_borders:
-        ax.add_feature(cfeature.BORDERS, linestyle=":")
+    map_setting = location(config)
+    if map_setting != "False":
+        ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
+
 
     # color bars move to bottom and set in nice place
     cbar1 = plt.axes((0.15, 0.05, 0.2, 0.05))
@@ -233,10 +236,8 @@ def reformatt(forecast_local, variable):
 
     Returns:
     new_dataset (xarray): A reformatted version of the forecast data for ens_plotting functions. 
-    
-
     """
-    
+
     data = xr.open_dataset(forecast_local)
     try:
         #Stack the three layers into a new dimension C
@@ -268,8 +269,6 @@ def reformatt(forecast_local, variable):
     return new_dataset
 
 
-
-
 def plot_forecasts(productdir,plotsdir, config):
     """
     Calls functions and parses configurations over for plotting forecasts. 
@@ -289,7 +288,6 @@ def plot_forecasts(productdir,plotsdir, config):
         fpath=productdir, **config
     )
 
-
     #checks the variable for use. 
     variable = "{hc_var}".format(**config)
     if variable == "2m_temperature":
@@ -298,13 +296,14 @@ def plot_forecasts(productdir,plotsdir, config):
         varaible = "precipitation"
     else:
         print("Variable not identified")
+        #Future functionality should be able to handle this - see plot_tercile_fc
         variable = variable
 
     #Reformatt dataset for plotting
     plot_dataset = reformatt(forecast_local, variable)
     
     #Tercile Summary - 1month forecasts, per origin centre.
-    plot_tercile_fc(plot_dataset, config, plotsdir, l_borders=True, var=variable, mask=None)
+    plot_tercile_fc(plot_dataset, config, plotsdir, var=variable, mask=None)
     
 
     

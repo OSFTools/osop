@@ -32,6 +32,7 @@ def parse_args():
     """
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--location", required=True, help="location; type None for all")
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
     parser.add_argument(
@@ -72,6 +73,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     # unpack args and reformat if needed
+    location = args.location
     centre = args.centre
     downloaddir = args.downloaddir
     productsfcdir = args.productsfcdir
@@ -109,6 +111,7 @@ if __name__ == "__main__":
         var=var,
         hc_var=hc_var,
         i = i,
+        border = location
     )
     # get remaning arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")

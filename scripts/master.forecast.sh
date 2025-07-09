@@ -114,6 +114,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     fi
     set +e
     python forecast_plots.py \
+        --location $location \
         --centre $centre \
         --month $month \
         --variable $variable \

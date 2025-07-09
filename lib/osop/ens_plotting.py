@@ -84,7 +84,6 @@ def plot_tercile_fc(mme, config, plotsdir, var="precipitation", mask=None,):
     mme - dataArray with tercile forecasts in it
     config - Dictionary used for variables in title of plot
     plotsdir - Location to save to. 
-    l_borders - whether to add standard borders on the plot
     var - name of variable in dataSet
     mask(optional, dataArray) - if using a dry mask, pass it in here
 

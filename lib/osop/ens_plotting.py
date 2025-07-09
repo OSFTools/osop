@@ -74,19 +74,25 @@ def get_cmap(precip_cs=False, wmo_cs=True):
     return cmap_below, cmap_normal, cmap_above
 
 
-def plot_tercile_fc(mme, atitle, l_borders=True, var="precipitation", mask=None):
+def plot_tercile_fc(mme, config, plotsdir, l_borders=True, var="precipitation", mask=None,):
     """
     Function to plot a tercile forecast with differet colormaps
     for each of three terciles. Uses a threshold of 40%
     below which it does not plot
 
     mme - dataArray with tercile forecasts in it
-    atitle - title for plot
+    config - Dictionary used for variables in title of plot
+    plotsdir - Location to save to. 
     l_borders - whether to add standard borders on the plot
     var - name of variable in dataSet
     mask(optional, dataArray) - if using a dry mask, pass it in here
 
     """
+    # Setting up of titles for plots and saving
+    i = int("{i}".format(**config))
+    i = i+1
+    config["i"]=i
+    atitle = "Tercile Summary:{origin} {systemfc} {fcstarty} \nstartmonth:{start_month} \nlead:{i} \nVariable: {hc_var}".format(**config)
 
     # add masking with defined threshold
     LTHRESH = 40.0
@@ -151,7 +157,7 @@ def plot_tercile_fc(mme, atitle, l_borders=True, var="precipitation", mask=None)
         norm=norm,
         add_colorbar=False,
     )
-    plt.title(atitle)
+    plt.title(atitle, fontsize = 12, loc = 'left')
 
     ax.coastlines()
 
@@ -209,45 +215,44 @@ def plot_tercile_fc(mme, atitle, l_borders=True, var="precipitation", mask=None)
             fontsize=12,
         )
 
-    # return figure for plotting or saving
-    return plt.gcf()
+    forecast_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_lead_{i}_{area_str}_{hc_var}".format(**config
+    )
+    figname = f"{plotsdir}/{forecast_fname}.png"
+    plt.savefig(figname)
 
+    return 
 
-
-
-def plot_forecasts(productdir,plotsdir, config):
-    # hindcast data set info 
+def reformatt(forecast_local, variable):
+    """
+    Takes a forecast_percentage dataset and reformats it to be able to run through
+    ens_plotting routines. 
     
-    # forecast data set info
-    forecast_local = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}.forecast_percentages.nc".format(
-        fpath=productdir, **config
-    )
+    Parameters:
+    config (dict): The cofiguraiton parameters for the forecast
+    forecast_local (str): The location of the forecast_data set to be plotted 
 
-    forecast_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
-        fpath=productdir, **config
-    )
-    variable = "{hc_var}".format(**config)
-    if variable == "2m_temperature":
-        varaible = "temperature"
-    elif varaible == "total_precipitation":
-        varaible = "precipitation"
+    Returns:
+    new_dataset (xarray): A reformatted version of the forecast data for ens_plotting functions. 
+    
 
+    """
+    
     data = xr.open_dataset(forecast_local)
-
-    #Stack the three layers into a new dimension C
-    values = np.stack([
+    try:
+        #Stack the three layers into a new dimension C
+        values = np.stack([
         data['lower'].values,
         data['middle'].values,
         data['higher'].values
-    ], axis=0)
+        ], axis=0)
 
-    # Define new coordinates
-    C = [1, 2, 3]  # 1: lower, 2: middle, 3: higher
-    Y = data['lat'].values
-    X = data['lon'].values
+        #Define new coordinates
+        C = [1, 2, 3]  # 1: lower, 2: middle, 3: higher
+        Y = data['lat'].values
+        X = data['lon'].values
 
-    # Create the new dataset
-    new_dataset = xr.Dataset(
+        # Create the new dataset
+        new_dataset = xr.Dataset(
         {
             variable: (("C", "Y", "X"), values)
         },
@@ -257,11 +262,49 @@ def plot_forecasts(productdir,plotsdir, config):
          "X": X
         }
     )
+    except NameError:
+        print("Check data configurations match input parameters")
 
-    title = "Tercile Summary:{origin}_{systemfc}_{fcstarty} \n startmonth:{start_month} forecast:{i} \n Variable: {hc_var}".format(**config)
-    save_fig = "{origin}_{systemfc}_{fcstarty}_startmonth_{start_month} forecast_{i}_variable_{hc_var}".format(**config)
-    output = plot_tercile_fc(new_dataset, title, l_borders=True, var=variable, mask=None)
-    output.savefig(f'{plotsdir}/{save_fig}')
+    return new_dataset
+
+
+
+
+def plot_forecasts(productdir,plotsdir, config):
+    """
+    Calls functions and parses configurations over for plotting forecasts. 
+
+    Parameters: 
+    productdir (str): Location for dataset to be plot.
+    plotsdir (str): Location for plots to save too.
+    config (dict): Dictionary for parameters of the file/dataset.
+
+    Returns: 
+    None 
+    
+    """
+    
+    # forecast data set info
+    forecast_local = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}.forecast_percentages.nc".format(
+        fpath=productdir, **config
+    )
+
+
+    #checks the variable for use. 
+    variable = "{hc_var}".format(**config)
+    if variable == "2m_temperature":
+        varaible = "temperature"
+    elif varaible == "total_precipitation":
+        varaible = "precipitation"
+    else:
+        print("Variable not identified")
+        variable = variable
+
+    #Reformatt dataset for plotting
+    plot_dataset = reformatt(forecast_local, variable)
+    
+    #Tercile Summary - 1month forecasts, per origin centre.
+    plot_tercile_fc(plot_dataset, config, plotsdir, l_borders=True, var=variable, mask=None)
     
 
     

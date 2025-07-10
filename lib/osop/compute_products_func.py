@@ -12,6 +12,7 @@ import numpy as np
 import os
 import eccodes
 import matplotlib.pyplot as plt
+from osop.util import get_tindex
 
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
@@ -219,27 +220,3 @@ def calc_products(config, downloaddir, productsdir):
     ## calc terc probs and thresholds
     prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir)
 
-
-def get_tindex(infile):
-    """
-    Use eccodes to check if there is an indexing time dimension
-
-    Input
-        infile(str): name of file to check
-    Returns:
-        st_dim_name (str): name of time dimension to use for indexing.
-            time for burst ensmeble and indexing_time for lagged
-
-    """
-    f = open(infile, "rb")
-    gid = eccodes.codes_grib_new_from_file(f)
-    key = "indexingDate"
-    try:
-        eccodes.codes_get(gid, key)
-        st_dim_name = "indexing_time"
-
-    except eccodes.KeyValueNotFoundError:
-        st_dim_name = "time"
-
-    eccodes.codes_release(gid)
-    return st_dim_name

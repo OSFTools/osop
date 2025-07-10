@@ -8,7 +8,8 @@ A module with utility functions for seasonal FCs
 """
 
 import xarray as xr
-
+import eccodes
+import pandas as pd
 
 def sel_season_time(dataset, start_year, end_year):
     """Extract the data for the specified years starting with Dec of
@@ -73,3 +74,57 @@ def season_stats(dataset, start_year, end_year, stats=["mean"]):
             raise ValueError(f"Unknown stat {stat}")
 
     return ds_stats
+
+def get_tindex(infile):
+    """
+    Use eccodes to check if there is an indexing time dimension
+
+    Input
+        infile(str): name of file to check
+    Returns:
+        st_dim_name (str): name of time dimension to use for indexing.
+            time for burst ensmeble and indexing_time for lagged
+
+    """
+    f = open(infile, "rb")
+    gid = eccodes.codes_grib_new_from_file(f)
+    key = "indexingDate"
+    try:
+        eccodes.codes_get(gid, key)
+        st_dim_name = "indexing_time"
+
+    except eccodes.KeyValueNotFoundError:
+        st_dim_name = "time"
+
+    eccodes.codes_release(gid)
+    return st_dim_name
+
+#move
+def index(forecast_local, st_dim_name):
+    """
+    Reindex and restyle the forcast grib so that the data layout is consistent
+    and compatiable with hindcast terciles. 
+
+    Parameters:
+    forecast_local (str): File location for the grib file.
+    st_dim_name (str): Name of the start date dimension (important for lagged models)
+
+    Returns:
+    A re-indexed x-array for forecast data. 
+    """
+
+    print("Reading Forecast data from file")
+    forecast_data = xr.open_dataset(
+        forecast_local,
+        engine="cfgrib",
+        backend_kwargs=dict(time_dims=("forecastMonth", st_dim_name)),
+    )
+    print("this is forecast_data", forecast_data)
+    # force dask.array using chunks on leadtime, latitude and longitude coordinate
+    forecast_data = forecast_data.chunk({"forecastMonth": 1, "latitude": "auto", "longitude": "auto"})
+    forecast_data = forecast_data.rename(
+        {"latitude": "lat", "longitude": "lon", st_dim_name: "start_date"}
+    )
+    return(forecast_data)
+
+    

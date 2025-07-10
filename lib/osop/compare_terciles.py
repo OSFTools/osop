@@ -7,6 +7,7 @@ See LICENSE in the root of the repository for full licensing details.
 # Libraries for working with multi-dimensional arrays
 import xarray as xr
 import xarray as xr
+import pandas as pd
 from osop.util import get_tindex, index
 
 
@@ -44,6 +45,11 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
     Saves output data-array that contains the percent values for each tercile and co-ord. 
     
     """
+    start_month = pd.to_datetime(forecast_data.start_date.values).month
+    forecast_indexed = forecast_data.assign_coords({"start_month": start_month})
+    # Add valid_time to the xr.Dataset
+
+
     for i in range(forecast_data.sizes['forecastMonth']):
         #Select for each forecast Month
         fc_one_month = forecast_data.isel(forecastMonth=i)

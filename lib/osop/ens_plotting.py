@@ -290,9 +290,9 @@ def plot_forecasts(productdir,plotsdir, config):
     #checks the variable for use. 
     variable = "{hc_var}".format(**config)
     if variable == "2m_temperature":
-        varaible = "temperature"
-    elif varaible == "total_precipitation":
-        varaible = "precipitation"
+        variable = "temperature"
+    elif variable == "total_precipitation":
+        variable = "precipitation"
     else:
         print("Variable not identified")
         #Future functionality should be able to handle this - see plot_tercile_fc

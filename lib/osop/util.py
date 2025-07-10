@@ -119,15 +119,12 @@ def index(forecast_local, st_dim_name):
         engine="cfgrib",
         backend_kwargs=dict(time_dims=("forecastMonth", st_dim_name)),
     )
+    print("this is forecast_data", forecast_data)
     # force dask.array using chunks on leadtime, latitude and longitude coordinate
     forecast_data = forecast_data.chunk({"forecastMonth": 1, "latitude": "auto", "longitude": "auto"})
     forecast_data = forecast_data.rename(
         {"latitude": "lat", "longitude": "lon", st_dim_name: "start_date"}
     )
+    return(forecast_data)
 
-    print("Re-arranging time metadata in xr.Dataset object")
-    # Add start_month to the xr.Dataset
-    start_month = pd.to_datetime(forecast_data.start_date.values).month
-    forecast_indexed = forecast_data.assign_coords({"start_month": start_month})
-    # Add valid_time to the xr.Dataset
-    return(forecast_indexed)
+    

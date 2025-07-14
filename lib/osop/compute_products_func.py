@@ -37,8 +37,7 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
     # Add start_month to the xr.Dataset
     start_month = pd.to_datetime(hcst.start_date.values[0]).month
     hcst = hcst.assign_coords({"start_month": start_month})
-
-    print("this is hcst from calc_anoms",hcst)
+    
     # Add valid_time to the xr.Dataset
     vt = xr.DataArray(
         dims=("start_date", "forecastMonth"),

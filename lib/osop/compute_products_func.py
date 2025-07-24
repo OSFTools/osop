@@ -12,12 +12,13 @@ import numpy as np
 import os
 import eccodes
 import matplotlib.pyplot as plt
+from osop.util import get_tindex, index
 
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
 
 
-def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, productsdir):
+def calc_anoms(hcst, hcst_bname, config, productsdir):
     """
     Calculate anomalies and save them to netCDF files.
 
@@ -32,23 +33,11 @@ def calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, productsdir):
     saves 1 month and 3 month anomalies to netCDF files
     returns a tuple of xarray datasets containing the original hindcast data and the 3-month aggregated data.
     """
-
-    print("Reading HCST data from file")
-    hcst = xr.open_dataset(
-        hcst_fname,
-        engine="cfgrib",
-        backend_kwargs=dict(time_dims=("forecastMonth", st_dim_name)),
-    )
-    # force dask.array using chunks on leadtime, latitude and longitude coordinate
-    hcst = hcst.chunk({"forecastMonth": 1, "latitude": "auto", "longitude": "auto"})
-    hcst = hcst.rename(
-        {"latitude": "lat", "longitude": "lon", st_dim_name: "start_date"}
-    )
-
     print("Re-arranging time metadata in xr.Dataset object")
     # Add start_month to the xr.Dataset
     start_month = pd.to_datetime(hcst.start_date.values[0]).month
     hcst = hcst.assign_coords({"start_month": start_month})
+    
     # Add valid_time to the xr.Dataset
     vt = xr.DataArray(
         dims=("start_date", "forecastMonth"),
@@ -213,33 +202,12 @@ def calc_products(config, downloaddir, productsdir):
     #  -> burst mode ensembles (e.g. ECMWF SEAS5) use "time". This is the default option
     #  -> lagged start ensembles (e.g. MetOffice GloSea6) use "indexing_time" (see CDS documentation about nominal start date)
     st_dim_name = get_tindex(hcst_fname)
+    hcst = index(hcst_fname, st_dim_name)
+    #print("this is hcst from index",hcst)
 
     ## calc anoms
-    hcst, hcst_3m = calc_anoms(hcst_fname, hcst_bname, config, st_dim_name, productsdir)
+    hcst, hcst_3m = calc_anoms(hcst, hcst_bname, config, productsdir)
     ## calc terc probs and thresholds
     prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir)
 
 
-def get_tindex(infile):
-    """
-    Use eccodes to check if there is an indexing time dimension
-
-    Input
-        infile(str): name of file to check
-    Returns:
-        st_dim_name (str): name of time dimension to use for indexing.
-            time for burst ensmeble and indexing_time for lagged
-
-    """
-    f = open(infile, "rb")
-    gid = eccodes.codes_grib_new_from_file(f)
-    key = "indexingDate"
-    try:
-        eccodes.codes_get(gid, key)
-        st_dim_name = "indexing_time"
-
-    except eccodes.KeyValueNotFoundError:
-        st_dim_name = "time"
-
-    eccodes.codes_release(gid)
-    return st_dim_name

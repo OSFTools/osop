@@ -6,7 +6,6 @@ See LICENSE in the root of the repository for full licensing details.
 """
 # Libraries for working with multi-dimensional arrays
 import xarray as xr
-import xarray as xr
 import pandas as pd
 from osop.util import get_tindex, index
 

@@ -144,7 +144,7 @@ def plot_score(
         levels = np.linspace(0.0, 0.5, 11)
         info = score_fname
         plt.title(
-            f"{score} \n"
+            f"{score}".upper() + "\n"
             + titles[0]
             + f" {config['var']}\n"
             + titles[1]
@@ -160,7 +160,7 @@ def plot_score(
         ex_dir = "max"
         under = "purple"
         plt.title(
-            f"{score} \n"
+            f"{score}".upper() + "\n"
             + titles[0]
             + f' {config["var"]}'
             + f" ({CATNAMES[category]})\n"
@@ -172,63 +172,7 @@ def plot_score(
         levels = np.linspace(0.0, 0.5, 11)
     elif score in ["roc", "rocss"]:
         plt.title(
-            f"{score} \n"
-            + titles[0]
-            + f' {config["var"]}'
-            + f" ({CATNAMES[category]})\n"
-            + titles[1]
-            + "\n"
-            + titles[2],
-            loc="left",
-        )
-        p = score_f[config["var"]].sel(category=category)[0, :, :]
-        lon = score_f[config["var"]].sel(category=category).lon
-        lat = score_f[config["var"]].sel(category=category).lat
-        cols = "YlGn"
-        ex_dir = "neither"
-        under = "lightgray"
-        levels = np.linspace(0.5, 1.0, 6)
-
-    info = f"{score_title}_category_{category}"
-    if score == "rps":
-        p = score_f[config["var"]][0, :, :]
-        lon = score_f[config["var"]].lon
-        lat = score_f[config["var"]].lat
-        cols = "YlGn_r"
-        ex_dir = "max"
-        under = "purple"
-        levels = np.linspace(0.0, 0.5, 11)
-        info = score_title
-        plt.title(
-            f"{score} \n"
-            + titles[0]
-            + f' {config["var"]}\n'
-            + titles[1]
-            + "\n"
-            + titles[2],
-            loc="left",
-        )
-    elif score == "bs":
-        p = score_f[config["var"]].sel(category=category)[0, :, :]
-        lon = score_f[config["var"]].sel(category=category).lon
-        lat = score_f[config["var"]].sel(category=category).lat
-        cols = "YlGn_r"
-        ex_dir = "max"
-        under = "purple"
-        plt.title(
-            f"{score} \n"
-            + titles[0]
-            + f' {config["var"]}'
-            + f" ({CATNAMES[category]})\n"
-            + titles[1]
-            + "\n"
-            + titles[2],
-            loc="left",
-        )
-        levels = np.linspace(0.0, 0.5, 11)
-    elif score in ["roc", "rocss"]:
-        plt.title(
-            f"{score} \n"
+            f"{score}".upper() + "\n"
             + titles[0]
             + f' {config["var"]}'
             + f" ({CATNAMES[category]})\n"
@@ -261,9 +205,9 @@ def plot_score(
     if map_setting != "False":
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
-
-    plt.colorbar()
-    plt.savefig(os.path.join(plotdir, f"{info}.png"))
+    
+    plt.colorbar(extend='max')
+    plt.savefig(os.path.join(plotdir, f"{info}.png"),bbox_inches='tight',pad_inches = 0.01)
     plt.close()
 
 
@@ -306,7 +250,7 @@ def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
             titles[0] + f" {config['var']}\n" + titles[1] + "\n" + titles[2], loc="left"
         )
         plt.tight_layout()
-        plt.savefig(os.path.join(plotdir, f"{score_title}.png"))
+        plt.savefig(os.path.join(plotdir, f"{score_title}.png"),bbox_inches='tight',pad_inches = 0.01)
         plt.close()
 
 
@@ -396,7 +340,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles):
     )
     plt.tight_layout()
     figname = f"{plotdir}/{hcst_bname}.{aggr}.{score}.png"
-    plt.savefig(figname)
+    plt.savefig(figname,bbox_inches='tight',pad_inches = 0.01)
     plt.close()
 
 

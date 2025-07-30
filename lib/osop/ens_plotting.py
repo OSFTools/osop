@@ -75,7 +75,7 @@ def get_cmap(precip_cs=False, wmo_cs=True):
     return cmap_below, cmap_normal, cmap_above
 
 
-def plot_tercile_fc(mme, config, plotsdir, var="precipitation", mask=None,):
+def plot_tercile_fc(mme, config, plotsdir,forecast_fname, var="precipitation", mask=None,):
     """
     Function to plot a tercile forecast with differet colormaps
     for each of three terciles. Uses a threshold of 40%
@@ -217,14 +217,13 @@ def plot_tercile_fc(mme, config, plotsdir, var="precipitation", mask=None,):
             fontsize=12,
         )
 
-    forecast_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_lead_{i}_{area_str}_{hc_var}".format(**config
-    )
+    forecast_fname = forecast_fname
     figname = f"{plotsdir}/{forecast_fname}.png"
     plt.savefig(figname)
 
     return 
 
-def reformatt(forecast_local, variable):
+def reformatt(data, variable):
     """
     Takes a forecast_percentage dataset and reformats it to be able to run through
     ens_plotting routines. 
@@ -237,7 +236,7 @@ def reformatt(forecast_local, variable):
     new_dataset (xarray): A reformatted version of the forecast data for ens_plotting functions. 
     """
 
-    data = xr.open_dataset(forecast_local)
+
     try:
         #Stack the three layers into a new dimension C
         values = np.stack([
@@ -283,9 +282,15 @@ def plot_forecasts(productdir,plotsdir, config):
     """
     
     # forecast data set info
-    forecast_local = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}.forecast_percentages.nc".format(
+    forecast_local_1m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}.forecast_percentages.nc".format(
         fpath=productdir, **config
     )
+    forecast_name_1m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}".format(**config)
+    forecast_local_3m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
+        fpath=productdir, **config
+    )
+    forecast_name_3m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m".format(**config)
+
 
     #checks the variable for use. 
     variable = "{hc_var}".format(**config)
@@ -299,10 +304,17 @@ def plot_forecasts(productdir,plotsdir, config):
         variable = variable
 
     #Reformatt dataset for plotting
-    plot_dataset = reformatt(forecast_local, variable)
+    fcst_local_1m = xr.open_dataset(forecast_local_1m)
+    fcst_local_3m = xr.open_dataset(forecast_local_3m)
+    fcst_local_3m = fcst_local_3m.squeeze(dim='forecastMonth')
+
+    plot_dataset_1m = reformatt(fcst_local_1m, variable)
+    plot_dataset_3m = reformatt(fcst_local_3m, variable)
+
     
     #Tercile Summary - 1month forecasts, per origin centre.
-    plot_tercile_fc(plot_dataset, config, plotsdir, var=variable, mask=None)
+    plot_tercile_fc(plot_dataset_1m, config, plotsdir,forecast_name_1m, var=variable, mask=None)
+    plot_tercile_fc(plot_dataset_3m,config, plotsdir,forecast_name_3m, var=variable, mask=None)
     
 
     

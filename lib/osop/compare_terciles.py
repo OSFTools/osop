@@ -28,6 +28,15 @@ def percentage(array):
     return array_percentage
 
 def counts(fcst,hcst_terciles):
+    """
+    Creates a boolean mask for where the forecast value falls.
+    Parameters: 
+    fcst (x-array): The forecast array
+    hcst_terciles (x-array): The hindcast terciles
+
+    Returns: 
+    cat (lower,higher,middle) masks (array): The boolean mask
+    """
     data_var = list(hcst_terciles.data_vars)[0]
     
 
@@ -55,6 +64,19 @@ def counts(fcst,hcst_terciles):
 
 def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fname ):
     """
+    Produces the three month tercile forecast data in the form of 
+    an x-array that contains the month, the percentage and the lat-lon coordinates. 
+
+    Parameters:
+    forecast_data (x-array): The re-indexed forecast data.
+    hindcast_terciles (x-array): The x-array that contains the matching tercile catagories.
+    products_forecast (str): The location for the files to output too. 
+    forcast_fname (str): The name of the forecast data. 
+
+    Returns:
+    None 
+    Saves output data-array that contains the percent values for each tercile and co-ord. 
+    
     """
     
     fcst_3m = forecast_data.rolling(forecastMonth=3).mean()
@@ -63,29 +85,8 @@ def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fn
     data_var = list(fcst_3m.data_vars)[0]
     fcst_3m = fcst_3m[data_var]
     
+    cat_lower_masks, cat_higher_masks, cat_middle_masks = counts(fcst_3m, hindcast_terciles)
 
-    data_var = list(hindcast_terciles.data_vars)[0]
-    
-
-    #Define Catagories
-    cat_lower_thresh = hindcast_terciles[data_var].sel(category=0)
-    cat_higher_thresh = hindcast_terciles[data_var].sel(category=1)
-
-    #Create empty lists to store into
-    cat_lower_masks = []
-    cat_higher_masks = []
-    cat_middle_masks = []
-
-    #for each member - assign catagory
-    for i in range(fcst_3m.sizes['number']):
-        fc_three_month_slice = fcst_3m.isel(number=i)
-        mask = fc_three_month_slice < cat_lower_thresh
-        cat_lower_masks.append(mask)
-        mask1 = fc_three_month_slice > cat_higher_thresh
-        cat_higher_masks.append(mask1)
-        mask3 = (fc_three_month_slice > cat_lower_thresh) & (fc_three_month_slice < cat_higher_thresh)
-        cat_middle_masks.append(mask3)
-    
     #"Percentagise" the boolean masks
     percentage_lower= percentage(cat_lower_masks)
     percentage_higher = percentage(cat_higher_masks)
@@ -122,8 +123,6 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
     forecast_indexed = forecast_data.assign_coords({"start_month": start_month})
     
     # Add valid_time to the xr.Dataset
-
-
     for i in range(forecast_data.sizes['forecastMonth']):
         #Select for each forecast Month
         fc_one_month = forecast_data.isel(forecastMonth=i)
@@ -131,32 +130,12 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
 
         fc_append_name = f'month_{i}'
 
-        
         #Select for variable
         data_var = list(fc_one_month.data_vars)[0]
         fc_one_month = fc_one_month[data_var]
 
-        data_var = list(hctt.data_vars)[0]
+        cat_lower_masks, cat_higher_masks, cat_middle_masks = counts(fc_one_month, hctt)
 
-        #Define Catagories
-        cat_lower_thresh = hctt[data_var].sel(category=0)
-        cat_higher_thresh = hctt[data_var].sel(category=1)
-
-        #Create empty lists to store into
-        cat_lower_masks = []
-        cat_higher_masks = []
-        cat_middle_masks = []
-
-        #for each member - assign catagory
-        for i in range(fc_one_month.sizes['number']):
-            fc_one_month_slice = fc_one_month.isel(number=i)
-            mask = fc_one_month_slice < cat_lower_thresh
-            cat_lower_masks.append(mask)
-            mask1 = fc_one_month_slice > cat_higher_thresh
-            cat_higher_masks.append(mask1)
-            mask3 = (fc_one_month_slice > cat_lower_thresh) & (fc_one_month_slice < cat_higher_thresh)
-            cat_middle_masks.append(mask3)
-    
         #"Percentagise" the boolean masks
         percentage_lower= percentage(cat_lower_masks)
         percentage_higher = percentage(cat_higher_masks)

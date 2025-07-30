@@ -27,7 +27,7 @@ def percentage(array):
 
     return array_percentage
 
-def counts(fcst,hcst_terciles):
+def counts(fcst,terciles):
     """
     Creates a boolean mask for where the forecast value falls.
     Parameters: 
@@ -37,29 +37,11 @@ def counts(fcst,hcst_terciles):
     Returns: 
     cat (lower,higher,middle) masks (array): The boolean mask
     """
-    data_var = list(hcst_terciles.data_vars)[0]
-    
 
-    #Define Catagories
-    cat_lower_thresh = hcst_terciles[data_var].sel(category=0)
-    cat_higher_thresh = hcst_terciles[data_var].sel(category=1)
+    v = list(terciles.data_vars)[0]
+    lo, hi = [terciles[v].sel(category=c) for c in (0, 1)]
+    return fcst < lo, fcst > hi, (fcst > lo) & (fcst < hi)
 
-    #Create empty lists to store into
-    cat_lower_masks = []
-    cat_higher_masks = []
-    cat_middle_masks = []
-
-    #for each member - assign catagory
-    for i in range(fcst.sizes['number']):
-        fc_three_month_slice = fcst.isel(number=i)
-        mask = fc_three_month_slice < cat_lower_thresh
-        cat_lower_masks.append(mask)
-        mask1 = fc_three_month_slice > cat_higher_thresh
-        cat_higher_masks.append(mask1)
-        mask3 = (fc_three_month_slice > cat_lower_thresh) & (fc_three_month_slice < cat_higher_thresh)
-        cat_middle_masks.append(mask3)
-    
-    return cat_lower_masks, cat_higher_masks, cat_middle_masks
 
 
 def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fname ):
@@ -78,27 +60,19 @@ def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fn
     Saves output data-array that contains the percent values for each tercile and co-ord. 
     
     """
-    
+    #Calculate average over the months
     fcst_3m = forecast_data.rolling(forecastMonth=3).mean()
     fcst_3m = fcst_3m.isel(forecastMonth=(fcst_3m['forecastMonth'] == 4))
-
-    data_var = list(fcst_3m.data_vars)[0]
-    fcst_3m = fcst_3m[data_var]
-    
-    cat_lower_masks, cat_higher_masks, cat_middle_masks = counts(fcst_3m, hindcast_terciles)
-
-    #"Percentagise" the boolean masks
-    percentage_lower= percentage(cat_lower_masks)
-    percentage_higher = percentage(cat_higher_masks)
-    percentage_middle = percentage(cat_middle_masks)
-
-    #Reorganise to one dataset for ease
+    #Select for data
+    fcst = fcst_3m[list(fcst_3m.data_vars)[0]]
+    #Form counts based on catagories 
+    lower, higher, middle = counts(fcst, hindcast_terciles)
     total_percentage = xr.Dataset({
-        'lower':percentage_lower,
-        'higher':percentage_higher,
-        'middle':percentage_middle
-        })
-
+        'lower': percentage(lower),
+        'higher': percentage(higher),
+        'middle': percentage(middle)
+    })
+    #Save out file for plots 
     total_percentage.to_netcdf(f"{products_forecast}/{forecast_fname}.3m.forecast_percentages.nc")
         
     
@@ -119,36 +93,26 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
     Saves output data-array that contains the percent values for each tercile and co-ord. 
     
     """
+    # Add valid_time to the xr.Dataset
     start_month = pd.to_datetime(forecast_data.start_date.values).month
     forecast_indexed = forecast_data.assign_coords({"start_month": start_month})
-    
-    # Add valid_time to the xr.Dataset
+
+    #Select the data out
+    data_var = list(forecast_data.data_vars)[0]
+
+    #Select for each month
     for i in range(forecast_data.sizes['forecastMonth']):
-        #Select for each forecast Month
-        fc_one_month = forecast_data.isel(forecastMonth=i)
+        fc_one_month = forecast_data.isel(forecastMonth=i)[data_var]
         hctt = hindcast_terciles.isel(forecastMonth=i)
-
         fc_append_name = f'month_{i}'
-
-        #Select for variable
-        data_var = list(fc_one_month.data_vars)[0]
-        fc_one_month = fc_one_month[data_var]
-
-        cat_lower_masks, cat_higher_masks, cat_middle_masks = counts(fc_one_month, hctt)
-
-        #"Percentagise" the boolean masks
-        percentage_lower= percentage(cat_lower_masks)
-        percentage_higher = percentage(cat_higher_masks)
-        percentage_middle = percentage(cat_middle_masks)
-
-        #Reorganise to one dataset for ease
+    #For each month form catagories
+        lower, higher, middle = counts(fc_one_month, hctt)
         total_percentage = xr.Dataset({
-            'lower':percentage_lower,
-            'higher':percentage_higher,
-            'middle':percentage_middle
+            'lower': percentage(lower),
+            'higher': percentage(higher),
+            'middle': percentage(middle)
         })
-        
-
+    #Save out file for plots
         total_percentage.to_netcdf(f"{products_forecast}/{forecast_fname}.i{fc_append_name}.forecast_percentages.nc")
         
 

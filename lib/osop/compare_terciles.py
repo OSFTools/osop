@@ -167,13 +167,15 @@ def compute_forecast(config, downloaddir, products_hindcast, products_forecast):
         None
     """
     # hindcast data set info 
+    # 1 Month
     hcst_terciles_1m = "{fpath}/{origin}_{systemhc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.1m.tercile_thresholds.nc".format(
         fpath=products_hindcast,**config
     )
     hcst_terciles_1m = xr.open_dataset(hcst_terciles_1m)
+    # 3 Month
     hcst_terciles_3m = "{fpath}/{origin}_{systemhc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.tercile_thresholds.nc".format(
         fpath=products_hindcast,**config
-    )
+    )   
     hcst_terciles_3m = xr.open_dataset(hcst_terciles_3m)
 
     # forecast data set info

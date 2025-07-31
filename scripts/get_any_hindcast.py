@@ -93,21 +93,39 @@ def do_cdsapi_call(
     if os.path.exists(fname):
         print(f"File {fname} already exists")
     else:
-        c.retrieve(
-            "seasonal-monthly-single-levels",
-            {
-                "format": "grib",
-                "originating_centre": f"{centre}",
-                "system": system,
-                "variable": [variable],
-                "product_type": "monthly_mean",
-                "year": years,
-                "month": "{:02d}".format(month),
-                "leadtime_month": leadtime_month,
-                "area": area,
-            },
-            f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
-        )
+        try:
+            c.retrieve(
+                "seasonal-monthly-single-levels",
+                {
+                    "format": "grib",
+                    "originating_centre": f"{centre}",
+                    "system": system,
+                    "variable": [variable],
+                    "product_type": "monthly_mean",
+                    "year": years,
+                    "month": "{:02d}".format(month),
+                    "leadtime_month": leadtime_month,
+                    "area": area,
+                },
+                f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
+            )
+        except:
+            print("system is incorrect... trying previous system...")
+            c.retrieve(
+                "seasonal-monthly-single-levels",
+                {
+                    "format": "grib",
+                    "originating_centre": f"{centre}",
+                    "system": system -1 ,
+                    "variable": [variable],
+                    "product_type": "monthly_mean",
+                    "year": years,
+                    "month": "{:02d}".format(month),
+                    "leadtime_month": leadtime_month,
+                    "area": area,
+                },
+                f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
+            )
 
 
 def parse_args():

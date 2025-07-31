@@ -22,16 +22,29 @@ conda activate osop
 set -u
 
 # pick download location
+# YAML="variables.yml"
+# variable=$(awk -F':' '/^[[:space:]]*variable:/ {split($2, val, "#"); gsub(/^[ \t]+|[ \t]+$/, "", val[1]); print val[1]}' "$YAML")
+# logdir=$(awk -F':' '/^[[:space:]]*logdir:/ {split($2, val, "#"); gsub(/^[ \t]+|[ \t]+$/, "", val[1]); print val[1]}' "$YAML")
+# echo "Logdir: $logdir"
+# mkdir -p $logdir
 
-logdir=$SCRATCH/seafoam/data/master/hindcast/logfiles
-mkdir -p $logdir
 
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
 export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 
-variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
+
+variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
+logdir=$SCRATCH/seafoam/data/master/hindcast/logfiles
+mkdir -p $logdir
+
+
+
+
+
+
+
 
 
 # get ERA5 data

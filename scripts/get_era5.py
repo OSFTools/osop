@@ -14,7 +14,9 @@ import os
 import warnings
 warnings.filterwarnings('ignore')
 
-import argparse
+
+import yaml
+from yaml.loader import SafeLoader
 
 
 def get_obs(obs_fname, config):
@@ -51,55 +53,45 @@ def get_obs(obs_fname, config):
     return obs_fname
 
 
-def parse_args():
-    """
-    set up argparse to get command line arguments
-
-    Returns:
-        args: argparse args object
-    """
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--month", required=True, help="start month for observations")
-    parser.add_argument(
-        "--leads", required=True, help="forecast range in months (comma separated)"
-    )
-    parser.add_argument(
-        "--area",
-        required=True,
-        help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
-    )
-    parser.add_argument("--downloaddir", required=True, help="location to download to")
-    parser.add_argument("--variable", required=True, help="variable to download")
-    parser.add_argument(
-        "--years",
-        required=False,
-        help="Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
-    )
-
-    args = parser.parse_args()
-    return args
-
-
 if __name__ == "__main__":
     """
     Called when this is run as a script
     Get the command line arguments using argparse
     Call the main funciton to do download era5
     """
+    # get remaning arguments from yml file
+    ymllocation = os.path.join("variables.yml")
 
-    # get command line args
-    args = parse_args()
+    with open(ymllocation, "r") as stream:
+        try:
+            print('yml found')
+            # Converts yaml document to python object
+            config_test = yaml.load(stream, Loader=SafeLoader)
+            # Converts contents to useable dictionary
+            Services = config_test["Services"]
+            Month_test = config_test["month"]
+            leads_test = config_test["leads"]
+            area_test = config_test["area"]
+            location_test = config_test["location"]
+            varaible_test = config_test["variable"]
+            downloaddir_test = config_test["downloaddir"]
+            years = config_test["years"]
+            print('yml success')
+        except yaml.YAMLError as e:
+            print(e)
+
+    #Make directory if it dosnt exist. 
+    os.makedirs(downloaddir_test, exist_ok=True)
 
     # unpack args and reformat if needed
-    downloaddir = args.downloaddir
-    month = int(args.month)
-    leadtime_month = [int(l)-1 for l in args.leads.split(",")]
+    downloaddir = downloaddir_test
+    month = Month_test
+    leadtime_month = [int(l)-1 for l in leads_test.split(",")]
     # for filename to keep consistent with hindcast filenames
     leads_str = "".join([str(mon) for mon in leadtime_month])
-    area_bounds = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
-    var = args.variable
+    area_bounds = [float(pt) for pt in area_test.split(",")]
+    area_str = area_test.replace(",", ":")
+    var = varaible_test
 
     # add arguments to config
     config = dict(
@@ -111,9 +103,9 @@ if __name__ == "__main__":
         var = var,
     )
 
-    if args.years:
-        config['hcstarty'] = int(args.years[0])
-        config['hcendy'] = int(args.years[1])
+    if years:
+        config['hcstarty'] = int(years[0])
+        config['hcendy'] = int(years[1])
     else:
         config['hcstarty'] = 1993
         config['hcendy'] = 2016

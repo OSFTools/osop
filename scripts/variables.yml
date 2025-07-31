@@ -1,0 +1,30 @@
+#Edit Variables appropriately
+
+#Service and relevent version 
+Services:
+    ecmwf: 51
+    meteo_france: 9
+    dwd: 22
+    cmcc: 35
+    ncep: 2
+    jma: 3
+    eccc_can: 4
+    eccc_gem5: 5
+    ukmo: 604
+
+# set General parameters 
+month: 5 # initialisation month
+leads: "2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
+area: "45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
+variable: "2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
+location: "Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
+
+#Hindcast
+downloaddir: "$SCRATCH/seafoam/data/master/hindcast/downloads"
+productsdir: "$SCRATCH/seafoam/data/master/hindcast/products"
+scoresdir: "$SCRATCH/seafoam/data/master/hindcast/scores"
+plotdir: "$SCRATCH/seafoam/data/master/hindcast/plots"
+logdir: "$SCRATCH/seafoam/data/master/hindcast/logfiles"
+years: False #If hindcast years need to be cut down write as such - [1997,2000]
+
+#Forecast

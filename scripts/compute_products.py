@@ -6,7 +6,7 @@ See LICENSE in the root of the repository for full licensing details.
 """
 
 # Ensure the top level directory has been added to PYTHONPATH
-import argparse
+
 
 #import functions 
 import os
@@ -18,43 +18,6 @@ from yaml.loader import SafeLoader
 from osop.compute_products_func import calc_products
 
 
-
-def parse_args():
-    """
-    set up argparse to get command line arguments
-
-    Returns:
-        args: argparse args object
-    """
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--centre", required=True, help="centre to download")
-    parser.add_argument("--month", required=True, help="start month for hindcasts")
-    parser.add_argument(
-        "--leads", required=True, help="forecast range in months (comma separated)"
-    )
-    parser.add_argument(
-        "--area",
-        required=True,
-        help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
-    )
-    parser.add_argument(
-        "--variable",
-        required=True,
-        help="variable to download, 2m_temperature, total_precipitation",
-    )
-    parser.add_argument("--downloaddir", required=True, help="location to get from")
-    parser.add_argument("--productsdir", required=True, help="location to download to")
-    parser.add_argument(
-        "--years",
-        required=False,
-        help="Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
-    )
-
-    args = parser.parse_args()
-    return args
-
-
 if __name__ == "__main__":
     """
     Called when this is run as a script
@@ -63,60 +26,72 @@ if __name__ == "__main__":
     """
 
     # get command line args
-    args = parse_args()
-
-    # unpack args and reformat if needed
-    centre = args.centre
-    downloaddir = args.downloaddir
-    productsdir = args.productsdir
-    month = int(args.month)
-    leads = args.leads
-    leadtime_month = [int(l) for l in args.leads.split(",")]
-    leads_str = "".join([str(mon) for mon in leadtime_month])
-    area = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
-    variable = args.variable
-
-    # get remaning arguments from yml file
-    ymllocation = os.path.join(downloaddir, "parseyml.yml")
-
+    ymllocation = os.path.join("variables.yml")
     with open(ymllocation, "r") as stream:
         try:
+            print('yml found')
             # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
+            config_test = yaml.load(stream, Loader=SafeLoader)
             # Converts contents to useable dictionary
-            Services = services["Services"]
+            Services = config_test["Services"]
+            Month_test = config_test["month"]
+            leads_test = config_test["leads"]
+            area_test = config_test["area"]
+            varaible_test = config_test["variable"]
+            downloaddir_test = config_test["downloaddir"]
+            productsdir = config_test["productsdir"]
+            years = config_test["years"]
+            centre = config_test["centre"]
+            print('yml success')
         except yaml.YAMLError as e:
             print(e)
+    
+    downloaddir_test = os.path.expandvars(downloaddir_test)
+    productsdir = os.path.expandvars(productsdir)
+    os.makedirs(productsdir, exist_ok=True)
 
+
+    # unpack args and reformat if needed
+    downloaddir = downloaddir_test
+    productsdir = productsdir
+    month = int(Month_test)
+    leads = leads_test
+    leadtime_month = [int(l) for l in leads_test.split(",")]
+    leads_str = "".join([str(mon) for mon in leadtime_month])
+    area = [float(pt) for pt in area_test.split(",")]
+    area_str = area_test.replace(",", ":")
+    variable = varaible_test
+
+   
     # add arguments to config
     config = dict(
         start_month=month,
         leads=leadtime_month,
-        origin=centre,
         area_str=area_str,
         leads_str=leads_str,
         var=variable,
     )
 
-    if args.years:
-        config["hcstarty"] = args.years[0]
-        config["hcendy"] = args.years[1]
+    if years:
+        config["hcstarty"] = years[0]
+        config["hcendy"] = years[1]
     else:
         config["hcstarty"] = 1993
         config["hcendy"] = 2016
 
-    ## hindcast info
-    if centre == "eccc":
-        # two models aka systems are live - call twice with each system number
-        config["system"] = Services["eccc_can"]
-        calc_products(config, downloaddir, productsdir)
+    for centre in config_test["centre"]:
+        config["origin"] = centre
+        ## hindcast info
+        if centre == "eccc":
+            # two models aka systems are live - call twice with each system number
+            config["system"] = Services["eccc_can"]
+            calc_products(config, downloaddir, productsdir)
 
-        ## repeat for second system
-        config["system"] = Services["eccc_gem5"]
-        calc_products(config, downloaddir, productsdir)
-    else:
-        if centre not in Services.keys():
-            raise ValueError(f"Unknown system for C3S: {centre}")
-        config["system"] = Services[centre]
-        calc_products(config, downloaddir, productsdir)
+            ## repeat for second system
+            config["system"] = Services["eccc_gem5"]
+            calc_products(config, downloaddir, productsdir)
+        else:
+            if centre not in Services.keys():
+                raise ValueError(f"Unknown system for C3S: {centre}")
+            config["system"] = Services[centre]
+            calc_products(config, downloaddir, productsdir)

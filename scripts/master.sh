@@ -85,12 +85,6 @@ fi
 for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do 
     set +e
     python get_any_hindcast.py \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --variable $variable\
-        --downloaddir $downloaddir \
         > $logdir/download_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
@@ -102,13 +96,6 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     # compute terciles and anomalies
     set +e
     python compute_products.py \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --variable $variable \
-        --downloaddir $downloaddir \
-        --productsdir $productsdir \
         > $logdir/product_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
@@ -120,14 +107,6 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     # calculate verification scores
     set +e
     python compute_scores.py \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --downloaddir $downloaddir \
-        --scoresdir $scoresdir \
-        --productsdir $productsdir \
-        --variable $variable \
         > $logdir/verification_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
@@ -139,15 +118,6 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     # plot scores
         set +e
     python plot_verification.py \
-        --location $location \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --downloaddir $downloaddir \
-        --scoresdir $scoresdir \
-        --plotdir $plotdir \
-        --variable $variable \
         > $logdir/plot_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e

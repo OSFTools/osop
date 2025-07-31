@@ -20,11 +20,13 @@ variable: "2m_temperature" # variable of interest, typically "2m_temperature" or
 location: "Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 
 #Hindcast
-downloaddir: "$SCRATCH/seafoam/data/master/hindcast/downloads"
+downloaddir: "$SCRATCH/seafoam/data/master/hindcast/downloads/x"
 productsdir: "$SCRATCH/seafoam/data/master/hindcast/products"
-scoresdir: "$SCRATCH/seafoam/data/master/hindcast/scores"
+scoresdir: "$SCRATCH/seafoam/data/master/hindcast/scores/x"
 plotdir: "$SCRATCH/seafoam/data/master/hindcast/plots"
 logdir: "$SCRATCH/seafoam/data/master/hindcast/logfiles"
 years: False #If hindcast years need to be cut down write as such - [1997,2000]
+centre: ["meteo_france","dwd","cmcc","ncep","ukmo","ecmwf","jma","eccc"]
+obs: False
 
 #Forecast

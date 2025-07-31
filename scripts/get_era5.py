@@ -81,6 +81,8 @@ if __name__ == "__main__":
             print(e)
 
     #Make directory if it dosnt exist. 
+
+    downloaddir_test = os.path.expandvars(downloaddir_test)
     os.makedirs(downloaddir_test, exist_ok=True)
 
     # unpack args and reformat if needed

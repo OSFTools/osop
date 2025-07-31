@@ -22,55 +22,21 @@ conda activate osop
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master/hindcast/downloads
-productsdir=$SCRATCH/seafoam/data/master/hindcast/products
-scoresdir=$SCRATCH/seafoam/data/master/hindcast/scores
-plotdir=$SCRATCH/seafoam/data/master/hindcast/plots
+
 logdir=$SCRATCH/seafoam/data/master/hindcast/logfiles
-mkdir -p $downloaddir
-mkdir -p $plotdir
 mkdir -p $logdir
-mkdir -p $productsdir
-mkdir -p $scoresdir
+
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
 export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 
-#create a yml file to pass dictionary parameters
-parseyml="$downloaddir/parseyml.yml"
-
-# set parameters 
-month=5 # initialisation month
-leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
-area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
 variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
-location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
-
-# Services in use:
-cat <<EOF > "$parseyml"
-Services:
-    ecmwf: 51
-    meteo_france: 9
-    dwd: 21
-    cmcc: 35
-    ncep: 2
-    jma: 3
-    eccc_can: 2
-    eccc_gem5: 3
-    ukmo: 602
-EOF
-echo "YML file created: $parseyml"
 
 
 # get ERA5 data
 set +e
 python get_era5.py \
-    --month $month \
-    --leads $leads \
-    --area $area \
-    --downloaddir $downloaddir \
-    --variable $variable \
     > $logdir/era5_log_${variable}.txt 2>&1
 exitcode=$?
 set -e
@@ -85,12 +51,6 @@ fi
 for centre in meteo_france ;do 
     set +e
     python get_any_hindcast.py \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --variable $variable\
-        --downloaddir $downloaddir \
         > $logdir/download_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
@@ -102,13 +62,6 @@ for centre in meteo_france ;do
     # compute terciles and anomalies
     set +e
     python compute_products.py \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --variable $variable \
-        --downloaddir $downloaddir \
-        --productsdir $productsdir #\
         #> $downloaddir/product_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
@@ -120,14 +73,6 @@ for centre in meteo_france ;do
     # calculate verification scores
     set +e
     python compute_scores.py \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --downloaddir $downloaddir \
-        --scoresdir $scoresdir \
-        --productsdir $productsdir \
-        --variable $variable \
         > $logdir/verification_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e
@@ -139,15 +84,6 @@ for centre in meteo_france ;do
     # plot scores
         set +e
     python plot_verification.py \
-        --location $location \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --downloaddir $downloaddir \
-        --scoresdir $scoresdir \
-        --plotdir $plotdir \
-        --variable $variable \
         > $logdir/plot_log_${variable}_${centre}.txt 2>&1
     exitcode=$?
     set -e

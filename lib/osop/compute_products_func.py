@@ -99,7 +99,7 @@ def get_thresh(icat, quantiles, xrds, dims=["number", "start_date"]):
         tuple: A tuple containing the lower and upper boundaries for the forecast category.
     """
 
-    if not all(elem in xrds.dims for elem in dims):
+    if not all(elem in xrds.sizes for elem in dims):
         raise ValueError(
             "Some of the dimensions in {} is not present in the xr.Dataset {}".format(
                 dims, xrds
@@ -155,7 +155,7 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir):
 
                 h_lo, h_hi = get_thresh(icat, quantiles, h)
                 probh = np.logical_and(h > h_lo, h <= h_hi).sum("number") / float(
-                    h.dims["number"]
+                    h.sizes["number"]
                 )
 
                 # Instead of using the coordinate 'quantile' coming from the hindcast xr.Dataset

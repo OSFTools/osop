@@ -157,7 +157,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         h = xr.open_dataset(f"{productsdir}/{hcst_bname}.{aggr}.ensmean.nc")
         # Reading anomalies file
         ha = xr.open_dataset(f"{productsdir}/{hcst_bname}.{aggr}.anom.nc")
-        is_fullensemble = "number" in ha.dims
+        is_fullensemble = "number" in ha.sizes
 
         # create empty list to store correlations and p-values to be concatenated after looping over months
         l_corr = list()

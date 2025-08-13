@@ -27,7 +27,7 @@ def percentage(array):
 
     return array_percentage
 
-def counts(fcst,terciles):
+def mask_cat(fcst,terciles):
     """
     Creates a boolean mask for where the forecast value falls.
     Parameters: 

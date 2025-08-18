@@ -48,8 +48,8 @@ def test_interp_target():
     assert isinstance(result, xr.Dataset)
 
     # Check if the result has the expected dimensions
-    assert "lat" in result.dims
-    assert "lon" in result.dims
+    assert "lat" in result.sizes
+    assert "lon" in result.sizes
 
     # Check if the result has the expected coordinates
     assert np.allclose(result.lat.values, np.arange(34.5, 39.5, res))

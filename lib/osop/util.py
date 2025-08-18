@@ -119,7 +119,6 @@ def index(forecast_local, st_dim_name):
         engine="cfgrib",
         backend_kwargs=dict(time_dims=("forecastMonth", st_dim_name)),
     )
-    print("this is forecast_data", forecast_data)
     # force dask.array using chunks on leadtime, latitude and longitude coordinate
     forecast_data = forecast_data.chunk({"forecastMonth": 1, "latitude": "auto", "longitude": "auto"})
     forecast_data = forecast_data.rename(

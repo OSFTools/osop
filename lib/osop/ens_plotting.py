@@ -75,29 +75,30 @@ def get_cmap(precip_cs=False, wmo_cs=True):
     return cmap_below, cmap_normal, cmap_above
 
 
-def plot_tercile_fc(mme, config, plotsdir, var="precipitation", mask=None,):
+def plot_tercile_fc(mme, config, plotsdir, forecast_fname, var="precipitation", mask=None):
     """
-    Function to plot a tercile forecast with differet colormaps
+    Function to plot a tercile forecast with different colormaps
     for each of three terciles. Uses a threshold of 40%
-    below which it does not plot
+    below which it does not plot.
 
-    mme - dataArray with tercile forecasts in it
-    config - Dictionary used for variables in title of plot
-    plotsdir - Location to save to. 
-    var - name of variable in dataSet
-    mask(optional, dataArray) - if using a dry mask, pass it in here
-
+    Parameters:
+    - mme: xarray DataArray with tercile forecasts
+    - config: Dictionary used for variables in title of plot
+    - plotsdir: Location to save the plot
+    - forecast_fname: Filename for saving the plot
+    - var: Variable name in the dataset
+    - mask: Optional dry mask as a DataArray
     """
-    # Setting up of titles for plots and saving
-    i = int("{i}".format(**config))
-    i = i+1
-    config["i"]=i
-    atitle = "Tercile Summary:{origin} {systemfc} {fcstarty} \nstartmonth:{start_month} \nlead:{i} \nVariable: {hc_var}".format(**config)
 
-    # add masking with defined threshold
+    # Set up title
+    lead = int(config["i"]) +1
+    atitle = (
+        f"Tercile Summary:{config['origin']} {config['systemfc']} {config['fcstarty']} \n"
+        f"startmonth:{config['start_month']} \nlead:{lead} \nVariable: {config['hc_var']}"
+    )
+
+    # Apply threshold mask
     LTHRESH = 40.0
-
-    amask = np.zeros_like(mme[var].data)
     Z1 = mme[var].data[0, ...]
     Z2 = mme[var].data[1, ...]
     Z3 = mme[var].data[2, ...]
@@ -106,67 +107,39 @@ def plot_tercile_fc(mme, config, plotsdir, var="precipitation", mask=None,):
     Z3_m = np.logical_or(np.logical_or(Z3 < Z1, Z3 < Z2), Z3 < LTHRESH)
     Z_all_m = np.stack([Z1_m, Z2_m, Z3_m])
 
-    # add masked array back into dataArray
     mme_mask = mme.copy(deep=True)
     mme_mask[var] = mme[var].where(np.logical_not(Z_all_m))
 
-    # choose type of colourscale to use - precipitation like or
-    # temperature like
-    if var == "precip" or var == "precipitation" or var == "pr":
-        precip_cs = True
-    else:
-        precip_cs = False
-
+    # Choose colour scheme
+    precip_cs = var in ["precip", "precipitation", "pr"]
     cmap_below, cmap_normal, cmap_above = get_cmap(precip_cs=precip_cs, wmo_cs=True)
 
     projection = ccrs.PlateCarree()
-
+    fig = plt.figure()
     ax = plt.axes(projection=projection)
 
-    # contour
     levels = np.arange(LTHRESH, 85.0, 5.0)
 
-    # below
+    # Plot each tercile
     norm = BoundaryNorm(levels, ncolors=cmap_below.N, extend="max")
-    clev1 = mme_mask[var][0, ...].plot(
-        ax=ax,
-        transform=ccrs.PlateCarree(),
-        cmap=cmap_below,
-        norm=norm,
-        add_colorbar=False,
-    )
-    plt.title("")
+    clev1 = mme_mask[var][0, ...].plot(ax=ax, transform=ccrs.PlateCarree(), cmap=cmap_below, norm=norm, add_colorbar=False)
 
-    # normal
     norm = BoundaryNorm(levels, ncolors=plt.cm.Greys.N)
-    clev2 = mme_mask[var][1, ...].plot(
-        ax=ax,
-        transform=ccrs.PlateCarree(),
-        cmap=cmap_normal,
-        norm=norm,
-        add_colorbar=False,
-    )
-    plt.title("")
+    clev2 = mme_mask[var][1, ...].plot(ax=ax, transform=ccrs.PlateCarree(), cmap=cmap_normal, norm=norm, add_colorbar=False)
 
-    # above
     norm = BoundaryNorm(levels, ncolors=cmap_above.N, extend="max")
-    clev3 = mme_mask[var][2, ...].plot(
-        ax=ax,
-        transform=ccrs.PlateCarree(),
-        cmap=cmap_above,
-        norm=norm,
-        add_colorbar=False,
-    )
-    plt.title(atitle, fontsize = 12, loc = 'left')
+    clev3 = mme_mask[var][2, ...].plot(ax=ax, transform=ccrs.PlateCarree(), cmap=cmap_above, norm=norm, add_colorbar=False)
 
+    # Set title once
+    plt.title(atitle, fontsize=12, loc='left')
     ax.coastlines()
 
+    # Optional map feature
     map_setting = location(config)
     if map_setting != "False":
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
 
-
-    # color bars move to bottom and set in nice place
+    # Colour bars
     cbar1 = plt.axes((0.15, 0.05, 0.2, 0.05))
     cbar = plt.colorbar(clev1, extend="max", location="bottom", cax=cbar1)
     cbar.set_label("Prob. below (%)")
@@ -186,20 +159,11 @@ def plot_tercile_fc(mme, config, plotsdir, var="precipitation", mask=None,):
     for label in cbar.ax.xaxis.get_ticklabels()[1::2]:
         label.set_visible(False)
 
-    # grid lines
-    gl = ax.gridlines(
-        crs=ccrs.PlateCarree(),
-        draw_labels=True,
-        linewidth=1,
-        color="black",
-        linestyle="--",
-    )
+    # Gridlines
+    ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color="black", linestyle="--")
 
-    # dry mask
+    # Optional dry mask
     if mask is not None:
-        # plot mask as dots over the top of tercile map
-        # and add legend for it.
-        # Could make these user defined if required
         mask.plot.contourf(
             ax=ax,
             transform=ccrs.PlateCarree(),
@@ -209,22 +173,14 @@ def plot_tercile_fc(mme, config, plotsdir, var="precipitation", mask=None,):
             colors=None,
             add_labels=False,
         )
-        plt.figtext(
-            0.5,
-            0.15,
-            "Dotted area has average rainfall <0.1 mm/day ",
-            ha="center",
-            fontsize=12,
-        )
+        plt.figtext(0.5, 0.15, "Dotted area has average rainfall <0.1 mm/day", ha="center", fontsize=12)
 
-    forecast_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_lead_{i}_{area_str}_{hc_var}".format(**config
-    )
+    # Save figure
     figname = f"{plotsdir}/{forecast_fname}.png"
-    plt.savefig(figname)
+    plt.savefig(figname,bbox_inches='tight',pad_inches = 0.01)
 
-    return 
 
-def reformatt(forecast_local, variable):
+def reformatt(data, variable):
     """
     Takes a forecast_percentage dataset and reformats it to be able to run through
     ens_plotting routines. 
@@ -237,7 +193,7 @@ def reformatt(forecast_local, variable):
     new_dataset (xarray): A reformatted version of the forecast data for ens_plotting functions. 
     """
 
-    data = xr.open_dataset(forecast_local)
+
     try:
         #Stack the three layers into a new dimension C
         values = np.stack([
@@ -283,9 +239,15 @@ def plot_forecasts(productdir,plotsdir, config):
     """
     
     # forecast data set info
-    forecast_local = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}.forecast_percentages.nc".format(
+    forecast_local_1m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}.forecast_percentages.nc".format(
         fpath=productdir, **config
     )
+    forecast_name_1m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}".format(**config)
+    forecast_local_3m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
+        fpath=productdir, **config
+    )
+    forecast_name_3m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m".format(**config)
+
 
     #checks the variable for use. 
     variable = "{hc_var}".format(**config)
@@ -299,10 +261,17 @@ def plot_forecasts(productdir,plotsdir, config):
         variable = variable
 
     #Reformatt dataset for plotting
-    plot_dataset = reformatt(forecast_local, variable)
+    fcst_local_1m = xr.open_dataset(forecast_local_1m)
+    fcst_local_3m = xr.open_dataset(forecast_local_3m)
+    fcst_local_3m = fcst_local_3m.squeeze(dim='forecastMonth')
+
+    plot_dataset_1m = reformatt(fcst_local_1m, variable)
+    plot_dataset_3m = reformatt(fcst_local_3m, variable)
+
     
     #Tercile Summary - 1month forecasts, per origin centre.
-    plot_tercile_fc(plot_dataset, config, plotsdir, var=variable, mask=None)
+    plot_tercile_fc(plot_dataset_1m, config, plotsdir,forecast_name_1m, var=variable, mask=None)
+    plot_tercile_fc(plot_dataset_3m,config, plotsdir,forecast_name_3m, var=variable, mask=None)
     
 
     

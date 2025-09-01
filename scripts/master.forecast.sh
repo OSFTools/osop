@@ -69,11 +69,12 @@ Services:
     eccc_can: 4
     eccc_gem5: 5
     ukmo: 604
+    mme: 1
 EOF
 echo "YML file created: $parseyml"
 
 # loop over all centres of interest and get data
-for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do  
+for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do  
     set +e
     python get_any_hindcast.py \
         --centre $centre \

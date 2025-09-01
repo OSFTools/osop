@@ -14,7 +14,7 @@ from yaml.loader import SafeLoader
 
 
 #import local modules for function usage 
-from osop.compare_terciles import compute_forecast
+from osop.compare_terciles import compute_forecast, mme_products
 
 
 # Ensure the top level directory has been added to PYTHONPATH
@@ -156,9 +156,14 @@ if __name__ == "__main__":
         config["systemfc"] = Services["eccc_gem5"]
         config["systemhc"] = Services_hc["eccc_gem5"]
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
+    elif centre == "mme":
+        config["systemfc"] = Services["mme"]
+        mme_products(Services,config,productsfcdir)
     else:
         if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")
         config["systemfc"] = Services[centre]
         config["systemhc"] = Services_hc[centre]
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
+
+    

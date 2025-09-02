@@ -27,11 +27,14 @@ def mme_products(Services,config,productsfcdir):
     #Remove when happy
     del Services["jma"]
     
+    #turn the leads string into array to allow naming of individual months
     months_1m = list(range(len('{leads_str}'.format(**config))))
     
     #Create a empty list for storage of arrays
-    del Services["{origin}".format(**config)]
     datasets_3m = []
+
+    #remove mme from the list thats worked on 
+    del Services["{origin}".format(**config)]
     
     for value in months_1m:
         datasets_1m = []
@@ -58,6 +61,7 @@ def mme_products(Services,config,productsfcdir):
         **config)
         mme_products_1m.to_netcdf(f"{productsfcdir}/{mme_fname}.forecast_percentages.nc")
 
+    #Repeat for 3months
     for origin, systemfc in Services.items():
         #open all services and store
         config_copy = copy.deepcopy(config) #Not sure this is better that just updating it in loop at reupdating it at end outside of loop

@@ -274,36 +274,5 @@ def plot_forecasts(productdir,plotsdir, config):
     plot_tercile_fc(plot_dataset_3m,config, plotsdir,forecast_name_3m, var=variable, mask=None)
     
 
-def plot_mme(Services,config,productsfcdir, plotsdir):   
-    # forecast data set info
-    
-    forecast_local_3m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
-        fpath=productsfcdir, **config
-    )
-    forecast_name_3m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m".format(**config)
 
-
-    #checks the variable for use. 
-    variable = "{hc_var}".format(**config)
-    if variable == "2m_temperature":
-        variable = "temperature"
-    elif variable == "total_precipitation":
-        variable = "precipitation"
-    else:
-        print("Variable not identified")
-        #Future functionality should be able to handle this - see plot_tercile_fc
-        variable = variable
-
-    #Reformatt dataset for plotting
-    
-    fcst_local_3m = xr.open_dataset(forecast_local_3m)
-    fcst_local_3m = fcst_local_3m.squeeze(dim='forecastMonth')
-
-
-    plot_dataset_3m = reformatt(fcst_local_3m, variable)
-
-    
-    #Tercile Summary - 1month forecasts, per origin centre.
-   
-    plot_tercile_fc(plot_dataset_3m,config, plotsdir,forecast_name_3m, var=variable, mask=None) 
  

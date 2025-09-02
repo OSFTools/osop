@@ -14,7 +14,7 @@ from yaml.loader import SafeLoader
 
 
 #import local modules for function usage 
-from osop.ens_plotting import plot_forecasts, plot_mme
+from osop.ens_plotting import plot_forecasts
 
 
 # Ensure the top level directory has been added to PYTHONPATH
@@ -145,9 +145,6 @@ if __name__ == "__main__":
             ## repeat for second system
             config["systemfc"] = Services["eccc_gem5"]
             plot_forecasts(productsfcdir,plotsdir,config)
-        elif centre == "mme":
-            config["systemfc"] = Services["mme"]
-            plot_mme(Services,config,productsfcdir, plotsdir)
         else:
             if centre not in Services.keys():
                raise ValueError(f"Unknown system for C3S: {centre}")

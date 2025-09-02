@@ -23,13 +23,41 @@ def mme_products(Services,config,productsfcdir):
     None
     Saves array (x-array) - The multi-model ensemble forecast percentages.
     """
+    
     #Remove when happy
     del Services["jma"]
     
+    months_1m = list(range(len('{leads_str}'.format(**config))))
     
     #Create a empty list for storage of arrays
     del Services["{origin}".format(**config)]
     datasets_3m = []
+    
+    for value in months_1m:
+        datasets_1m = []
+        for origin, systemfc in Services.items():
+        #open all services and store
+            config_copy = copy.deepcopy(config) #Not sure this is better that just updating it in loop at reupdating it at end outside of loop
+            config_copy.update({'origin' : origin, 'systemfc': systemfc})
+            if origin == "eccc_can":
+                config_copy.update({'origin' : "eccc", 'systemfc': '4'})
+            if origin == "eccc_gem5":
+                config_copy.update({'origin': "eccc", 'systemfc': '5'})
+
+            local_1m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}.forecast_percentages.nc".format(
+                fpath=productsfcdir,month=value, **config_copy)
+            print("this is local_1m", local_1m)
+            ds_1m = xr.open_dataset(local_1m)
+            datasets_1m.append(ds_1m)
+        #Stack and average for percantages
+        stacked_1m = xr.concat(datasets_1m, dim='model')
+        mme_products_1m = stacked_1m.mean(dim='model')
+
+        #Save out
+        mme_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}".format(month=value,
+        **config)
+        mme_products_1m.to_netcdf(f"{productsfcdir}/{mme_fname}.forecast_percentages.nc")
+
     for origin, systemfc in Services.items():
         #open all services and store
         config_copy = copy.deepcopy(config) #Not sure this is better that just updating it in loop at reupdating it at end outside of loop

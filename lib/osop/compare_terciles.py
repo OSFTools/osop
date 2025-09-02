@@ -23,19 +23,22 @@ def mme_products(Services,config,productsfcdir):
     None
     Saves array (x-array) - The multi-model ensemble forecast percentages.
     """
-    #This needs to be converted to something else: ideas are a seperate yaml - ideal because of allowal for mutiplication
-    del Services["eccc_can"]
-    del Services["eccc_gem5"]
+    #Remove when happy
     del Services["jma"]
-    del Services["mme"]
+    
     
     #Create a empty list for storage of arrays
+    del Services["{origin}".format(**config)]
     datasets_3m = []
     for origin, systemfc in Services.items():
         #open all services and store
         config_copy = copy.deepcopy(config) #Not sure this is better that just updating it in loop at reupdating it at end outside of loop
         config_copy.update({'origin' : origin, 'systemfc': systemfc})
-        
+        if origin == "eccc_can":
+            config_copy.update({'origin' : "eccc", 'systemfc': '4'})
+        if origin == "eccc_gem5":
+            config_copy.update({'origin': "eccc", 'systemfc': '5'})
+
         local = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
         fpath=productsfcdir, **config_copy)
 
@@ -44,10 +47,9 @@ def mme_products(Services,config,productsfcdir):
 
     #Stack and average for percantages
     stacked_3m = xr.concat(datasets_3m, dim='model')
-    averaged_dataset_3m = stacked_3m.mean(dim='model')
+    mme_products_3m = stacked_3m.mean(dim='model')
 
-    #Squeeze to put into plotting format
-    mme_products_3m = averaged_dataset_3m #.squeeze(dim='forecastMonth')
+    #Save out
     mme_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
         **config)
     mme_products_3m.to_netcdf(f"{productsfcdir}/{mme_fname}.3m.forecast_percentages.nc")

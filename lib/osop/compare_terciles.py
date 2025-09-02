@@ -8,12 +8,50 @@ See LICENSE in the root of the repository for full licensing details.
 import xarray as xr
 import pandas as pd
 from osop.util import get_tindex, index
+import copy
 
-def mme_products(Services,config, productsfcdir):
-    print(Services)
-    print(config)
-    print(productsfcdir)
-    print("function hit")
+def mme_products(Services,config,productsfcdir):
+    """
+    Calls each service percentage file to combine for multi-model ensemble.
+    
+    Parameters:
+    Services (list): List of services to combine
+    config (dict): The cofiguraiton parameters for the forecast
+    productsfcdir (str): The location for the files to output too and get from
+    
+    Returns:
+    None
+    Saves array (x-array) - The multi-model ensemble forecast percentages.
+    """
+    #This needs to be converted to something else: ideas are a seperate yaml - ideal because of allowal for mutiplication
+    del Services["eccc_can"]
+    del Services["eccc_gem5"]
+    del Services["jma"]
+    del Services["mme"]
+    
+    #Create a empty list for storage of arrays
+    datasets_3m = []
+    for origin, systemfc in Services.items():
+        #open all services and store
+        config_copy = copy.deepcopy(config) #Not sure this is better that just updating it in loop at reupdating it at end outside of loop
+        config_copy.update({'origin' : origin, 'systemfc': systemfc})
+        
+        local = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
+        fpath=productsfcdir, **config_copy)
+
+        ds_3m = xr.open_dataset(local)
+        datasets_3m.append(ds_3m)
+
+    #Stack and average for percantages
+    stacked_3m = xr.concat(datasets_3m, dim='model')
+    averaged_dataset_3m = stacked_3m.mean(dim='model')
+
+    #Squeeze to put into plotting format
+    mme_products_3m = averaged_dataset_3m #.squeeze(dim='forecastMonth')
+    mme_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
+        **config)
+    mme_products_3m.to_netcdf(f"{productsfcdir}/{mme_fname}.3m.forecast_percentages.nc")
+    
 
 
 def percentage(array):

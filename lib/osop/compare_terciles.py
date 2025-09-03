@@ -12,7 +12,7 @@ import copy
 
 def mme_products(Services,config,productsfcdir):
     """
-    Calls each service percentage file to combine for multi-model ensemble.
+    Loads each tercile forecast and combines for mme.
     
     Parameters:
     Services (list): List of services to combine
@@ -37,7 +37,10 @@ def mme_products(Services,config,productsfcdir):
     del Services["{origin}".format(**config)]
     
     for value in months_1m:
-        datasets_1m = []
+        mme_products_1m = None
+        n_members = len(Services)
+        #theortiecally could add weights here #weight = services[0:1] etc idea
+
         for origin, systemfc in Services.items():
         #open all services and store
             config_copy = copy.deepcopy(config) #Not sure this is better that just updating it in loop at reupdating it at end outside of loop
@@ -51,10 +54,13 @@ def mme_products(Services,config,productsfcdir):
                 fpath=productsfcdir,month=value, **config_copy)
             print("this is local_1m", local_1m)
             ds_1m = xr.open_dataset(local_1m)
-            datasets_1m.append(ds_1m)
-        #Stack and average for percantages
-        stacked_1m = xr.concat(datasets_1m, dim='model')
-        mme_products_1m = stacked_1m.mean(dim='model')
+
+
+            if mme_products_1m is None:
+                mme_products_1m = xr.zeros_like(ds_1m)
+                
+
+            mme_products_1m += ds_1m / n_members ##Once weights added would go here *ds_1m
 
         #Save out
         mme_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}".format(month=value,

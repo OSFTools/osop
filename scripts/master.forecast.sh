@@ -75,24 +75,26 @@ echo "YML file created: $parseyml"
 
 # loop over all centres of interest and get data
 for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do  
-    set +e
-    python get_any_hindcast.py \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --variable $variable\
-        --downloaddir $downloaddir \
-        --years $years \
-        > $logdir/download_log_${variable}_${centre}.txt 2>&1
-    exitcode=$?
-    set -e
-    if [ $exitcode -eq 0 ]; then
-        echo $centre : download sucessful
-    else
-        echo $centre : download failed
+    if [ "$centre" != "mme" ]; then
+        set +e
+        python get_any_hindcast.py \
+            --centre $centre \
+            --month $month \
+            --leads $leads \
+            --area $area \
+            --variable $variable\
+            --downloaddir $downloaddir \
+            --years $years \
+            > $logdir/download_log_${variable}_${centre}.txt 2>&1
+        exitcode=$?
+        set -e
+        if [ $exitcode -eq 0 ]; then
+            echo $centre : download sucessful
+        else
+            echo $centre : download failed
+        fi
+        # calculate products 
     fi
-    # calculate products 
     set +e
     python forecast_products.py \
         --centre $centre \

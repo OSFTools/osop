@@ -10,6 +10,60 @@ import pandas as pd
 from osop.util import get_tindex, index
 import copy
 
+
+def update_config(origin, systemfc, config):
+    """
+    Creates a copy of the config dict to be used for repeated load in of tercile forecasts
+
+    Parameters:
+    Origin (Str): The service to be loaded
+    Systemfc (Str): The service version 
+    config (Dict): The dictionary to be copied and variated
+
+    Returns: 
+    Config_copy (Dict): The copy of the dictionary with new updated names
+    """
+    config_copy = copy.deepcopy(config)
+    config_copy.update({'origin': origin, 'systemfc': systemfc})
+    if origin == "eccc_can":
+        config_copy.update({'origin': "eccc", 'systemfc': '4'})
+    elif origin == "eccc_gem5":
+        config_copy.update({'origin': "eccc", 'systemfc': '5'})
+    return config_copy
+
+
+def mme_process_forecasts(months, suffix, Services, productsfcdir, config):
+    """
+    Loads each tercile forecast and combines for mme.
+    
+    Parameters:
+    months (int): Set to None or value of month based on leads
+    suffix (str): Used for naming between 3months or the imonth lead
+    Services (list): List of services to combine
+    config (dict): The cofiguraiton parameters for the forecast
+    productsfcdir (str): The location for the files to output too and get from
+    
+    Returns:
+    mme_combined (array): The combined mme forecast array.
+
+    """
+    mme_combined = None
+    n_members = len(Services)
+    for origin, systemfc in Services.items():
+        config_copy = update_config(origin, systemfc, config)
+        if suffix == 'imonth':
+            file_name = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}.forecast_percentages.nc".format(
+                fpath=productsfcdir, month=months, **config_copy)
+        else:
+            file_name = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
+                fpath=productsfcdir, **config_copy)
+        ds = xr.open_dataset(file_name)
+        if mme_combined is None:
+            mme_combined = xr.zeros_like(ds)
+        mme_combined += ds / n_members
+    return mme_combined
+
+
 def mme_products(Services,config,productsfcdir):
     """
     Loads each tercile forecast and combines for mme.
@@ -23,74 +77,24 @@ def mme_products(Services,config,productsfcdir):
     None
     Saves array (x-array) - The multi-model ensemble forecast percentages.
     """
-    
+    #remove mme from the list thats worked on 
+    del Services["{origin}".format(**config)]
     #Remove when happy
     del Services["jma"]
     
     #turn the leads string into array to allow naming of individual months
     months_1m = list(range(len('{leads_str}'.format(**config))))
-
-    #remove mme from the list thats worked on 
-    del Services["{origin}".format(**config)]
-    
-    for value in months_1m:
-        mme_products_1m = None
-        n_members = len(Services)
-        #theortiecally could add weights here #weight = services[0:1] etc idea
-
-        for origin, systemfc in Services.items():
-        #open all services and store
-            config_copy = copy.deepcopy(config) #Not sure this is better that just updating it in loop at reupdating it at end outside of loop
-            config_copy.update({'origin' : origin, 'systemfc': systemfc})
-            if origin == "eccc_can":
-                config_copy.update({'origin' : "eccc", 'systemfc': '4'})
-            if origin == "eccc_gem5":
-                config_copy.update({'origin': "eccc", 'systemfc': '5'})
-
-            local_1m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}.forecast_percentages.nc".format(
-                fpath=productsfcdir,month=value, **config_copy)
-            print("this is local_1m", local_1m)
-            ds_1m = xr.open_dataset(local_1m)
-
-
-            if mme_products_1m is None:
-                mme_products_1m = xr.zeros_like(ds_1m)
-                
-
-            mme_products_1m += ds_1m / n_members ##Once weights added would go here *ds_1m
-
-        #Save out
-        mme_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}".format(month=value,
+    for month in months_1m:
+        mme_products_1m = mme_process_forecasts(month, 'imonth', Services, productsfcdir, config)
+        mme_fname_1m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}".format(month=month,
         **config)
-        mme_products_1m.to_netcdf(f"{productsfcdir}/{mme_fname}.forecast_percentages.nc")
+        mme_products_1m.to_netcdf(f"{productsfcdir}/{mme_fname_1m}.forecast_percentages.nc")
 
-    #Repeat for 3months
-    mme_products_3m = None
-    n_members = len(Services)
-    for origin, systemfc in Services.items():
-        #open all services and store
-        config_copy = copy.deepcopy(config) #Not sure this is better that just updating it in loop at reupdating it at end outside of loop
-        config_copy.update({'origin' : origin, 'systemfc': systemfc})
-        if origin == "eccc_can":
-            config_copy.update({'origin' : "eccc", 'systemfc': '4'})
-        if origin == "eccc_gem5":
-            config_copy.update({'origin': "eccc", 'systemfc': '5'})
-
-        local = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
-        fpath=productsfcdir, **config_copy)
-
-        ds_3m = xr.open_dataset(local)
-        if mme_products_3m is None:
-                mme_products_3m = xr.zeros_like(ds_1m)
-                
-
-        mme_products_3m += ds_3m / n_members ##Once weights added would go here *ds_1m
-    #Save out
-    mme_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
+    mme_products_3m = mme_process_forecasts(None, '3m', Services, productsfcdir, config)
+    mme_fname_3m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
         **config)
-    mme_products_3m.to_netcdf(f"{productsfcdir}/{mme_fname}.3m.forecast_percentages.nc")
+    mme_products_3m.to_netcdf(f"{productsfcdir}/{mme_fname_3m}.3m.forecast_percentages.nc")
     
-
 
 def percentage(array):
     """

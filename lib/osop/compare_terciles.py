@@ -29,9 +29,6 @@ def mme_products(Services,config,productsfcdir):
     
     #turn the leads string into array to allow naming of individual months
     months_1m = list(range(len('{leads_str}'.format(**config))))
-    
-    #Create a empty list for storage of arrays
-    datasets_3m = []
 
     #remove mme from the list thats worked on 
     del Services["{origin}".format(**config)]
@@ -68,6 +65,8 @@ def mme_products(Services,config,productsfcdir):
         mme_products_1m.to_netcdf(f"{productsfcdir}/{mme_fname}.forecast_percentages.nc")
 
     #Repeat for 3months
+    mme_products_3m = None
+    n_members = len(Services)
     for origin, systemfc in Services.items():
         #open all services and store
         config_copy = copy.deepcopy(config) #Not sure this is better that just updating it in loop at reupdating it at end outside of loop
@@ -81,12 +80,11 @@ def mme_products(Services,config,productsfcdir):
         fpath=productsfcdir, **config_copy)
 
         ds_3m = xr.open_dataset(local)
-        datasets_3m.append(ds_3m)
+        if mme_products_3m is None:
+                mme_products_3m = xr.zeros_like(ds_1m)
+                
 
-    #Stack and average for percantages
-    stacked_3m = xr.concat(datasets_3m, dim='model')
-    mme_products_3m = stacked_3m.mean(dim='model')
-
+        mme_products_3m += ds_3m / n_members ##Once weights added would go here *ds_1m
     #Save out
     mme_fname = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
         **config)

@@ -8,8 +8,93 @@ See LICENSE in the root of the repository for full licensing details.
 import xarray as xr
 import pandas as pd
 from osop.util import get_tindex, index
+import copy
 
 
+def update_config(origin, systemfc, config):
+    """
+    Creates a copy of the config dict to be used for repeated load in of tercile forecasts
+
+    Parameters:
+    Origin (Str): The service to be loaded
+    Systemfc (Str): The service version 
+    config (Dict): The dictionary to be copied and variated
+
+    Returns: 
+    Config_copy (Dict): The copy of the dictionary with new updated names
+    """
+    config_copy = copy.deepcopy(config)
+    config_copy.update({'origin': origin, 'systemfc': systemfc})
+    if origin == "eccc_can":
+        config_copy.update({'origin': "eccc", 'systemfc': '4'})
+    elif origin == "eccc_gem5":
+        config_copy.update({'origin': "eccc", 'systemfc': '5'})
+    return config_copy
+
+
+def mme_process_forecasts(months, suffix, Services, productsfcdir, config):
+    """
+    Loads each tercile forecast and combines for mme.
+    
+    Parameters:
+    months (int): Set to None or value of month based on leads
+    suffix (str): Used for naming between 3months or the imonth lead
+    Services (list): List of services to combine
+    config (dict): The cofiguraiton parameters for the forecast
+    productsfcdir (str): The location for the files to output too and get from
+    
+    Returns:
+    mme_combined (array): The combined mme forecast array.
+
+    """
+    mme_combined = None
+    n_members = len(Services)
+    for origin, systemfc in Services.items():
+        config_copy = update_config(origin, systemfc, config)
+        if suffix == 'imonth':
+            file_name = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}.forecast_percentages.nc".format(
+                fpath=productsfcdir, month=months, **config_copy)
+        else:
+            file_name = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
+                fpath=productsfcdir, **config_copy)
+        ds = xr.open_dataset(file_name)
+        if mme_combined is None:
+            mme_combined = xr.zeros_like(ds)
+        mme_combined += ds / n_members
+    return mme_combined
+
+
+def mme_products(Services,config,productsfcdir):
+    """
+    Loads each tercile forecast and combines for mme.
+    
+    Parameters:
+    Services (list): List of services to combine
+    config (dict): The cofiguraiton parameters for the forecast
+    productsfcdir (str): The location for the files to output too and get from
+    
+    Returns:
+    None
+    Saves array (x-array) - The multi-model ensemble forecast percentages.
+    """
+    #remove mme from the list thats worked on 
+    del Services["{origin}".format(**config)]
+    #Remove when happy
+    del Services["jma"]
+    
+    #turn the leads string into array to allow naming of individual months
+    months_1m = list(range(len('{leads_str}'.format(**config))))
+    for month in months_1m:
+        mme_products_1m = mme_process_forecasts(month, 'imonth', Services, productsfcdir, config)
+        mme_fname_1m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}".format(month=month,
+        **config)
+        mme_products_1m.to_netcdf(f"{productsfcdir}/{mme_fname_1m}.forecast_percentages.nc")
+
+    mme_products_3m = mme_process_forecasts(None, '3m', Services, productsfcdir, config)
+    mme_fname_3m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
+        **config)
+    mme_products_3m.to_netcdf(f"{productsfcdir}/{mme_fname_3m}.3m.forecast_percentages.nc")
+    
 
 def percentage(array):
     """
@@ -65,6 +150,7 @@ def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fn
     fcst_3m = fcst_3m.isel(forecastMonth=(fcst_3m['forecastMonth'] == 4))
     #Select for data
     fcst = fcst_3m[list(fcst_3m.data_vars)[0]]
+
     #Form masks based on catagories
     lower, higher, middle = mask_cat(fcst, hindcast_terciles)
     total_percentage = xr.Dataset({

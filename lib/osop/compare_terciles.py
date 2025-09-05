@@ -150,7 +150,8 @@ def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fn
     fcst_3m = fcst_3m.isel(forecastMonth=(fcst_3m['forecastMonth'] == 4))
     #Select for data
     fcst = fcst_3m[list(fcst_3m.data_vars)[0]]
-    #Form counts based on catagories 
+
+    #Form masks based on catagories
     lower, higher, middle = mask_cat(fcst, hindcast_terciles)
     total_percentage = xr.Dataset({
         'lower': percentage(lower),

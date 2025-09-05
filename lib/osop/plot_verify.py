@@ -144,7 +144,8 @@ def plot_score(
         levels = np.linspace(0.0, 0.5, 11)
         info = score_fname
         plt.title(
-            f"{score}".upper() + "\n"
+            f"{score}".upper()
+            + "\n"
             + titles[0]
             + f" {config['var']}\n"
             + titles[1]
@@ -160,7 +161,8 @@ def plot_score(
         ex_dir = "max"
         under = "purple"
         plt.title(
-            f"{score}".upper() + "\n"
+            f"{score}".upper()
+            + "\n"
             + titles[0]
             + f' {config["var"]}'
             + f" ({CATNAMES[category]})\n"
@@ -172,7 +174,8 @@ def plot_score(
         levels = np.linspace(0.0, 0.5, 11)
     elif score in ["roc", "rocss"]:
         plt.title(
-            f"{score}".upper() + "\n"
+            f"{score}".upper()
+            + "\n"
             + titles[0]
             + f' {config["var"]}'
             + f" ({CATNAMES[category]})\n"
@@ -205,9 +208,11 @@ def plot_score(
     if map_setting != "False":
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
-    
-    plt.colorbar(extend='max')
-    plt.savefig(os.path.join(plotdir, f"{info}.png"),bbox_inches='tight',pad_inches = 0.01)
+
+    plt.colorbar(extend="max")
+    plt.savefig(
+        os.path.join(plotdir, f"{info}.png"), bbox_inches="tight", pad_inches=0.01
+    )
     plt.close()
 
 
@@ -219,7 +224,7 @@ def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
     score (str): The name of the score.
     plotdir (str): The directory to save the plot.
     score_title (str): The name for the plot in the file directory.
-    
+
     Returns:
     None
     """
@@ -250,7 +255,11 @@ def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
             titles[0] + f" {config['var']}\n" + titles[1] + "\n" + titles[2], loc="left"
         )
         plt.tight_layout()
-        plt.savefig(os.path.join(plotdir, f"{score_title}.png"),bbox_inches='tight',pad_inches = 0.01)
+        plt.savefig(
+            os.path.join(plotdir, f"{score_title}.png"),
+            bbox_inches="tight",
+            pad_inches=0.01,
+        )
         plt.close()
 
 
@@ -269,9 +278,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles):
     """
     # Read the data files
     corr = xr.open_dataset(f"{scoresdir}/{hcst_bname}.{aggr}.{score}.nc")
-    corr_pval = xr.open_dataset(
-        f"{scoresdir}/{hcst_bname}.{aggr}.{score}_pval.nc"
-    )
+    corr_pval = xr.open_dataset(f"{scoresdir}/{hcst_bname}.{aggr}.{score}_pval.nc")
 
     # Rearrange the dataset longitude values for plotting purposes
     corr = corr.assign_coords(lon=(((corr.lon + 180) % 360) - 180)).sortby("lon")
@@ -340,9 +347,8 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles):
     )
     plt.tight_layout()
     figname = f"{plotdir}/{hcst_bname}.{aggr}.{score}.png"
-    plt.savefig(figname,bbox_inches='tight',pad_inches = 0.01)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
     plt.close()
-
 
 
 def generate_plots(config, titles, scoresdir, plotdir):
@@ -359,14 +365,28 @@ def generate_plots(config, titles, scoresdir, plotdir):
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
-        corr_plots(scoresdir, plotdir, score_fname, config["aggr"], config, config["score"], titles)
-    
+        corr_plots(
+            scoresdir,
+            plotdir,
+            score_fname,
+            config["aggr"],
+            config,
+            config["score"],
+            titles,
+        )
+
     elif config["score"] == "pearson_corr":
         score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}".format(
             **config
         )
         corr_plots(
-            scoresdir, plotdir, score_fname, config["aggr"], config, config["score"], titles
+            scoresdir,
+            plotdir,
+            score_fname,
+            config["aggr"],
+            config,
+            config["score"],
+            titles,
         )
 
     elif config["score"] == "rel":

@@ -8,15 +8,14 @@ See LICENSE in the root of the repository for full licensing details.
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
 
-#import functions 
+# import functions
 import os
 import yaml
 from yaml.loader import SafeLoader
 
 
-#import needed local functions
+# import needed local functions
 from osop.compute_products_func import calc_products
-
 
 
 def parse_args():

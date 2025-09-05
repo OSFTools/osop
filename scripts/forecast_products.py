@@ -13,14 +13,12 @@ import yaml
 from yaml.loader import SafeLoader
 
 
-#import local modules for function usage 
+# import local modules for function usage
 from osop.compare_terciles import compute_forecast, mme_products
 
 
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
-
-
 
 
 def parse_args():
@@ -45,9 +43,15 @@ def parse_args():
         required=True,
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
-    parser.add_argument("--downloaddir", required=True, help="location to get grib from")
-    parser.add_argument("--downloadhcdir", required=True, help="location to get yml hc services from")
-    parser.add_argument("--productshcdir", required=True, help="location to get products from")
+    parser.add_argument(
+        "--downloaddir", required=True, help="location to get grib from"
+    )
+    parser.add_argument(
+        "--downloadhcdir", required=True, help="location to get yml hc services from"
+    )
+    parser.add_argument(
+        "--productshcdir", required=True, help="location to get products from"
+    )
     parser.add_argument("--productsfcdir", required=True, help="location to save too")
     parser.add_argument(
         "--yearsfc",
@@ -117,7 +121,7 @@ if __name__ == "__main__":
             Services = services["Services"]
         except yaml.YAMLError as e:
             print(e)
-    
+
     ymllocation_hc = os.path.join(downloadhcdir, "parseyml.yml")
 
     with open(ymllocation_hc, "r") as stream:
@@ -143,8 +147,7 @@ if __name__ == "__main__":
     else:
         config["fcstarty"] = 1993
         config["fcendy"] = 2016
-    
-    
+
     # hindcast info
     if centre == "eccc":
         # two models aka systems are live - call twice with each system number
@@ -158,12 +161,10 @@ if __name__ == "__main__":
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
     elif centre == "mme":
         config["systemfc"] = Services["mme"]
-        mme_products(Services,config,productsfcdir)
+        mme_products(Services, config, productsfcdir)
     else:
         if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")
         config["systemfc"] = Services[centre]
         config["systemhc"] = Services_hc[centre]
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
-
-    

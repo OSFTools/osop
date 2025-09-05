@@ -13,14 +13,12 @@ import yaml
 from yaml.loader import SafeLoader
 
 
-#import local modules for function usage 
+# import local modules for function usage
 from osop.ens_plotting import plot_forecasts
 
 
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
-
-
 
 
 def parse_args():
@@ -91,7 +89,7 @@ if __name__ == "__main__":
     area_str = args.area.replace(",", ":")
     hc_var = args.variable
     i = list(map(int, leadtime_month))
-    i = [x-2 for x in i]
+    i = [x - 2 for x in i]
 
     if hc_var == "2m_temperature":
         var = "2m_temperature"
@@ -110,8 +108,8 @@ if __name__ == "__main__":
         obs_str=obs_str,
         var=var,
         hc_var=hc_var,
-        i = i,
-        border = location
+        i=i,
+        border=location,
     )
     # get remaning arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
@@ -124,7 +122,6 @@ if __name__ == "__main__":
             Services = services["Services"]
         except yaml.YAMLError as e:
             print(e)
-    
 
     if args.yearsfc:
         years = [int(yr) for yr in args.yearsfc.split(",")]
@@ -133,20 +130,19 @@ if __name__ == "__main__":
     else:
         config["fcstarty"] = 1993
         config["fcendy"] = 2016
-    
-    
+
     for x in i:
-        config["i"]=x
+        config["i"] = x
         if centre == "eccc":
             # two models aka systems are live - call twice with each system number
             config["systemfc"] = Services["eccc_can"]
-            plot_forecasts(productsfcdir,plotsdir,config)
+            plot_forecasts(productsfcdir, plotsdir, config)
 
             ## repeat for second system
             config["systemfc"] = Services["eccc_gem5"]
-            plot_forecasts(productsfcdir,plotsdir,config)
+            plot_forecasts(productsfcdir, plotsdir, config)
         else:
             if centre not in Services.keys():
-               raise ValueError(f"Unknown system for C3S: {centre}")
+                raise ValueError(f"Unknown system for C3S: {centre}")
             config["systemfc"] = Services[centre]
-            plot_forecasts(productsfcdir,plotsdir,config)
+            plot_forecasts(productsfcdir, plotsdir, config)

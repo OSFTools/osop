@@ -8,15 +8,13 @@ See LICENSE in the root of the repository for full licensing details.
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
 
-# Import functions 
+# Import functions
 import os
 import yaml
 from yaml.loader import SafeLoader
 
-#import needed local functions
+# import needed local functions
 from osop.plot_verify import generate_plots, prep_titles
-
-
 
 
 def parse_args():
@@ -44,9 +42,13 @@ def parse_args():
         required=True,
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
-    parser.add_argument("--downloaddir", required=True, help="location to get grib from")
+    parser.add_argument(
+        "--downloaddir", required=True, help="location to get grib from"
+    )
     parser.add_argument("--scoresdir", required=True, help="location for grab files")
-    parser.add_argument("--plotdir", required=True, help="location to download output to")
+    parser.add_argument(
+        "--plotdir", required=True, help="location to download output to"
+    )
     parser.add_argument(
         "--years",
         required=False,
@@ -63,7 +65,7 @@ if __name__ == "__main__":
     Get the command line arguments using argparse
     Call the plotting functions to generate verification plots
     """
-    scores = ["spearman_corr","pearson_corr", "roc", "rocss", "rps", "rel", "bs"]
+    scores = ["spearman_corr", "pearson_corr", "roc", "rocss", "rps", "rel", "bs"]
 
     # get command line args
     args = parse_args()
@@ -94,7 +96,7 @@ if __name__ == "__main__":
 
     # add arguments to config
     config = dict(
-        border = border,
+        border=border,
         start_month=month,
         valid_month=valid_month,
         origin=centre,

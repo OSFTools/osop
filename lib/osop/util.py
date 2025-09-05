@@ -11,6 +11,7 @@ import xarray as xr
 import eccodes
 import pandas as pd
 
+
 def sel_season_time(dataset, start_year, end_year):
     """Extract the data for the specified years starting with Dec of
     first year and ending with Nov of last year
@@ -75,6 +76,7 @@ def season_stats(dataset, start_year, end_year, stats=["mean"]):
 
     return ds_stats
 
+
 def get_tindex(infile):
     """
     Use eccodes to check if there is an indexing time dimension
@@ -99,18 +101,19 @@ def get_tindex(infile):
     eccodes.codes_release(gid)
     return st_dim_name
 
-#move
+
+# move
 def index(forecast_local, st_dim_name):
     """
     Reindex and restyle the forcast grib so that the data layout is consistent
-    and compatiable with hindcast terciles. 
+    and compatiable with hindcast terciles.
 
     Parameters:
     forecast_local (str): File location for the grib file.
     st_dim_name (str): Name of the start date dimension (important for lagged models)
 
     Returns:
-    A re-indexed x-array for forecast data. 
+    A re-indexed x-array for forecast data.
     """
 
     print("Reading Forecast data from file")
@@ -120,10 +123,10 @@ def index(forecast_local, st_dim_name):
         backend_kwargs=dict(time_dims=("forecastMonth", st_dim_name)),
     )
     # force dask.array using chunks on leadtime, latitude and longitude coordinate
-    forecast_data = forecast_data.chunk({"forecastMonth": 1, "latitude": "auto", "longitude": "auto"})
+    forecast_data = forecast_data.chunk(
+        {"forecastMonth": 1, "latitude": "auto", "longitude": "auto"}
+    )
     forecast_data = forecast_data.rename(
         {"latitude": "lat", "longitude": "lon", st_dim_name: "start_date"}
     )
-    return(forecast_data)
-
-    
+    return forecast_data

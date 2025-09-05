@@ -13,14 +13,12 @@ import yaml
 from yaml.loader import SafeLoader
 
 
-#import local modules for function usage 
+# import local modules for function usage
 from osop.compute_scores_func import calc_scores
 
 
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
-
-
 
 
 def parse_args():
@@ -34,8 +32,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument(
-        "--obs_dataset", required=False,
-        help="name of observation or reanalysis dataset. Optional. Defaults to ERA5")
+        "--obs_dataset",
+        required=False,
+        help="name of observation or reanalysis dataset. Optional. Defaults to ERA5",
+    )
     parser.add_argument("--month", required=True, help="start month for hindcasts")
     parser.add_argument(
         "--variable", required=True, help="variable to verify. t2m or tprate"
@@ -48,9 +48,13 @@ def parse_args():
         required=True,
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
-    parser.add_argument("--downloaddir", required=True, help="location to get grib from")
+    parser.add_argument(
+        "--downloaddir", required=True, help="location to get grib from"
+    )
     parser.add_argument("--scoresdir", required=True, help="location to download to")
-    parser.add_argument("--productsdir", required=True, help="location to get products from")
+    parser.add_argument(
+        "--productsdir", required=True, help="location to get products from"
+    )
     parser.add_argument(
         "--years",
         required=False,
@@ -124,12 +128,11 @@ if __name__ == "__main__":
     else:
         config["hcstarty"] = 1993
         config["hcendy"] = 2016
-    
-    if args.obs_dataset:
-        config['obs_name'] = args.obs
-    else:
-        config['obs_name'] = 'era5'
 
+    if args.obs_dataset:
+        config["obs_name"] = args.obs
+    else:
+        config["obs_name"] = "era5"
 
     # hindcast info
     if centre == "eccc":

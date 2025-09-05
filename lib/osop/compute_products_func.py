@@ -4,6 +4,7 @@
 This file is part of osop and is released under the BSD 3-Clause license.
 See LICENSE in the root of the repository for full licensing details.
 """
+
 # Ensure the top level directory has been added to PYTHONPATH
 # Libraries for working with multi-dimensional arrays
 import xarray as xr
@@ -37,7 +38,7 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
     # Add start_month to the xr.Dataset
     start_month = pd.to_datetime(hcst.start_date.values[0]).month
     hcst = hcst.assign_coords({"start_month": start_month})
-    
+
     # Add valid_time to the xr.Dataset
     vt = xr.DataArray(
         dims=("start_date", "forecastMonth"),
@@ -63,7 +64,7 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
     # Calculate Anomalies (and save to file)
     print("Computing anomalies 1m")
     hcmean = hcst.mean(["number", "start_date"])
-        # Calculate Mean across all ensemble members 
+    # Calculate Mean across all ensemble members
     hc_ens_mean = hcst.mean(["number"])
     anom = hcst - hcmean
     anom = anom.assign_attrs(reference_period="{hcstarty}-{hcendy}".format(**config))
@@ -203,11 +204,9 @@ def calc_products(config, downloaddir, productsdir):
     #  -> lagged start ensembles (e.g. MetOffice GloSea6) use "indexing_time" (see CDS documentation about nominal start date)
     st_dim_name = get_tindex(hcst_fname)
     hcst = index(hcst_fname, st_dim_name)
-    #print("this is hcst from index",hcst)
+    # print("this is hcst from index",hcst)
 
     ## calc anoms
     hcst, hcst_3m = calc_anoms(hcst, hcst_bname, config, productsdir)
     ## calc terc probs and thresholds
     prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir)
-
-

@@ -15,6 +15,7 @@ import numpy as np
 
 # Forecast verification metrics with xarray
 import xskillscore as xs
+
 # Regridding packages needed for JMA
 import xesmf as xe
 
@@ -102,6 +103,7 @@ def swap_dims(hcst, obs):
 
         return thishcst, thisobs
 
+
 def regrid_data(input_ds, target_ds):
     """
     Regrids the dataset appropriatley for its type (planned expansion for percipertation)
@@ -115,14 +117,13 @@ def regrid_data(input_ds, target_ds):
     target_ds (xarray.Dataset): Matching target dataset (no changes)
     """
     try:
-        regridder =  xe.Regridder(input_ds, target_ds, "bilinear")
+        regridder = xe.Regridder(input_ds, target_ds, "bilinear")
         output_ds = regridder(input_ds, keep_attrs=True)
     except Exception as e:
-                print(f"Alignment failed {e}: {e}")
-                raise KeyError("Alignment failed: please check dataset entry")    
-    
-    return output_ds, target_ds
+        print(f"Alignment failed {e}: {e}")
+        raise KeyError("Alignment failed: please check dataset entry")
 
+    return output_ds, target_ds
 
 
 def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
@@ -173,12 +174,19 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         thishcst_em_anom = (
             thishcst_em_anom if not is_fullensemble else thishcst_em_anom.mean("number")
         )
-         # Regrid if lattitude or longitude on a varied resolution or grid. 
-        if not thishcst_em_mean['lat'].equals(this_obs_m_match['lat']) or not thishcst_em_mean['lon'].equals(this_obs_m_match['lon']):
-            thishcst_em_mean, this_obs_m_match = regrid_data(thishcst_em_mean, this_obs_m_match)
-        if not thishcst_em_anom['lat'].equals(this_obs_anom['lat']) or not thishcst_em_anom['lon'].equals(this_obs_anom['lon']):
-            thishcst_em_anom, this_obs_anom = regrid_data(thishcst_em_anom, this_obs_anom)
-
+        # Regrid if lattitude or longitude on a varied resolution or grid.
+        if not thishcst_em_mean["lat"].equals(
+            this_obs_m_match["lat"]
+        ) or not thishcst_em_mean["lon"].equals(this_obs_m_match["lon"]):
+            thishcst_em_mean, this_obs_m_match = regrid_data(
+                thishcst_em_mean, this_obs_m_match
+            )
+        if not thishcst_em_anom["lat"].equals(
+            this_obs_anom["lat"]
+        ) or not thishcst_em_anom["lon"].equals(this_obs_anom["lon"]):
+            thishcst_em_anom, this_obs_anom = regrid_data(
+                thishcst_em_anom, this_obs_anom
+            )
 
         # calculate measures
         l_corr.append(
@@ -200,13 +208,9 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
         print(f"Saving to netCDF file correlation for {aggr}-aggregation")
         corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
-        corr_pval.to_netcdf(
-            f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc"
-        )
+        corr_pval.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
         r_corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr.nc")
-        r_corr_pval.to_netcdf(
-            f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr_pval.nc"
-        )
+        r_corr_pval.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr_pval.nc")
 
 
 def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
@@ -273,9 +277,11 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
             thisobs = xr.concat(l_probs_obs, dim="category")
 
-            # Regrid if lattitude or longitude on a varied resolution or grid. 
-            if not thishcst['lat'].equals(thisobs['lat']) or not thishcst['lon'].equals(thisobs['lon']):
-               thishcst, thisobs = regrid_data(thishcst,thisobs)
+            # Regrid if lattitude or longitude on a varied resolution or grid.
+            if not thishcst["lat"].equals(thisobs["lat"]) or not thishcst["lon"].equals(
+                thisobs["lon"]
+            ):
+                thishcst, thisobs = regrid_data(thishcst, thisobs)
 
             # Calculate the probabilistic scores
             thisroc = xr.Dataset()

@@ -89,9 +89,9 @@ for centre in meteo_france ;do
         --month $month \
         --leads $leads \
         --area $area \
-        --variable $variable\
+        --variable $variable \
         --downloaddir $downloaddir \
-        > $logdir/download_log_${variable}_${centre}.txt 2>&1
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

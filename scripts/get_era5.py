@@ -113,7 +113,7 @@ if __name__ == "__main__":
     # unpack args and reformat if needed
     downloaddir = args.downloaddir
 
-    # start logging - need to know downloadir location before we can set it up
+    # start logging - need to know logdir location before we can set it up
     logfile = os.path.join(
         args.logdir,
         f"era5_log_{args.variable}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",

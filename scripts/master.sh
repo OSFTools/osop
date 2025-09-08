@@ -71,8 +71,7 @@ python get_era5.py \
     --leads $leads \
     --area $area \
     --downloaddir $downloaddir \
-    --variable $variable \
-    > $logdir/era5_log_${variable}.txt 2>&1
+    --variable $variable
 exitcode=$?
 set -e
 if [ $exitcode -eq 0 ]; then

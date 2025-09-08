@@ -84,8 +84,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do
             --area $area \
             --variable $variable\
             --downloaddir $downloaddir \
-            --years $years \
-            > $logdir/download_log_${variable}_${centre}.txt 2>&1
+            --years $years 
         exitcode=$?
         set -e
         if [ $exitcode -eq 0 ]; then

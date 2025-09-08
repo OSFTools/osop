@@ -70,6 +70,7 @@ python get_era5.py \
     --leads $leads \
     --area $area \
     --downloaddir $downloaddir \
+    --logdir $logdir \
     --variable $variable
 exitcode=$?
 set -e

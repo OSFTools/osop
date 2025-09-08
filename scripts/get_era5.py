@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 
 import argparse
 import logging
-import datetime
+from datetime import datetime
 
 
 def get_obs(obs_fname, config):
@@ -30,10 +30,12 @@ def get_obs(obs_fname, config):
         config dictionary containing necessary arguments for cdsapi
 
     """
-    c = cdsapi.Client()
+    
     if os.path.exists(obs_fname):
         logging.warning(f"File {obs_fname} already exists")
         return obs_fname
+
+    c = cdsapi.Client()
 
     c.retrieve(
         "reanalysis-era5-single-levels-monthly-means",
@@ -86,6 +88,7 @@ def parse_args():
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
     parser.add_argument("--downloaddir", required=True, help="location to download to")
+    parser.add_argument("--logdir", required=True, help="location to store logfiles")
     parser.add_argument("--variable", required=True, help="variable to download")
     parser.add_argument(
         "--years",
@@ -112,7 +115,7 @@ if __name__ == "__main__":
 
     # start logging - need to know downloadir location before we can set it up
     logfile = os.path.join(
-        downloaddir,
+        args.logdir,
         f"era5_log_{args.variable}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
     )
     loglev = logging.INFO  # can be an argument later if needed

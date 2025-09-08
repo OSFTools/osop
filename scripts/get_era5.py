@@ -16,6 +16,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import argparse
+import logging
+import datetime
 
 
 def get_obs(obs_fname, config):
@@ -30,7 +32,7 @@ def get_obs(obs_fname, config):
     """
     c = cdsapi.Client()
     if os.path.exists(obs_fname):
-        print(f"File {obs_fname} already exists")
+        logging.warning(f"File {obs_fname} already exists")
         return obs_fname
 
     c.retrieve(
@@ -107,6 +109,23 @@ if __name__ == "__main__":
 
     # unpack args and reformat if needed
     downloaddir = args.downloaddir
+
+    # start logging - need to know downloadir location before we can set it up
+    logfile = os.path.join(
+        downloaddir,
+        f"era5_log_{args.variable}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+    )
+    loglev = logging.INFO  # can be an argument later if needed
+    logging.basicConfig(
+        level=loglev,
+        filename=logfile,
+        encoding="utf-8",
+        filemode="w",
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+    )
+
     month = int(args.month)
     leadtime_month = [int(l) - 1 for l in args.leads.split(",")]
     # for filename to keep consistent with hindcast filenames
@@ -115,7 +134,7 @@ if __name__ == "__main__":
     area_str = args.area.replace(",", ":")
     var = args.variable
 
-    # add arguments to config
+    # add arguments to config dictionary used to pass parameters 
     config = dict(
         start_month=month,
         leads_obs=leadtime_month,
@@ -124,6 +143,8 @@ if __name__ == "__main__":
         leads_str=leads_str,
         var=var,
     )
+
+    logging.debug(config)
 
     if args.years:
         config["hcstarty"] = int(args.years[0])
@@ -136,5 +157,5 @@ if __name__ == "__main__":
     obs_fname = "{fpath}/era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
         fpath=downloaddir, **config
     )
-    print(obs_fname)
+    logging.info(f"Downloading obs filename: {obs_fname}")
     get_obs(obs_fname, config)

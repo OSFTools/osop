@@ -172,7 +172,7 @@ def main():
     month = int(args.month)
     variable = str(args.variable)
 
-    # get remaning arguments from yml file
+    # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
     with open(ymllocation, "r") as stream:

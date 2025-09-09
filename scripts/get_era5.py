@@ -93,7 +93,7 @@ def parse_args():
     parser.add_argument(
         "--years",
         required=False,
-        help="Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
+        help="Years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
 
     args = parser.parse_args()
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     """
     Called when this is run as a script
     Get the command line arguments using argparse
-    Call the main funciton to do download era5
+    Call the main function to do download era5
     """
 
     # get command line args

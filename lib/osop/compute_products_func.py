@@ -17,6 +17,7 @@ from osop.util import get_tindex, index
 
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
+import logging
 
 
 def calc_anoms(hcst, hcst_bname, config, productsdir):
@@ -34,7 +35,7 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
     saves 1 month and 3 month anomalies to netCDF files
     returns a tuple of xarray datasets containing the original hindcast data and the 3-month aggregated data.
     """
-    print("Re-arranging time metadata in xr.Dataset object")
+    logging.debug("Re-arranging time metadata in xr.Dataset object")
     # Add start_month to the xr.Dataset
     start_month = pd.to_datetime(hcst.start_date.values[0]).month
     hcst = hcst.assign_coords({"start_month": start_month})
@@ -55,21 +56,21 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
 
     # CALCULATE 3-month AGGREGATIONS
     # NOTE rolling() assigns the label to the end of the N month period, so the first N-1 elements have NaN and can be dropped
-    print("Computing 3-month aggregation")
+    logging.debug("Computing 3-month aggregation")
     # rollng method defaults to look backwards
     hcst_3m = hcst.rolling(forecastMonth=3).mean()
     # Want only 3 month mean with complete 3 months
     hcst_3m = hcst_3m.where(hcst_3m.forecastMonth >= int(config["leads"][2]), drop=True)
 
     # Calculate Anomalies (and save to file)
-    print("Computing anomalies 1m")
+    logging.debug("Computing anomalies 1m")
     hcmean = hcst.mean(["number", "start_date"])
     # Calculate Mean across all ensemble members
     hc_ens_mean = hcst.mean(["number"])
     anom = hcst - hcmean
     anom = anom.assign_attrs(reference_period="{hcstarty}-{hcendy}".format(**config))
 
-    print("Computing anomalies 3m")
+    logging.debug("Computing anomalies 3m")
     hcmean_3m = hcst_3m.mean(["number", "start_date"])
     hc_ens_mean_3m = hcst_3m.mean(["number"])
     anom_3m = hcst_3m - hcmean_3m
@@ -77,7 +78,7 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
         reference_period="{hcstarty}-{hcendy}".format(**config)
     )
 
-    print("Saving mean and anomalies 1m/3m to netCDF files")
+    logging.debug("Saving mean and anomalies 1m/3m to netCDF files")
     anom.to_netcdf(f"{productsdir}/{hcst_bname}.1m.anom.nc")
     anom_3m.to_netcdf(f"{productsdir}/{hcst_bname}.3m.anom.nc")
     hc_ens_mean.to_netcdf(f"{productsdir}/{hcst_bname}.1m.ensmean.nc")
@@ -140,15 +141,15 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir):
         Saves tercile forecasts to netcdf file.
     """
 
-    print("Computing probabilities (tercile categories)")
+    logging.debug("Computing probabilities (tercile categories)")
     quantiles = [1 / 3.0, 2 / 3.0]
     numcategories = len(quantiles) + 1
 
     for aggr, h in [("1m", hcst), ("3m", hcst_3m)]:
         if os.path.isfile(f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc"):
-            print(f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc exists")
+            logging.debug(f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc exists")
         else:
-            print(f"Computing tercile probabilities {aggr}")
+            logging.debug(f"Computing tercile probabilities {aggr}")
 
             l_probs_hcst = list()
             # Loop over the categories and calculate the probabilities
@@ -177,12 +178,12 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir):
                     )
                     tercs = tercs.assign_attrs(start_month=f"{config['start_month']}")
 
-            print(f"Concatenating {aggr} tercile probs categories")
+            logging.debug(f"Concatenating {aggr} tercile probs categories")
             probs = xr.concat(l_probs_hcst, dim="category")
-            print(f"Saving {aggr} tercile probs netCDF files")
+            logging.debug(f"Saving {aggr} tercile probs netCDF files")
             probs.to_netcdf(f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc")
 
-            print(f"Saving tercile thresholds {aggr} netCDF files")
+            logging.debug(f"Saving tercile thresholds {aggr} netCDF files")
             tercs.to_netcdf(f"{productsdir}/{hcst_bname}.{aggr}.tercile_thresholds.nc")
 
 
@@ -204,9 +205,11 @@ def calc_products(config, downloaddir, productsdir):
     #  -> lagged start ensembles (e.g. MetOffice GloSea6) use "indexing_time" (see CDS documentation about nominal start date)
     st_dim_name = get_tindex(hcst_fname)
     hcst = index(hcst_fname, st_dim_name)
-    # print("this is hcst from index",hcst)
+    logging.debug("this is hcst from index",hcst)
 
     ## calc anoms
+    logging.info(f"Calculating anomalies for {hcst_bname}")
     hcst, hcst_3m = calc_anoms(hcst, hcst_bname, config, productsdir)
     ## calc terc probs and thresholds
+    logging.info(f"Calculating tercile probabilities for {hcst_bname}")
     prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir)

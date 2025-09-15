@@ -108,8 +108,8 @@ for centre in meteo_france ;do
         --area $area \
         --variable $variable \
         --downloaddir $downloaddir \
-        --productsdir $productsdir #\
-        #> $downloaddir/product_log_${variable}_${centre}.txt 2>&1
+        --productsdir $productsdir \
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

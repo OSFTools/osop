@@ -49,8 +49,8 @@ python get_era5.py \
     --leads $leads \
     --area $area \
     --downloaddir $downloaddir \
-    --variable $variable \
-    > $downloaddir/era5_log_${variable}_${month}.txt 2>&1
+    --logdir $logdir \
+    --variable $variable 
 exitcode=$?
 set -e
 if [ $exitcode -eq 0 ]; then
@@ -69,7 +69,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         --area $area \
         --variable $variable\
         --downloaddir $downloaddir \
-        > $downloaddir/download_log_${variable}_${centre}_${month}.txt 2>&1
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

@@ -85,7 +85,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         --area $area \
         --variable $variable \
         --downloaddir $downloaddir \
-        > $downloaddir/product_log_${variable}_${centre}_${month}.txt 2>&1
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
@@ -102,7 +102,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         --area $area \
         --downloaddir $downloaddir \
         --variable $variable \
-        > $downloaddir/verification_log_${variable}_${centre}_${month}.txt 2>&1
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
@@ -119,7 +119,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
         --area $area \
         --downloaddir $downloaddir \
         --variable $variable \
-        > $downloaddir/plot_log_${variable}_${centre}_${month}.txt 2>&1
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

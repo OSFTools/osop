@@ -12,6 +12,8 @@ import argparse
 import os
 import yaml
 from yaml.loader import SafeLoader
+import logging
+from datetime import datetime
 
 # import needed local functions
 from osop.plot_verify import generate_plots, prep_titles
@@ -54,6 +56,7 @@ def parse_args():
         required=False,
         help="Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
+    parser.add_argument("--logdir", required=True, help="location to store logfiles")
 
     args = parser.parse_args()
     return args
@@ -69,6 +72,22 @@ if __name__ == "__main__":
 
     # get command line args
     args = parse_args()
+
+    # start logging - need to know logdir location before we can set it up
+    logfile = os.path.join(
+        args.logdir,
+        f"scores_log_{args.variable}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+    )
+    loglev = logging.INFO  # can be an argument later if needed
+    logging.basicConfig(
+        level=loglev,
+        filename=logfile,
+        encoding="utf-8",
+        filemode="w",
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+    )
 
     # unpack args and reformat if needed
     border = args.location
@@ -107,7 +126,9 @@ if __name__ == "__main__":
         var=var,
     )
 
-    # get remaning arguments from yml file
+    logging.debug(config)
+
+    # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
     with open(ymllocation, "r") as stream:
@@ -117,7 +138,7 @@ if __name__ == "__main__":
             # Converts contents to useable dictionary
             Services = services["Services"]
         except yaml.YAMLError as e:
-            print(e)
+            logging.error(f"Error reading YAML file: {e}", stack_info=True)
 
     if args.years:
         config["hcstarty"] = args.years[0]

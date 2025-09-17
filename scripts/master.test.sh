@@ -137,7 +137,7 @@ for centre in meteo_france ;do
         echo $centre : score generation failed
     fi
     # plot scores
-        set +e
+    set +e
     python plot_verification.py \
         --location $location \
         --centre $centre \
@@ -148,7 +148,7 @@ for centre in meteo_france ;do
         --scoresdir $scoresdir \
         --plotdir $plotdir \
         --variable $variable \
-        > $logdir/plot_log_${variable}_${centre}.txt 2>&1
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

@@ -24,6 +24,8 @@ import argparse
 import os
 import yaml
 from yaml.loader import SafeLoader
+import logging
+from datetime import datetime
 
 # Ensure the top level directory has been added to PYTHONPATH
 
@@ -57,42 +59,19 @@ def do_cdsapi_call(
                     Default is hindcast period 1993-2016.
 
     """
-    c = cdsapi.Client()
 
     leads_str = "".join([str(mon) for mon in leadtime_month])
 
-    # set a default set of year that are the common period of hindcasts
+    # set a default set of years that are the common period of hindcasts
     if years == "hc":
-        years = [
-            "1993",
-            "1994",
-            "1995",
-            "1996",
-            "1997",
-            "1998",
-            "1999",
-            "2000",
-            "2001",
-            "2002",
-            "2003",
-            "2004",
-            "2005",
-            "2006",
-            "2007",
-            "2008",
-            "2009",
-            "2010",
-            "2011",
-            "2012",
-            "2013",
-            "2014",
-            "2015",
-            "2016",
-        ]
+        years = [str(y) for y in range(1993, 2017)]
+
     fname = f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
     if os.path.exists(fname):
-        print(f"File {fname} already exists")
+        logging.warning(f"File {fname} already exists")
+
     else:
+        c = cdsapi.Client()
         c.retrieve(
             "seasonal-monthly-single-levels",
             {
@@ -108,7 +87,7 @@ def do_cdsapi_call(
             },
             f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
         )
-
+        logging.info(f"Downloaded {fname}")
 
 def parse_args():
     """
@@ -134,7 +113,18 @@ def parse_args():
         required=True,
         help="variable to download, 2m_temperature, total_precipitation",
     )
-    parser.add_argument("--downloaddir", required=True, help="location to download to")
+    parser.add_argument(
+        "--downloaddir", 
+        required=True, 
+        help="location to download to"
+        )
+
+    parser.add_argument(
+        "--logdir",
+        required=True,
+        help="Path to log directory for logging output.",
+        )
+
     parser.add_argument(
         "--years",
         required=False,
@@ -149,12 +139,29 @@ def main():
     """
     Called when this is run as a script
     Get the command line arguments using argparse
-    Call the main funciton to do the actual
+    Call the main function to do the actual
     cdsapi call
     """
 
     # get command line args
     args = parse_args()
+
+    # start logging - need to know logdir location before we can set it up
+    logfile = os.path.join(
+        args.logdir,
+        f"download_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+    )
+
+    loglev = logging.INFO  # can be an argument later if needed
+    logging.basicConfig(
+        level=loglev,
+        filename=logfile,
+        encoding="utf-8",
+        filemode="w",
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+    )
 
     # unpack args and reformat if needed
     centre = args.centre
@@ -165,7 +172,7 @@ def main():
     month = int(args.month)
     variable = str(args.variable)
 
-    # get remaning arguments from yml file
+    # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
     with open(ymllocation, "r") as stream:
@@ -175,10 +182,11 @@ def main():
             # Converts contents to useable dictionary
             Services = services["Services"]
         except yaml.YAMLError as e:
-            print(e)
+            logging.error(f"Error reading YAML file: {e}", stack_info=True)
 
     area = [float(pt) for pt in args.area.split(",")]
     if len(area) != 4:
+        logging.error(f"Need 4 points for area: {area}", stack_info=True)
         raise ValueError(f"Need 4 points for area: {area}")
     if args.years:
         years = [int(yr) for yr in args.years.split(",")]
@@ -211,6 +219,7 @@ def main():
         )
     else:
         if centre not in Services.keys():
+            logging.error(f"Unknown system for C3S: {centre}", stack_info=True)
             raise ValueError(f"Unknown system for C3S: {centre}")
         do_cdsapi_call(
             centre,

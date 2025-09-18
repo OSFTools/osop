@@ -16,6 +16,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import argparse
+import logging
+from datetime import datetime
 
 
 def get_obs(obs_fname, config):
@@ -28,10 +30,12 @@ def get_obs(obs_fname, config):
         config dictionary containing necessary arguments for cdsapi
 
     """
-    c = cdsapi.Client()
+    
     if os.path.exists(obs_fname):
-        print(f"File {obs_fname} already exists")
+        logging.warning(f"File {obs_fname} already exists")
         return obs_fname
+
+    c = cdsapi.Client()
 
     c.retrieve(
         "reanalysis-era5-single-levels-monthly-means",
@@ -84,11 +88,12 @@ def parse_args():
         help="sub-area in degrees for retrieval (comma separated N,W,S,E)",
     )
     parser.add_argument("--downloaddir", required=True, help="location to download to")
+    parser.add_argument("--logdir", required=True, help="location to store logfiles")
     parser.add_argument("--variable", required=True, help="variable to download")
     parser.add_argument(
         "--years",
         required=False,
-        help="Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
+        help="Years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
 
     args = parser.parse_args()
@@ -99,7 +104,7 @@ if __name__ == "__main__":
     """
     Called when this is run as a script
     Get the command line arguments using argparse
-    Call the main funciton to do download era5
+    Call the main function to do download era5
     """
 
     # get command line args
@@ -107,6 +112,23 @@ if __name__ == "__main__":
 
     # unpack args and reformat if needed
     downloaddir = args.downloaddir
+
+    # start logging - need to know logdir location before we can set it up
+    logfile = os.path.join(
+        args.logdir,
+        f"era5_log_{args.variable}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+    )
+    loglev = logging.INFO  # can be an argument later if needed
+    logging.basicConfig(
+        level=loglev,
+        filename=logfile,
+        encoding="utf-8",
+        filemode="w",
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+    )
+
     month = int(args.month)
     leadtime_month = [int(l) - 1 for l in args.leads.split(",")]
     # for filename to keep consistent with hindcast filenames
@@ -115,7 +137,7 @@ if __name__ == "__main__":
     area_str = args.area.replace(",", ":")
     var = args.variable
 
-    # add arguments to config
+    # add arguments to config dictionary used to pass parameters 
     config = dict(
         start_month=month,
         leads_obs=leadtime_month,
@@ -124,6 +146,8 @@ if __name__ == "__main__":
         leads_str=leads_str,
         var=var,
     )
+
+    logging.debug(config)
 
     if args.years:
         config["hcstarty"] = int(args.years[0])
@@ -136,5 +160,5 @@ if __name__ == "__main__":
     obs_fname = "{fpath}/era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
         fpath=downloaddir, **config
     )
-    print(obs_fname)
+    logging.info(f"Downloading obs filename: {obs_fname}")
     get_obs(obs_fname, config)

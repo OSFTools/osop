@@ -14,9 +14,75 @@ import os
 import eccodes
 import matplotlib.pyplot as plt
 from osop.util import get_tindex, index
+import copy
+
 
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
+
+def update_config_hindcast(origin, systemfc, config):
+    """
+    Creates a copy of the config dict to be used for repeated load in of tercile forecasts
+
+    Parameters:
+    Origin (Str): The service to be loaded
+    Systemfc (Str): The service version
+    config (Dict): The dictionary to be copied and variated
+
+    Returns:
+    Config_copy (Dict): The copy of the dictionary with new updated names
+    """
+    config_copy = copy.deepcopy(config)
+    config_copy.update({"origin": origin, "systemfc": systemfc})
+    if origin == "eccc_can":
+        config_copy.update({"origin": "eccc", "systemfc": "4"})
+    elif origin == "eccc_gem5":
+        config_copy.update({"origin": "eccc", "systemfc": "5"})
+    return config_copy
+
+
+def mme_products_hindcast(Services, config, productsdir):
+    """
+    Loads each tercile forecast and combines for mme.
+
+    Parameters:
+    Services (list): List of services to combine
+    config (dict): The cofiguraiton parameters for the forecast
+    productsfcdir (str): The location for the files to output too and get from
+
+    Returns:
+    None
+    Saves array (x-array) - The multi-model ensemble forecast percentages.
+    """
+    # remove mme from the list thats worked on
+    del Services["{origin}".format(**config)]
+    # Remove when happy
+    del Services["jma"]
+
+    hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
+        **config)
+    print(hcst_bname)
+    
+
+    mme_combined = None
+    n_members = len(Services)
+    for origin, systemfc in Services.items():
+        config_copy_hc = update_config_hindcast(origin, systemfc, config)
+        print(config_copy_hc)
+       
+        file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.index.nc".format(
+                fpath=productsdir, **config_copy_hc)
+    ds = xr.open_dataset(file_name)
+    if mme_combined is None:
+        mme_combined = xr.zeros_like(ds)
+        mme_combined += ds / n_members
+    print(f"Saving mme to netCDF files")
+    mme_combined.to_netcdf(f"{productsdir}/{hcst_bname}.nc")
+    print("this is mme_combined hindcast")
+    print(mme_combined)
+    return mme_combined
+
+
 
 
 def calc_anoms(hcst, hcst_bname, config, productsdir):
@@ -203,10 +269,22 @@ def calc_products(config, downloaddir, productsdir):
     #  -> burst mode ensembles (e.g. ECMWF SEAS5) use "time". This is the default option
     #  -> lagged start ensembles (e.g. MetOffice GloSea6) use "indexing_time" (see CDS documentation about nominal start date)
     st_dim_name = get_tindex(hcst_fname)
-    hcst = index(hcst_fname, st_dim_name)
+    hcst = index(hcst_fname, st_dim_name, productsdir, hcst_bname)
     # print("this is hcst from index",hcst)
 
     ## calc anoms
     hcst, hcst_3m = calc_anoms(hcst, hcst_bname, config, productsdir)
     ## calc terc probs and thresholds
     prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir)
+
+def calc_products_mme(Services, config, productsdir):
+    print(config)
+    hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
+        **config
+    )
+    #hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
+     #   **config)
+
+    hcst = mme_products_hindcast(Services, config, productsdir)
+    hcst,hcst_3m = calc_anoms(hcst, hcst_bname, config, productsdir)
+    prob_terc(config,hcst_bname, hcst, hcst_3m, productsdir)

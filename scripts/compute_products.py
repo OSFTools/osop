@@ -15,7 +15,7 @@ from yaml.loader import SafeLoader
 
 
 # import needed local functions
-from osop.compute_products_func import calc_products
+from osop.compute_products_func import calc_products, calc_products_mme, mme_products_hindcast
 
 
 def parse_args():
@@ -114,6 +114,9 @@ if __name__ == "__main__":
         ## repeat for second system
         config["system"] = Services["eccc_gem5"]
         calc_products(config, downloaddir, productsdir)
+    elif centre == "mme":
+        config["systemfc"] = Services["mme"]
+        calc_products_mme(Services, config, productsdir)
     else:
         if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")

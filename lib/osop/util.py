@@ -103,7 +103,7 @@ def get_tindex(infile):
 
 
 # move
-def index(forecast_local, st_dim_name):
+def index(forecast_local, st_dim_name, productsdir, hcst_bname):
     """
     Reindex and restyle the forcast grib so that the data layout is consistent
     and compatiable with hindcast terciles.
@@ -129,4 +129,6 @@ def index(forecast_local, st_dim_name):
     forecast_data = forecast_data.rename(
         {"latitude": "lat", "longitude": "lon", st_dim_name: "start_date"}
     )
+    print(f"Saving index netCDF files")
+    forecast_data.to_netcdf(f"{productsdir}/{hcst_bname}.index.nc")
     return forecast_data

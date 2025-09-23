@@ -14,36 +14,17 @@ import os
 import eccodes
 import matplotlib.pyplot as plt
 from osop.util import get_tindex, index
+from osop.compare_terciles import update_config
 import copy
 
 
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
 
-def update_config_hindcast(origin, systemfc, config):
+
+def mme_products_hindcast(services, config, productsdir):
     """
-    Creates a copy of the config dict to be used for repeated load in of tercile forecasts
-
-    Parameters:
-    Origin (Str): The service to be loaded
-    Systemfc (Str): The service version
-    config (Dict): The dictionary to be copied and variated
-
-    Returns:
-    Config_copy (Dict): The copy of the dictionary with new updated names
-    """
-    config_copy = copy.deepcopy(config)
-    config_copy.update({"origin": origin, "systemfc": systemfc})
-    if origin == "eccc_can":
-        config_copy.update({"origin": "eccc", "systemfc": "4"})
-    elif origin == "eccc_gem5":
-        config_copy.update({"origin": "eccc", "systemfc": "5"})
-    return config_copy
-
-
-def mme_products_hindcast(Services, config, productsdir):
-    """
-    Loads each tercile forecast and combines for mme.
+    Loads each indexed datasets and combines for mme.
 
     Parameters:
     Services (list): List of services to combine
@@ -55,20 +36,17 @@ def mme_products_hindcast(Services, config, productsdir):
     Saves array (x-array) - The multi-model ensemble forecast percentages.
     """
     # remove mme from the list thats worked on
-    del Services["{origin}".format(**config)]
+    del services["{origin}".format(**config)]
     # Remove when happy
-    del Services["jma"]
+    del services["jma"]
 
     hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
         **config)
-    print(hcst_bname)
     
-
     mme_combined = None
-    n_members = len(Services)
-    for origin, systemfc in Services.items():
-        config_copy_hc = update_config_hindcast(origin, systemfc, config)
-        print(config_copy_hc)
+    n_members = len(services)
+    for origin, systemfc in services.items():
+        config_copy_hc = update_config(origin, systemfc, config)
        
         file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.index.nc".format(
                 fpath=productsdir, **config_copy_hc)
@@ -78,11 +56,8 @@ def mme_products_hindcast(Services, config, productsdir):
         mme_combined += ds / n_members
     print(f"Saving mme to netCDF files")
     mme_combined.to_netcdf(f"{productsdir}/{hcst_bname}.nc")
-    print("this is mme_combined hindcast")
-    print(mme_combined)
+    
     return mme_combined
-
-
 
 
 def calc_anoms(hcst, hcst_bname, config, productsdir):
@@ -277,14 +252,24 @@ def calc_products(config, downloaddir, productsdir):
     ## calc terc probs and thresholds
     prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir)
 
-def calc_products_mme(Services, config, productsdir):
-    print(config)
+def calc_products_mme(services, config, productsdir):
+    """
+    Calculate anomalies and tercile probabilities for a the mme combined data.
+
+    Args:
+        Services (dict): All the services intended for the mme.
+        config (dict): Configuration parameters.
+        downloaddir (str): Directory path to save the netCDF files.
+    """
+    
     hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
         **config
     )
-    #hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
-     #   **config)
+    
 
-    hcst = mme_products_hindcast(Services, config, productsdir)
+    hcst = mme_products_hindcast(services, config, productsdir)
+    # Loads in the indexed version of all the datasets. Averages them and then proceeds through the pipeline. 
     hcst,hcst_3m = calc_anoms(hcst, hcst_bname, config, productsdir)
+    # calc anoms
     prob_terc(config,hcst_bname, hcst, hcst_3m, productsdir)
+    # calc terc and probs

@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 import pytest
+import cartopy.io.shapereader as shpreader
 
 from osop import ens_plotting
 
@@ -136,6 +137,9 @@ def test_plot_tercile_fc(mme):
     """
 
     atitle = "Test plot"
+    shpfilename = shpreader.natural_earth(
+        resolution="10m", category="cultural", map_setting='admin_0_countries'
+    )
     fig = ens_plotting.plot_tercile_fc(mme, atitle)
 
 
@@ -155,5 +159,5 @@ def test_plot_tercile_fc_mask(mme, mask):
     atitle = "Test plot"
     mme = mme.rename({"precipitation": "temperature"})
     fig = ens_plotting.plot_tercile_fc(
-        mme, atitle, mask=mask, var="temperature", l_borders=False
+        mme, atitle, mask=mask, var="temperature", map_setting="False"
     )

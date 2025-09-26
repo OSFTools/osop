@@ -14,7 +14,7 @@ import os
 import eccodes
 import matplotlib.pyplot as plt
 from osop.util import get_tindex, index
-from osop.compare_terciles import update_config
+from osop.compare_terciles import update_config, mme_process_forecasts
 import copy
 
 
@@ -36,28 +36,42 @@ def mme_products_hindcast(services, config, productsdir):
     Saves array (x-array) - The multi-model ensemble forecast percentages.
     """
     # remove mme from the list thats worked on
+
+    
+  
     del services["{origin}".format(**config)]
     # Remove when happy
-    del services["jma"]
-
-    hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
-        **config)
-    
-    mme_combined = None
+    del services["jma"] 
+    del services["ukmo"]  
+    mme_combined = {}
     n_members = len(services)
-    for origin, systemfc in services.items():
-        config_copy_hc = update_config(origin, systemfc, config)
-       
-        file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.index.nc".format(
-                fpath=productsdir, **config_copy_hc)
-    ds = xr.open_dataset(file_name)
-    if mme_combined is None:
-        mme_combined = xr.zeros_like(ds)
-        mme_combined += ds / n_members
-    print(f"Saving mme to netCDF files")
-    mme_combined.to_netcdf(f"{productsdir}/{hcst_bname}.nc")
-    
-    return mme_combined
+    for aggr in ["1m","3m"]:
+        mme_combined[aggr] = None
+        for origin, system in services.items():
+            config_copy_hc = update_config(origin, system, config)
+        file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(
+            fpath=productsdir, **config_copy_hc, aggr=aggr)
+        ds = xr.open_dataset(file_name)
+        if mme_combined[aggr] is None:
+            mme_combined[aggr] = xr.zeros_like(ds)
+            mme_combined[aggr] += ds / n_members        
+        save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(**config, aggr=aggr) 
+        print(save_name)  
+        print(f"Saving mme to netCDF files")
+        mme_combined[aggr].to_netcdf(f"{productsdir}/{save_name}")
+    return 
+
+# def mme_products_hc(Services, config, productsdir):    #### Leaving this commented out so that I can thoertically use it when removing redundancy.
+#      # remove mme from the list thats worked on
+#     del Services["{origin}".format(**config)]
+#     # Remove when happy
+#     del Services["jma"]
+#     mme_products_hc = mme_process_forecasts(None, "index", Services, productsdir, config)
+#     hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
+#         **config)
+#     mme_products_hc.to_netcdf(
+#         f"{productsdir}/{hcst_bname}.nc"
+#     )
 
 
 def calc_anoms(hcst, hcst_bname, config, productsdir):
@@ -266,10 +280,5 @@ def calc_products_mme(services, config, productsdir):
         **config
     )
     
-
+    # Combined the services to produce a mme for hindcast verifcation
     hcst = mme_products_hindcast(services, config, productsdir)
-    # Loads in the indexed version of all the datasets. Averages them and then proceeds through the pipeline. 
-    hcst,hcst_3m = calc_anoms(hcst, hcst_bname, config, productsdir)
-    # calc anoms
-    prob_terc(config,hcst_bname, hcst, hcst_3m, productsdir)
-    # calc terc and probs

@@ -15,7 +15,7 @@ from yaml.loader import SafeLoader
 
 
 # import needed local functions
-from osop.compute_products_func import calc_products, calc_products_mme, mme_products_hindcast
+from osop.compute_products_func import calc_products, calc_products_mme
 
 
 def parse_args():

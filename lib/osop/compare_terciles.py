@@ -63,7 +63,7 @@ def mme_process_forecasts(months, suffix, Services, productsfcdir, config):
         ds = xr.open_dataset(file_name)
         if mme_combined is None:
             mme_combined = xr.zeros_like(ds)
-        mme_combined += ds / n_members
+            mme_combined += ds / n_members
     return mme_combined
 
 

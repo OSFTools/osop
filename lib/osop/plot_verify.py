@@ -17,7 +17,7 @@ import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
 from cartopy import crs as ccrs
 import calendar
-
+import logging
 
 CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
 
@@ -213,6 +213,7 @@ def plot_score(
     plt.savefig(
         os.path.join(plotdir, f"{info}.png"), bbox_inches="tight", pad_inches=0.01
     )
+    logging.info(f"Saved figure to {os.path.join(plotdir, f'{info}.png')}")
     plt.close()
 
 
@@ -260,6 +261,7 @@ def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
             bbox_inches="tight",
             pad_inches=0.01,
         )
+        logging.info(f"Saved figure to {os.path.join(plotdir, f'{score_title}.png')}")
         plt.close()
 
 
@@ -302,7 +304,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
         corr[config["var"]].lat.size,
         corr[config["var"]].lon.size,
     ):
-        print("Data values matrices need to be transposed")
+        logging.info("Data values matrices need to be transposed")
         corrvalues = corrvalues.T
         corrpvalvalues = corrpvalvalues.T
     elif corrvalues.shape == (
@@ -366,6 +368,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
     plt.tight_layout()
     figname = f"{plotdir}/{hcst_bname}.{aggr}.{score}.png"
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
+    logging.info(f"Saved figure to {figname}")  
     plt.close()
 
 

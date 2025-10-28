@@ -10,6 +10,7 @@ A module with utility functions for seasonal FCs
 import xarray as xr
 import eccodes
 import pandas as pd
+import logging
 
 
 def sel_season_time(dataset, start_year, end_year):
@@ -116,7 +117,7 @@ def index(forecast_local, st_dim_name):
     A re-indexed x-array for forecast data.
     """
 
-    print("Reading Forecast data from file")
+    logging.debug("Reading Forecast data from file")
     forecast_data = xr.open_dataset(
         forecast_local,
         engine="cfgrib",

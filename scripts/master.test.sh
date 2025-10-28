@@ -109,8 +109,8 @@ for centre in meteo_france ;do
         --area $area \
         --variable $variable \
         --downloaddir $downloaddir \
-        --productsdir $productsdir #\
-        #> $downloaddir/product_log_${variable}_${centre}.txt 2>&1
+        --productsdir $productsdir \
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
@@ -129,7 +129,7 @@ for centre in meteo_france ;do
         --scoresdir $scoresdir \
         --productsdir $productsdir \
         --variable $variable \
-        > $logdir/verification_log_${variable}_${centre}.txt 2>&1
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
@@ -138,7 +138,7 @@ for centre in meteo_france ;do
         echo $centre : score generation failed
     fi
     # plot scores
-        set +e
+    set +e
     python plot_verification.py \
         --location $location \
         --centre $centre \
@@ -150,7 +150,7 @@ for centre in meteo_france ;do
         --plotdir $plotdir \
         --variable $variable \
         --method $method \
-        > $logdir/plot_log_${variable}_${centre}.txt 2>&1
+        --logdir $logdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

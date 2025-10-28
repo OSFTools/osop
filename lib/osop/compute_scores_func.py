@@ -8,6 +8,7 @@ See LICENSE in the root of the repository for full licensing details.
 # This script currently can only be used to create scores using ERA5 as the comparison dataset
 
 # Libraries for working with multi-dimensional arrays
+import logging
 import xarray as xr
 import pandas as pd
 import numpy as np
@@ -62,7 +63,7 @@ def read_obs(obs_fname, config):
 
     # Calculate 3-month aggregations
     # NOTE rolling() assigns the label to the end of the N month period
-    print("Calculate observation 3-monthly aggregations")
+    logging.debug("Calculate observation 3-monthly aggregations")
     obs_ds_3m = obs_ds.rolling(valid_time=3).mean()
     obs_ds_3m = obs_ds_3m.where(
         obs_ds_3m.forecastMonth >= int(config["leads"][2]), drop=True
@@ -79,7 +80,7 @@ def read_obs(obs_fname, config):
 
 def swap_dims(hcst, obs):
     """
-    Swaps dimensions appropriately and alligns hindcast with observed dataset
+    Swaps dimensions appropriately and aligns hindcast with observed dataset
     for deterministic verification measures.
 
     Parameters:
@@ -92,13 +93,13 @@ def swap_dims(hcst, obs):
     """
 
     for this_fcmonth in hcst.forecastMonth.values:
-        print(f"forecastMonth={this_fcmonth}")
+        logging.debug(f"forecastMonth={this_fcmonth}")
         thishcst = hcst.sel(forecastMonth=this_fcmonth).swap_dims(
             {"start_date": "valid_time"}
         )
         thishcst["valid_time"] = thishcst.valid_time.dt.strftime("%Y-%m")
-        print(thishcst["valid_time"])
-        print(obs["valid_time"])
+        logging.debug(thishcst["valid_time"])
+        logging.debug(obs["valid_time"])
         thisobs = obs.where(obs.valid_time == thishcst.valid_time, drop=True)
 
         return thishcst, thisobs
@@ -106,7 +107,7 @@ def swap_dims(hcst, obs):
 
 def regrid_data(input_ds, target_ds):
     """
-    Regrids the dataset appropriatley for its type (planned expansion for percipertation)
+    Regrids the dataset appropriately for its type (planned expansion for precipitation)
 
     Parameters:
     input_ds (xarray.Dataset): Data to be re-gridded
@@ -120,7 +121,7 @@ def regrid_data(input_ds, target_ds):
         regridder = xe.Regridder(input_ds, target_ds, "bilinear")
         output_ds = regridder(input_ds, keep_attrs=True)
     except Exception as e:
-        print(f"Alignment failed {e}: {e}")
+        logging.error(f"Alignment failed {e}: {e}")
         raise KeyError("Alignment failed: please check dataset entry")
 
     return output_ds, target_ds
@@ -152,7 +153,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         else:
             raise ValueError(f"Unknown aggregation {aggr}")
 
-        print(f"Computing deterministic scores for {aggr}-aggregation")
+        logging.debug(f"Computing deterministic scores for {aggr}-aggregation")
 
         # Reading mean file
         h = xr.open_dataset(f"{productsdir}/{hcst_bname}.{aggr}.ensmean.nc")
@@ -206,10 +207,16 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         r_corr = xr.concat(r_corr, dim="forecastMonth")
         r_corr_pval = xr.concat(r_corr_pval, dim="forecastMonth")
 
-        print(f"Saving to netCDF file correlation for {aggr}-aggregation")
+        logging.info(f"Saving to netCDF file spearman correlation for {aggr}-aggregation")
         corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
+
+        logging.info(f"Saving to netCDF file pvalue for {aggr}-aggregation")
         corr_pval.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
+
+        logging.info(f"Saving to netCDF file pearson for {aggr}-aggregation")
         r_corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr.nc")
+
+        logging.info(f"Saving to netCDF file pearson pvalue for {aggr}-aggregation")
         r_corr_pval.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr_pval.nc")
 
 
@@ -240,7 +247,7 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         else:
             raise BaseException(f"Unknown aggregation {aggr}")
 
-        print(f"Computing probabilistic scores for {aggr}-aggregation")
+        logging.debug(f"Computing probabilistic scores for {aggr}-aggregation")
 
         # Read hindcast probabilities file
         probs_hcst = xr.open_dataset(
@@ -338,11 +345,19 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         bs = xr.concat(l_bs, dim="forecastMonth")
         rel = xr.concat(l_rel, dim="forecastMonth")
 
-        print("writing scores to netcdf")
+        logging.info(f"Saving to netCDF file rps for {aggr}-aggregation")
         rps.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.rps.nc")
+
+        logging.info(f"Saving to netCDF file bs for {aggr}-aggregation")
         bs.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.bs.nc")
+
+        logging.info(f"Saving to netCDF file roc for {aggr}-aggregation")
         roc.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.roc.nc")
+
+        logging.info(f"Saving to netCDF file rocss for {aggr}-aggregation")
         rocss.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.rocss.nc")
+
+        logging.info(f"Saving to netCDF file rel for {aggr}-aggregation")
         rel.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.rel.nc")
 
 

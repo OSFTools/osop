@@ -12,6 +12,8 @@ import argparse
 import os
 import yaml
 from yaml.loader import SafeLoader
+import logging
+from datetime import datetime
 
 
 # import needed local functions
@@ -47,8 +49,10 @@ def parse_args():
     parser.add_argument(
         "--years",
         required=False,
-        help="Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
+        help="Years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
+    parser.add_argument("--logdir", required=True, help="location to store logfiles")
+
 
     args = parser.parse_args()
     return args
@@ -58,11 +62,27 @@ if __name__ == "__main__":
     """
     Called when this is run as a script
     Get the command line arguments using argparse
-    Call the main funcitons to calculate anomalies and terciles
+    Call the main functions to calculate anomalies and terciles
     """
 
     # get command line args
     args = parse_args()
+
+    # start logging - need to know logdir location before we can set it up
+    logfile = os.path.join(
+        args.logdir,
+        f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+    )
+    loglev = logging.INFO  # can be an argument later if needed
+    logging.basicConfig(
+        level=loglev,
+        filename=logfile,
+        encoding="utf-8",
+        filemode="w",
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+    )
 
     # unpack args and reformat if needed
     centre = args.centre
@@ -76,7 +96,7 @@ if __name__ == "__main__":
     area_str = args.area.replace(",", ":")
     variable = args.variable
 
-    # get remaning arguments from yml file
+    # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
     with open(ymllocation, "r") as stream:
@@ -86,7 +106,7 @@ if __name__ == "__main__":
             # Converts contents to useable dictionary
             Services = services["Services"]
         except yaml.YAMLError as e:
-            print(e)
+            logging.error(f"Error reading YAML file: {e}", stack_info=True)
 
     # add arguments to config
     config = dict(
@@ -97,6 +117,7 @@ if __name__ == "__main__":
         leads_str=leads_str,
         var=variable,
     )
+    logging.debug(config)
 
     if args.years:
         config["hcstarty"] = args.years[0]

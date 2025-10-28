@@ -56,6 +56,12 @@ def parse_args():
         required=False,
         help="Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
+    parser.add_argument(
+        "--method",
+        required=False,
+        default = None,
+        help="Changes the plotting look, use pmesh for pcolourmesh",
+    )
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
 
     args = parser.parse_args()
@@ -90,6 +96,7 @@ if __name__ == "__main__":
     )
 
     # unpack args and reformat if needed
+    method = args.method
     border = args.location
     centre = args.centre
     downloaddir = args.downloaddir
@@ -158,17 +165,17 @@ if __name__ == "__main__":
                 config["system"] = Services["eccc_can"]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(config, titles, scoresdir, plotdir)
+                generate_plots(config, titles, scoresdir, plotdir, method)
 
                 ## repeat for second system
                 config["system"] = Services["eccc_gem5"]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(config, titles, scoresdir, plotdir)
+                generate_plots(config, titles, scoresdir, plotdir, method)
             else:
                 if centre not in Services.keys():
                     raise ValueError(f"Unknown system for C3S: {centre}")
                 config["system"] = Services[centre]
                 ## set titles
                 titles = prep_titles(config)
-                generate_plots(config, titles, scoresdir, plotdir)
+                generate_plots(config, titles, scoresdir, plotdir, method)

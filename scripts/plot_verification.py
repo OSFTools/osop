@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # start logging - need to know logdir location before we can set it up
     logfile = os.path.join(
         args.logdir,
-        f"scores_log_{args.variable}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+        f"scores_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
     )
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(

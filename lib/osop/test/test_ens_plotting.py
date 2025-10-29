@@ -138,7 +138,7 @@ def test_plot_tercile_fc(mme):
 
     atitle = "Test plot"
     shpfilename = shpreader.natural_earth(
-        resolution="10m", category="cultural", map_setting='admin_0_countries'
+        resolution="10m", category="cultural", name='admin_0_countries'
     )
     fig = ens_plotting.plot_tercile_fc(mme, atitle)
 

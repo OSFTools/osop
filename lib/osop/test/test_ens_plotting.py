@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 import pytest
-import cartopy.io.shapereader as shpreader
+import cartopy.feature as cfeature
 
 from osop import ens_plotting
 
@@ -137,10 +137,11 @@ def test_plot_tercile_fc(mme):
     """
 
     atitle = "Test plot"
-    shpfilename = shpreader.natural_earth(
-        resolution="10m", category="cultural", name='admin_0_countries'
-    )
-    fig = ens_plotting.plot_tercile_fc(mme, atitle)
+    shpfile = cfeature.NaturalEarthFeature(
+                category="cultural", name='admin_0_countries', 
+                scale="10m", facecolor="none"
+            )
+    fig = ens_plotting.plot_tercile_fc(mme, atitle, map_setting=shpfile)
 
 
 @image_comparison(

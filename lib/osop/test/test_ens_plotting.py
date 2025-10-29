@@ -147,7 +147,7 @@ def test_plot_tercile_fc(mme):
 @image_comparison(
     baseline_images=["terciles_mask"],
     tol=1.0,
-    remove_text=False,
+    remove_text=True,
     extensions=["png"],
     style="mpl20",
 )

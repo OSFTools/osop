@@ -103,7 +103,7 @@ def get_tindex(infile):
 
 
 # move
-def index(forecast_local, st_dim_name, productsdir, hcst_bname):
+def index(forecast_local, st_dim_name):
     """
     Reindex and restyle the forcast grib so that the data layout is consistent
     and compatiable with hindcast terciles.

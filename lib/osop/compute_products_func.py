@@ -37,41 +37,30 @@ def mme_products_hindcast(services, config, productsdir):
     """
     # remove mme from the list thats worked on
 
-    
-  
     del services["{origin}".format(**config)]
     # Remove when happy
-    del services["jma"] 
-    del services["ukmo"]  
+    del services["jma"]
+
     mme_combined = {}
     n_members = len(services)
-    for aggr in ["1m","3m"]:
+    for aggr in ["1m", "3m"]:
         mme_combined[aggr] = None
         for origin, system in services.items():
             config_copy_hc = update_config(origin, system, config)
-        file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(
-            fpath=productsdir, **config_copy_hc, aggr=aggr)
-        ds = xr.open_dataset(file_name)
+            file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(
+            fpath=productsdir, **config_copy_hc, aggr=aggr
+            )
+            ds = xr.open_dataset(file_name)
         if mme_combined[aggr] is None:
             mme_combined[aggr] = xr.zeros_like(ds)
-            mme_combined[aggr] += ds / n_members        
-        save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(**config, aggr=aggr) 
-        print(save_name)  
+        mme_combined[aggr] += ds / n_members
+        save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(
+            **config, aggr=aggr
+        )
+
         print(f"Saving mme to netCDF files")
         mme_combined[aggr].to_netcdf(f"{productsdir}/{save_name}")
-    return 
-
-# def mme_products_hc(Services, config, productsdir):    #### Leaving this commented out so that I can thoertically use it when removing redundancy.
-#      # remove mme from the list thats worked on
-#     del Services["{origin}".format(**config)]
-#     # Remove when happy
-#     del Services["jma"]
-#     mme_products_hc = mme_process_forecasts(None, "index", Services, productsdir, config)
-#     hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
-#         **config)
-#     mme_products_hc.to_netcdf(
-#         f"{productsdir}/{hcst_bname}.nc"
-#     )
+    return
 
 
 def calc_anoms(hcst, hcst_bname, config, productsdir):
@@ -258,13 +247,14 @@ def calc_products(config, downloaddir, productsdir):
     #  -> burst mode ensembles (e.g. ECMWF SEAS5) use "time". This is the default option
     #  -> lagged start ensembles (e.g. MetOffice GloSea6) use "indexing_time" (see CDS documentation about nominal start date)
     st_dim_name = get_tindex(hcst_fname)
-    hcst = index(hcst_fname, st_dim_name, productsdir, hcst_bname)
+    hcst = index(hcst_fname, st_dim_name)
     # print("this is hcst from index",hcst)
 
     ## calc anoms
     hcst, hcst_3m = calc_anoms(hcst, hcst_bname, config, productsdir)
     ## calc terc probs and thresholds
     prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir)
+
 
 def calc_products_mme(services, config, productsdir):
     """
@@ -275,10 +265,10 @@ def calc_products_mme(services, config, productsdir):
         config (dict): Configuration parameters.
         downloaddir (str): Directory path to save the netCDF files.
     """
-    
+
     hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
         **config
     )
-    
+
     # Combined the services to produce a mme for hindcast verifcation
     hcst = mme_products_hindcast(services, config, productsdir)

@@ -395,5 +395,5 @@ def calc_scores(config, downloaddir, scoresdir, productsdir):
         obs_ds_3m["tprate"] = obs_ds_3m["tprate"] * 3600 * 24
         obs_ds_3m["tprate"].attrs["units"] = "m/s"
     ## calc scores
-    scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir)
     scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir)
+    scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir)

@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 import pytest
+import cartopy.feature as cfeature
 
 from osop import ens_plotting
 
@@ -136,13 +137,17 @@ def test_plot_tercile_fc(mme):
     """
 
     atitle = "Test plot"
-    fig = ens_plotting.plot_tercile_fc(mme, atitle)
+    shpfile = cfeature.NaturalEarthFeature(
+                category="cultural", name='admin_0_countries', 
+                scale="10m", facecolor="none"
+            )
+    fig = ens_plotting.plot_tercile_fc(mme, atitle, map_setting=shpfile)
 
 
 @image_comparison(
     baseline_images=["terciles_mask"],
     tol=1.0,
-    remove_text=False,
+    remove_text=True,
     extensions=["png"],
     style="mpl20",
 )
@@ -155,5 +160,5 @@ def test_plot_tercile_fc_mask(mme, mask):
     atitle = "Test plot"
     mme = mme.rename({"precipitation": "temperature"})
     fig = ens_plotting.plot_tercile_fc(
-        mme, atitle, mask=mask, var="temperature", l_borders=False
+        mme, atitle, mask=mask, var="temperature", map_setting="False"
     )

@@ -37,10 +37,12 @@ def mme_products_hindcast(services, config, productsdir):
     """
     # remove mme from the list thats worked on
 
-    del services["{origin}".format(**config)]
-    # Remove when happy
-    del services["jma"]
+    
 
+    del services["{origin}".format(**config)]
+    # Remove when jma regridded 
+    del services["jma"]
+    
     mme_combined = {}
     n_members = len(services)
     for aggr in ["1m", "3m"]:
@@ -51,9 +53,9 @@ def mme_products_hindcast(services, config, productsdir):
             fpath=productsdir, **config_copy_hc, aggr=aggr
             )
             ds = xr.open_dataset(file_name)
-        if mme_combined[aggr] is None:
-            mme_combined[aggr] = xr.zeros_like(ds)
-        mme_combined[aggr] += ds / n_members
+            if mme_combined[aggr] is None:
+                mme_combined[aggr] = xr.zeros_like(ds)
+            mme_combined[aggr] += ds / n_members
         save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(
             **config, aggr=aggr
         )

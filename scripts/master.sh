@@ -61,6 +61,7 @@ Services:
     eccc_can: 4
     eccc_gem5: 5
     ukmo: 604
+    mme: 1
 EOF
 echo "YML file created: $parseyml"
 
@@ -81,23 +82,25 @@ else
     echo era5 download failed
 fi
 
-# loop over all centres of interest and get data
-for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do 
-    set +e
-    python get_any_hindcast.py \
-        --centre $centre \
-        --month $month \
-        --leads $leads \
-        --area $area \
-        --variable $variable\
-        --downloaddir $downloaddir \
-        --logdir $logdir
-    exitcode=$?
-    set -e
-    if [ $exitcode -eq 0 ]; then
-        echo $centre : download sucessful
-    else
-        echo $centre : download failed
+# loop over all centres of interest and get data #for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do 
+for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do 
+    if [ "$centre" != "mme" ]; then
+        set +e
+        python get_any_hindcast.py \
+            --centre $centre \
+            --month $month \
+            --leads $leads \
+            --area $area \
+            --variable $variable\
+            --downloaddir $downloaddir \
+            --logdir $logdir
+        exitcode=$?
+        set -e
+        if [ $exitcode -eq 0 ]; then
+            echo $centre : download sucessful
+        else
+            echo $centre : download failed
+        fi
     fi
     # compute terciles and anomalies
     set +e

@@ -14,10 +14,56 @@ import os
 import eccodes
 import matplotlib.pyplot as plt
 from osop.util import get_tindex, index
+from osop.compare_terciles import update_config, mme_process_forecasts
+import copy
+
 
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
 import logging
+
+
+def mme_products_hindcast(services, config, productsdir):
+    """
+    Loads each indexed datasets and combines for mme.
+
+    Parameters:
+    Services (list): List of services to combine
+    config (dict): The cofiguraiton parameters for the forecast
+    productsfcdir (str): The location for the files to output too and get from
+
+    Returns:
+    None
+    Saves array (x-array) - The multi-model ensemble forecast percentages.
+    """
+    # remove mme from the list thats worked on
+
+    
+
+    del services["{origin}".format(**config)]
+    # Remove when jma regridded 
+    del services["jma"]
+    
+    mme_combined = {}
+    n_members = len(services)
+    for aggr in ["1m", "3m"]:
+        mme_combined[aggr] = None
+        for origin, system in services.items():
+            config_copy_hc = update_config(origin, system, config)
+            file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(
+            fpath=productsdir, **config_copy_hc, aggr=aggr
+            )
+            ds = xr.open_dataset(file_name)
+            if mme_combined[aggr] is None:
+                mme_combined[aggr] = xr.zeros_like(ds)
+            mme_combined[aggr] += ds / n_members
+        save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(
+            **config, aggr=aggr
+        )
+
+        print(f"Saving mme to netCDF files")
+        mme_combined[aggr].to_netcdf(f"{productsdir}/{save_name}")
+    return
 
 
 def calc_anoms(hcst, hcst_bname, config, productsdir):
@@ -213,3 +259,21 @@ def calc_products(config, downloaddir, productsdir):
     ## calc terc probs and thresholds
     logging.info(f"Calculating tercile probabilities for {hcst_bname}")
     prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir)
+
+
+def calc_products_mme(services, config, productsdir):
+    """
+    Calculate anomalies and tercile probabilities for a the mme combined data.
+
+    Args:
+        Services (dict): All the services intended for the mme.
+        config (dict): Configuration parameters.
+        downloaddir (str): Directory path to save the netCDF files.
+    """
+
+    hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
+        **config
+    )
+
+    # Combined the services to produce a mme for hindcast verifcation
+    hcst = mme_products_hindcast(services, config, productsdir)

@@ -75,10 +75,25 @@ def get_cmap(precip_cs=False, wmo_cs=True):
 
     return cmap_below, cmap_normal, cmap_above
 
+def fc_title(config):
+    """
+    Create a title string for the forecast plot based on the configuration.
+
+    Parameters:
+    - config: Dictionary containing configuration parameters.
+
+    Returns:
+    - atitle: Formatted title string.
+    """
+    lead = int(config["i"]) + 1
+    atitle = (
+        f"Tercile Summary:{config['origin']} {config['systemfc']} {config['fcstarty']} \n"
+        f"startmonth:{config['start_month']} \nlead:{lead} \nVariable: {config['hc_var']}"
+    )
+    return atitle
 
 def plot_tercile_fc(
-    mme, config, plotsdir, forecast_fname, var="precipitation", mask=None
-):
+    mme, atitle, var="precipitation", mask=None, map_setting="False"):
     """
     Function to plot a tercile forecast with different colormaps
     for each of three terciles. Uses a threshold of 40%
@@ -86,19 +101,12 @@ def plot_tercile_fc(
 
     Parameters:
     - mme: xarray DataArray with tercile forecasts
-    - config: Dictionary used for variables in title of plot
+    - atitle: Title for the plot
     - plotsdir: Location to save the plot
-    - forecast_fname: Filename for saving the plot
     - var: Variable name in the dataset
     - mask: Optional dry mask as a DataArray
+    - map_setting: Optional map feature from cartopy
     """
-
-    # Set up title
-    lead = int(config["i"]) + 1
-    atitle = (
-        f"Tercile Summary:{config['origin']} {config['systemfc']} {config['fcstarty']} \n"
-        f"startmonth:{config['start_month']} \nlead:{lead} \nVariable: {config['hc_var']}"
-    )
 
     # Apply threshold mask
     LTHRESH = 40.0
@@ -156,7 +164,6 @@ def plot_tercile_fc(
     ax.coastlines()
 
     # Optional map feature
-    map_setting = location(config)
     if map_setting != "False":
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
 
@@ -208,9 +215,7 @@ def plot_tercile_fc(
             fontsize=12,
         )
 
-    # Save figure
-    figname = f"{plotsdir}/{forecast_fname}.png"
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
+    return plt.gcf()
 
 
 def reformatt(data, variable):
@@ -286,7 +291,7 @@ def plot_forecasts(productdir, plotsdir, config):
         # Future functionality should be able to handle this - see plot_tercile_fc
         variable = variable
 
-    # Reformatt dataset for plotting
+    # Reformat dataset for plotting
     fcst_local_1m = xr.open_dataset(forecast_local_1m)
     fcst_local_3m = xr.open_dataset(forecast_local_3m)
     fcst_local_3m = fcst_local_3m.squeeze(dim="forecastMonth")
@@ -295,9 +300,20 @@ def plot_forecasts(productdir, plotsdir, config):
     plot_dataset_3m = reformatt(fcst_local_3m, variable)
 
     # Tercile Summary - 1month forecasts, per origin centre.
-    plot_tercile_fc(
-        plot_dataset_1m, config, plotsdir, forecast_name_1m, var=variable, mask=None
+    map_setting = location(config)
+    atitle = fc_title(config)
+    fig = plot_tercile_fc(
+        plot_dataset_1m, atitle, var=variable, mask=None,
+        map_setting=map_setting
     )
-    plot_tercile_fc(
-        plot_dataset_3m, config, plotsdir, forecast_name_3m, var=variable, mask=None
+        # Save figure
+    figname = f"{plotsdir}/{forecast_name_1m}.png"
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
+
+    fig = plot_tercile_fc(
+        plot_dataset_3m,  atitle, var=variable, mask=None,
+        map_setting=map_setting
     )
+    # Save figure
+    figname = f"{plotsdir}/{forecast_name_3m}.png"
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)

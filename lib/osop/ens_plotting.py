@@ -7,6 +7,7 @@ See LICENSE in the root of the repository for full licensing details.
 Collection of plotting codes relevant to ensembles
 """
 
+import logging
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
@@ -241,8 +242,9 @@ def reformatt(data, variable):
         new_dataset = xr.Dataset(
             {variable: (("C", "Y", "X"), values)}, coords={"C": C, "Y": Y, "X": X}
         )
-    except NameError:
-        print("Check data configurations match input parameters")
+    except NameError as e:
+        logging.error("Check data configurations match input parameters")
+        raise e
 
     return new_dataset
 
@@ -282,7 +284,7 @@ def plot_forecasts(productdir, plotsdir, config):
     elif variable == "total_precipitation":
         variable = "precipitation"
     else:
-        print("Variable not identified")
+        logging.info(f"Variable not identified: {variable}")
         # Future functionality should be able to handle this - see plot_tercile_fc
         variable = variable
 

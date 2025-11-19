@@ -11,3 +11,5 @@ dependencies:
   - pytest
   - pytest-cov
   - black
+  - sphinx
+  - myst-parser

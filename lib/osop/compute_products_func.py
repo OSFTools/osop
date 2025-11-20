@@ -45,24 +45,56 @@ def mme_products_hindcast(services, config, productsdir):
     del services["jma"]
     
     mme_combined = {}
+    mme_combined_mean = {}
+    mme_combined_anom = {}
     n_members = len(services)
     for aggr in ["1m", "3m"]:
         mme_combined[aggr] = None
+        mme_combined_mean[aggr] = None
+        mme_combined_anom[aggr] = None
         for origin, system in services.items():
             config_copy_hc = update_config(origin, system, config)
+            print(config_copy_hc)
             file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(
             fpath=productsdir, **config_copy_hc, aggr=aggr
             )
+            file_name_mean = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.ensmean.nc".format(
+            fpath=productsdir, **config_copy_hc, aggr=aggr
+            )
+            print("file_name_mean=", file_name_mean)
+            file_name_anom = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.anom.nc".format(
+            fpath=productsdir, **config_copy_hc, aggr=aggr
+            )
+            print("file_name_anom=", file_name_anom)
+
             ds = xr.open_dataset(file_name)
+            ds_mean = xr.open_dataset(file_name_mean)
+            ds_anom = xr.open_dataset(file_name_anom)
             if mme_combined[aggr] is None:
                 mme_combined[aggr] = xr.zeros_like(ds)
             mme_combined[aggr] += ds / n_members
+
+            if mme_combined_mean[aggr] is None: 
+                mme_combined_mean[aggr] = xr.zeros_like(ds_mean)
+            mme_combined_mean[aggr] += ds_mean / n_members
+
+            if mme_combined_anom[aggr] is None: 
+                mme_combined_anom[aggr] = xr.zeros_like(ds_anom)
+            mme_combined_anom[aggr] += ds_anom / n_members
         save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.tercile_probs.nc".format(
+            **config, aggr=aggr
+        )
+        save_name_mean = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.ensmean.nc".format(
+            **config, aggr=aggr
+        )
+        save_name_anom = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.anom.nc".format(
             **config, aggr=aggr
         )
 
         print(f"Saving mme to netCDF files")
         mme_combined[aggr].to_netcdf(f"{productsdir}/{save_name}")
+        mme_combined_mean[aggr].to_netcdf(f"{productsdir}/{save_name_mean}")
+        mme_combined_anom[aggr].to_netcdf(f"{productsdir}/{save_name_anom}")
     return
 
 

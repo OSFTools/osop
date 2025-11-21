@@ -74,7 +74,7 @@ if __name__ == "__main__":
     Get the command line arguments using argparse
     Call the plotting functions to generate verification plots
     """
-    scores = ["roc", "rocss", "rps", "rel", "bs"] #"spearman_corr", "pearson_corr", # this needs to be re-added when sorted with the mean and anom
+    scores = ["spearman_corr", "pearson_corr","roc", "rocss", "rps", "rel", "bs"] #"spearman_corr", "pearson_corr", # this needs to be re-added when sorted with the mean and anom
 
     # get command line args
     args = parse_args()

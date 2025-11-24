@@ -8,10 +8,11 @@ This script currently can only be used to create scores using ERA5 as the compar
 
 """
 
+from datetime import datetime
 import os
 import yaml
 from yaml.loader import SafeLoader
-
+import logging
 
 # import local modules for function usage
 from osop.compare_terciles import compute_forecast, mme_products
@@ -60,6 +61,8 @@ def parse_args():
     )
     parser.add_argument("--years", required=False, help="location to save too")
 
+    parser.add_argument("--logdir", required=True, help="location to save logs")
+
     args = parser.parse_args()
     return args
 
@@ -76,6 +79,19 @@ if __name__ == "__main__":
     # get command line args
     args = parse_args()
 
+    logfile = os.path.join(args.logdir, 
+                           f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt")
+    loglev = logging.INFO  # can be an argument later if needed
+    logging.basicConfig(
+        level=loglev,
+        filename=logfile,
+        encoding="utf-8",
+        filemode="w",
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+    )
+
     # unpack args and reformat if needed
     centre = args.centre
     downloaddir = args.downloaddir
@@ -84,6 +100,9 @@ if __name__ == "__main__":
     productsfcdir = args.productsfcdir
     month = int(args.month)
     leads = args.leads
+    logging.info(f'Doing FC products, Centre: {centre}, Month: {month},'\
+                 f' Leads: {leads}')
+
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
     obs_month = [int(l) - 1 for l in args.leads.split(",")]
@@ -97,6 +116,7 @@ if __name__ == "__main__":
     elif hc_var == "total_precipitation":
         var = "tprate"
     else:
+        logging.error(f"Unknown hindcast variable: {hc_var}")
         raise ValueError(f"Unknown hindcast variable: {hc_var}")
 
     # add arguments to config
@@ -120,7 +140,8 @@ if __name__ == "__main__":
             # Converts contents to useable dictionary
             Services = services["Services"]
         except yaml.YAMLError as e:
-            print(e)
+            logging.error(f"Error reading YAML file: {e}", stack_info=True)
+            raise e
 
     ymllocation_hc = os.path.join(downloadhcdir, "parseyml.yml")
 
@@ -131,7 +152,8 @@ if __name__ == "__main__":
             # Converts contents to useable dictionary
             Services_hc = services_hc["Services"]
         except yaml.YAMLError as e:
-            print(e)
+            logging.error(f"Error reading YAML file: {e}", stack_info=True)
+            raise e
 
     if args.years:
         config["hcstarty"] = args.years[0]
@@ -164,7 +186,9 @@ if __name__ == "__main__":
         mme_products(Services, config, productsfcdir)
     else:
         if centre not in Services.keys():
+            logging.error(f"Unknown system for C3S: {centre}")
             raise ValueError(f"Unknown system for C3S: {centre}")
         config["systemfc"] = Services[centre]
         config["systemhc"] = Services_hc[centre]
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
+    logging.info("Completed forecast products successfully")

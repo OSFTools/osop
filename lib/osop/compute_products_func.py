@@ -49,9 +49,8 @@ def process_mme_products(array, n_members, output, aggr, config, productsdir, si
             **config, aggr=aggr,sig=sig,
         )
     
-    output[aggr].to_netcdf(f"{productsdir}/{save_name}")
 
-    return
+    return output[aggr], save_name
     
     
 
@@ -82,23 +81,24 @@ def mme_products_hindcast(services, config, productsdir):
         mme_combined[aggr] = None
         mme_combined_mean[aggr] = None
         mme_combined_anom[aggr] = None
-        for origin, system in services.items():
-            config_copy_hc = update_config(origin, system, config)
-            
-            targets = {
+
+        targets = {
                 "tercile_probs.nc":mme_combined,
                 "ensmean.nc": mme_combined_mean,
                 "anom.nc": mme_combined_anom,
             }
-
-            #Load and run each array, 1m-3m and tercile, mean and anom 
-            for suffix, target in targets.items():
+        for suffix, target in targets.items():
+            for origin, system in services.items():
+                config_copy_hc = update_config(origin, system, config)
+                
+                    #Load and run each array, 1m-3m and tercile, mean and anom 
+                    
                 file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{suffix}".format(
                     fpath=productsdir, **config_copy_hc, aggr=aggr, suffix = suffix,
                 )
                 logging.debug("Combining MME product for {suffix}".format(suffix = suffix))
-                process_mme_products(xr.open_dataset(file_name), n_members, target, aggr, config, productsdir, suffix)
-        
+                output, save_name = process_mme_products(xr.open_dataset(file_name), n_members, target, aggr, config, productsdir, suffix)
+            output.to_netcdf(f"{productsdir}/{save_name}")
     return
 
 

@@ -22,37 +22,34 @@ import copy
 from dateutil.relativedelta import relativedelta
 import logging
 
-def process_mme_products(array, n_members, output, aggr, config, productsdir, sig): 
+
+def process_mme_products(array, n_members, output, aggr, config, sig):
     """
     Calculate anomalies and save them to netCDF files.
 
     Parameters:
-    array (x-array): Target array. 
+    array (x-array): Target array.
     n_members (int): Length of services for weights (to be added)
     output (x-array): Enters as an empty array
     aggr (str): 1m or 3m array
     config (dic): Configuration parameters.
-    products_dir (str): Directory path to save the netCDF files.
-    suffix (str): Addition to save path for mean, anom or tercile mme. 
+    sig (str): Signifier for addition to save path for mean, anom or tercile mme.
 
     Returns:
-    None
-    saves 1 month and 3 month combined mme outputs to netCDF files
+    Returns x-array of the combined mme for 1 month and 3 month combined
     """
-    #populate array and divide by members. 
+    # populate array and divide by members.
     if output[aggr] is None:
         output[aggr] = xr.zeros_like(array)
     output[aggr] += array / n_members
 
-    
     save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{sig}".format(
-            **config, aggr=aggr,sig=sig,
-        )
-    
+        **config,
+        aggr=aggr,
+        sig=sig,
+    )
 
     return output[aggr], save_name
-    
-    
 
 
 def mme_products_hindcast(services, config, productsdir):
@@ -70,9 +67,9 @@ def mme_products_hindcast(services, config, productsdir):
     """
     # remove mme from the list thats worked on
     del services["{origin}".format(**config)]
-    # Remove when jma regridded 
+    # Remove when jma regridded
     del services["jma"]
-    
+
     mme_combined = {}
     mme_combined_mean = {}
     mme_combined_anom = {}
@@ -83,21 +80,33 @@ def mme_products_hindcast(services, config, productsdir):
         mme_combined_anom[aggr] = None
 
         targets = {
-                "tercile_probs.nc":mme_combined,
-                "ensmean.nc": mme_combined_mean,
-                "anom.nc": mme_combined_anom,
-            }
+            "tercile_probs.nc": mme_combined,
+            "ensmean.nc": mme_combined_mean,
+            "anom.nc": mme_combined_anom,
+        }
         for suffix, target in targets.items():
             for origin, system in services.items():
                 config_copy_hc = update_config(origin, system, config)
-                
-                    #Load and run each array, 1m-3m and tercile, mean and anom 
-                    
+
+                # Load and run each array, 1m-3m and tercile, mean and anom
                 file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{suffix}".format(
-                    fpath=productsdir, **config_copy_hc, aggr=aggr, suffix = suffix,
+                    fpath=productsdir,
+                    **config_copy_hc,
+                    aggr=aggr,
+                    suffix=suffix,
                 )
-                logging.debug("Combining MME product for {suffix}".format(suffix = suffix))
-                output, save_name = process_mme_products(xr.open_dataset(file_name), n_members, target, aggr, config, productsdir, suffix)
+                logging.debug(
+                    "Combining MME product for {suffix}".format(suffix=suffix)
+                )
+                output, save_name = process_mme_products(
+                    xr.open_dataset(file_name),
+                    n_members,
+                    target,
+                    aggr,
+                    config,
+                    suffix,
+                )
+            # Save out final mme array
             output.to_netcdf(f"{productsdir}/{save_name}")
     return
 
@@ -287,7 +296,7 @@ def calc_products(config, downloaddir, productsdir):
     #  -> lagged start ensembles (e.g. MetOffice GloSea6) use "indexing_time" (see CDS documentation about nominal start date)
     st_dim_name = get_tindex(hcst_fname)
     hcst = index(hcst_fname, st_dim_name)
-    logging.debug("this is hcst from index",hcst)
+    logging.debug("this is hcst from index", hcst)
 
     ## calc anoms
     logging.info(f"Calculating anomalies for {hcst_bname}")

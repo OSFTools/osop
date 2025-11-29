@@ -1,9 +1,9 @@
+# (C) Crown Copyright, Met Office. All rights reserved.
+
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+
 """
-(C) Crown Copyright, Met Office. All rights reserved.
-
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-
 A module with utility functions for seasonal FCs
 """
 
@@ -14,7 +14,8 @@ import logging
 
 
 def sel_season_time(dataset, start_year, end_year):
-    """Extract the data for the specified years starting with Dec of
+    """
+    Extract the data for the specified years starting with Dec of
     first year and ending with Nov of last year
 
     Parameters:
@@ -34,7 +35,7 @@ def season_stats(dataset, start_year, end_year, stats=["mean"]):
     over a given time period for standard meteorological seasons
     and the categories of the terciles for each season.
 
-    Parameters
+    Parameters:
         dataset: xarray.Dataset - the data to calculate the stats on
         start_year: int - the start year of the period to calculate the stats
         end_year: int - the end year of the period to calculate the stats
@@ -43,7 +44,7 @@ def season_stats(dataset, start_year, end_year, stats=["mean"]):
         stats: list - the statistics to calculate, default is ['mean']
             options: ['mean', 'seas_ts'], seas_ts is the seasonal time series for all years
 
-    Returns
+    Returns:
         ds_stats: dictionary - a dictionary with the calculated stats as xarray.Datasets
 
     """
@@ -82,11 +83,11 @@ def get_tindex(infile):
     """
     Use eccodes to check if there is an indexing time dimension
 
-    Input
+    Parameters:
         infile(str): name of file to check
     Returns:
         st_dim_name (str): name of time dimension to use for indexing.
-            time for burst ensmeble and indexing_time for lagged
+        (time for burst ensmeble and indexing_time for lagged)
 
     """
     f = open(infile, "rb")

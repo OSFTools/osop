@@ -18,5 +18,7 @@ The documentation includes a user guide and API reference.
    :caption: Contents:
 
    user_guide.md
+      run.md
+      devel.md
    api_reference.rst
 

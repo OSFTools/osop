@@ -101,10 +101,15 @@ if __name__ == "__main__":
 
     with open(ymllocation, "r") as stream:
         try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
+            services_doc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw = services_doc["Services"]
+
+            # Convert Services back the original dictionary (service -> value)
+            # Remove Weights 
+            Services = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw.items()
+            }
         except yaml.YAMLError as e:
             logging.error(f"Error reading YAML file: {e}", stack_info=True)
 
@@ -137,7 +142,7 @@ if __name__ == "__main__":
         calc_products(config, downloaddir, productsdir)
     elif centre == "mme":
         config["systemfc"] = Services["mme"]
-        calc_products_mme(Services, config, productsdir)
+        calc_products_mme(ServicesRaw, config, productsdir)
     else:
         if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")

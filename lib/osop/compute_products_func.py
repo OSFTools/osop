@@ -23,7 +23,7 @@ from dateutil.relativedelta import relativedelta
 import logging
 
 
-def process_mme_products(array, n_members, output, aggr, config, sig):
+def process_mme_products(array, n_members, output, aggr, config, sig, member_weight=1):
     """
     Calculate anomalies and save them to netCDF files.
 
@@ -41,7 +41,7 @@ def process_mme_products(array, n_members, output, aggr, config, sig):
     # populate array and divide by members.
     if output[aggr] is None:
         output[aggr] = xr.zeros_like(array)
-    output[aggr] += array / n_members
+    output[aggr] += array * (member_weight/ n_members)
 
     save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{sig}".format(
         **config,
@@ -73,6 +73,14 @@ def mme_products_hindcast(services, config, productsdir):
     mme_combined = {}
     mme_combined_mean = {}
     mme_combined_anom = {}
+
+
+    services_values = {origin: val[0] if isinstance(val, (list, tuple)) else val
+                        for origin, val in services.items()}
+    services_weights = {origin: val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
+                        for origin, val in services.items()}
+
+
     n_members = len(services)
     for aggr in ["1m", "3m"]:
         mme_combined[aggr] = None
@@ -85,8 +93,8 @@ def mme_products_hindcast(services, config, productsdir):
             "anom.nc": mme_combined_anom,
         }
         for suffix, target in targets.items():
-            for origin, system in services.items():
-                config_copy_hc = update_config(origin, system, config)
+            for origin, system_value in services_values.items():
+                config_copy_hc = update_config(origin, system_value, config)
 
                 # Load and run each array, 1m-3m and tercile, mean and anom
                 file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{suffix}".format(
@@ -105,6 +113,7 @@ def mme_products_hindcast(services, config, productsdir):
                     aggr,
                     config,
                     suffix,
+                    member_weight=services_weights[origin]
                 )
             # Save out final mme array
             output.to_netcdf(f"{productsdir}/{save_name}")

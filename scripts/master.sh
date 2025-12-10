@@ -53,16 +53,16 @@ method="pmesh" #Remove for smooth plotting on correlation plots
 # Services in use:
 cat <<EOF > "$parseyml"
 Services:
-    ecmwf: 51
-    meteo_france: 9
-    dwd: 22
-    cmcc: 35
-    ncep: 2
-    jma: 3
-    eccc_can: 4
-    eccc_gem5: 5
-    ukmo: 604
-    mme: 1
+    ecmwf: [51,1]
+    meteo_france: [9,1]
+    dwd: [22,1]
+    cmcc: [35,1]
+    ncep: [2,1]
+    jma: [3,1]
+    eccc_can: [4,1]
+    eccc_gem5: [5,1]
+    ukmo: [604,1]
+    mme: [1,1]
 EOF
 echo "YML file created: $parseyml"
 

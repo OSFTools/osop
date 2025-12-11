@@ -40,10 +40,10 @@ def process_mme_products(array, n_members, output, aggr, config, sig, member_wei
     Returns x-array of the combined mme for 1 month and 3 month combined
     """
     # populate array and divide by members.
-    
+    #print("this is member_weight", member_weight)
     if output[aggr] is None:
         output[aggr] = xr.zeros_like(array)
-    output[aggr] += array * (member_weight/ n_members)
+    output[aggr] += (array * member_weight)
 
     save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{sig}".format(
         **config,
@@ -82,8 +82,9 @@ def mme_products_hindcast(services, config, productsdir):
     services_weights = {origin: val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
                         for origin, val in services.items()}
 
-
+    
     n_members = len(services)
+    print("this is n_members",n_members)
     for aggr in ["1m", "3m"]:
         mme_combined[aggr] = None
         mme_combined_mean[aggr] = None

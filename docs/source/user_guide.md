@@ -1,4 +1,9 @@
 # OSOP User Guide
+```{eval-rst}
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+```
 
 ## Set up and using the Objective Seasonal Outlook Package (OSOP)
 

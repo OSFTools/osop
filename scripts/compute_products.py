@@ -143,14 +143,14 @@ if __name__ == "__main__":
         config["system"] = Services["eccc_gem5"]
         calc_products(config, downloaddir, productsdir)
     elif centre == "mme":
-            # Calculate fractional weights
+        ## Calculate fractional weights
         sum_weights = {}
         weights_sum = sum(n for _, n in ServicesRaw.values())
         for serv, val in ServicesRaw.items():
             version = val[0] if isinstance(val, (list, tuple)) else val
             weight = val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
             ServicesRaw[serv] = [version, weight / weights_sum]
-        print(ServicesRaw)
+        ## Run mme calc
         config["systemfc"] = Services["mme"]
         calc_products_mme(ServicesRaw, config, productsdir)
     else:

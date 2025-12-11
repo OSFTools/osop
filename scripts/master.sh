@@ -51,6 +51,9 @@ location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' 
 method="pmesh" #Remove for smooth plotting on correlation plots
 
 # Services in use:
+# First column service, second column weight
+# mme weight should be set to 0, 1 on all other for equal weights
+# JMA set to 0 until regridding issue resolved
 cat <<EOF > "$parseyml"
 Services:
     ecmwf: [51,1]
@@ -58,7 +61,7 @@ Services:
     dwd: [22,1]
     cmcc: [35,1]
     ncep: [2,1]
-    jma: [3,1]
+    jma: [3,0]  
     eccc_can: [4,1]
     eccc_gem5: [5,1]
     ukmo: [604,1]

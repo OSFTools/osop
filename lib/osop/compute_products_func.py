@@ -35,12 +35,11 @@ def process_mme_products(array, n_members, output, aggr, config, sig, member_wei
     aggr (str): 1m or 3m array
     config (dic): Configuration parameters.
     sig (str): Signifier for addition to save path for mean, anom or tercile mme.
-
+    member_weight (float): The fractional weight for the service, i.e. weight/sum of weights
     Returns:
     Returns x-array of the combined mme for 1 month and 3 month combined
     """
-    # populate array and divide by members.
-    #print("this is member_weight", member_weight)
+    # populate array and divide by members fractional weight
     if output[aggr] is None:
         output[aggr] = xr.zeros_like(array)
     output[aggr] += (array * member_weight)
@@ -84,7 +83,7 @@ def mme_products_hindcast(services, config, productsdir):
 
     
     n_members = len(services)
-    print("this is n_members",n_members)
+    
     for aggr in ["1m", "3m"]:
         mme_combined[aggr] = None
         mme_combined_mean[aggr] = None

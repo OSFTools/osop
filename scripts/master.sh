@@ -62,7 +62,7 @@ Services:
     eccc_can: [4,1]
     eccc_gem5: [5,1]
     ukmo: [604,1]
-    mme: [1,1]
+    mme: [1,0]
 EOF
 echo "YML file created: $parseyml"
 

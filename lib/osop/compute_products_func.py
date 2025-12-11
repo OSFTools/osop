@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from osop.util import get_tindex, index
 from osop.compare_terciles import update_config, mme_process_forecasts
 import copy
+import warnings
 
 
 # Date and calendar libraries
@@ -39,6 +40,7 @@ def process_mme_products(array, n_members, output, aggr, config, sig, member_wei
     Returns x-array of the combined mme for 1 month and 3 month combined
     """
     # populate array and divide by members.
+    
     if output[aggr] is None:
         output[aggr] = xr.zeros_like(array)
     output[aggr] += array * (member_weight/ n_members)

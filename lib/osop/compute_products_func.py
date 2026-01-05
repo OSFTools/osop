@@ -12,8 +12,7 @@ import eccodes
 import matplotlib.pyplot as plt
 from osop.util import get_tindex, index
 from osop.compare_terciles import update_config, mme_process_forecasts
-import copy
-import warnings
+
 
 
 # Date and calendar libraries
@@ -21,13 +20,12 @@ from dateutil.relativedelta import relativedelta
 import logging
 
 
-def process_mme_products(array, n_members, output, aggr, config, sig, member_weight=1):
+def process_mme_products(array, output, aggr, config, sig, member_weight=0.1):
     """
     Calculate anomalies and save them to netCDF files.
 
     Parameters:
     array (x-array): Target array.
-    n_members (int): Length of services for weights (to be added)
     output (x-array): Enters as an empty array
     aggr (str): 1m or 3m array
     config (dic): Configuration parameters.
@@ -79,8 +77,6 @@ def mme_products_hindcast(services, config, productsdir):
                         for origin, val in services.items()}
 
     
-    n_members = len(services)
-    
     for aggr in ["1m", "3m"]:
         mme_combined[aggr] = None
         mme_combined_mean[aggr] = None
@@ -107,7 +103,6 @@ def mme_products_hindcast(services, config, productsdir):
                 )
                 output, save_name = process_mme_products(
                     xr.open_dataset(file_name),
-                    n_members,
                     target,
                     aggr,
                     config,

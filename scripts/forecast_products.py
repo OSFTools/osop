@@ -130,20 +130,57 @@ if __name__ == "__main__":
         var=var,
         hc_var=hc_var,
     )
-    ymllocation = os.path.join(downloaddir, "parseyml.yml") # this is the added one
-    with open(ymllocation, "r") as stream:
-        try:
-            services_doc = yaml.load(stream, Loader=SafeLoader)
-            ServicesRaw = services_doc["Services"]
+    
 
-            # Convert Services back the original dictionary (service -> value)
-            # Remove Weights 
-            Services = {
-                svc: (val[0] if isinstance(val, (list, tuple)) else val)
-                for svc, val in ServicesRaw.items()
-                }
-        except yaml.YAMLError as e:
-            logging.error(f"Error reading YAML file: {e}", stack_info=True)
+    def normalize_services(services_raw):
+        """
+        Services_raw(dict): config file from the passed through yml
+        Normalize a mapping of service -> value into service -> (id, weight)
+        Accepts:
+        - scalar (e.g., 51)                 -> (51, 1)
+        - [id] or (id,)                     -> (id, 1)
+        - [id, weight] or (id, weight, ...) -> (id, weight) (first two only)
+        - []                                -> (None, 1) with a warning
+        """
+        if not isinstance(services_raw, dict):
+            raise TypeError("'Services' must be a mapping of service -> [id, weight]")
+
+        normalized = {}
+        for svc, val in services_raw.items():
+            if isinstance(val, (list, tuple)):
+                if len(val) == 0:
+                    logging.warning(f"Service '{svc}' has an empty list; defaulting to (None, 1)")
+                    sid, w = None, 1
+                elif len(val) == 1:
+                    sid, w = val[0], 1
+                else:
+                    sid, w = val[0], val[1]
+            else:
+                # scalar
+                sid, w = val, 1
+
+            normalized[svc] = (sid, w)
+        return normalized
+
+    ymllocation = os.path.join(downloaddir, "parseyml.yml")
+    try:
+        with open(ymllocation, "r") as stream:
+            services_doc = yaml.safe_load(stream)  # equivalent to yaml.load(..., Loader=SafeLoader)
+
+        if not isinstance(services_doc, dict) or "Services" not in services_doc:
+            raise KeyError("'Services' key not found in YAML")
+
+        ServicesRaw = services_doc["Services"]
+        ServicesPairs = normalize_services(ServicesRaw)  # service -> (id, weight)
+        Services = {svc: sid for svc, (sid, _) in ServicesPairs.items()}
+        ServicesRaw = {svc: [sid, weight] for svc, (sid, weight) in ServicesPairs.items()}
+
+    except FileNotFoundError:
+        logging.error(f"YAML file not found: {ymllocation}", stack_info=True)
+    except (yaml.YAMLError, KeyError, TypeError) as e:
+        logging.error(f"Error reading or parsing YAML file: {e}", stack_info=True)
+
+
 
 
     ymllocation_hc = os.path.join(downloadhcdir, "parseyml.yml")

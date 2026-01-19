@@ -60,8 +60,8 @@ years=2025
 # edit as approprite to the most up to date systems. 
 cat <<EOF > "$parseyml"
 Services:
-    ecmwf: [51,1]
-    meteo_france: [9,1]
+    ecmwf: [51]
+    meteo_france: [9,2]
     dwd: [22,1]
     cmcc: [35,1]
     ncep: [2,1]

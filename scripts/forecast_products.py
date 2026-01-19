@@ -79,8 +79,10 @@ if __name__ == "__main__":
     # get command line args
     args = parse_args()
 
-    logfile = os.path.join(args.logdir, 
-                           f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt")
+    logfile = os.path.join(
+        args.logdir,
+        f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+    )
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(
         level=loglev,
@@ -100,8 +102,9 @@ if __name__ == "__main__":
     productsfcdir = args.productsfcdir
     month = int(args.month)
     leads = args.leads
-    logging.info(f'Doing FC products, Centre: {centre}, Month: {month},'\
-                 f' Leads: {leads}')
+    logging.info(
+        f"Doing FC products, Centre: {centre}, Month: {month}," f" Leads: {leads}"
+    )
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
@@ -130,7 +133,6 @@ if __name__ == "__main__":
         var=var,
         hc_var=hc_var,
     )
-    
 
     def normalize_services(services_raw):
         """
@@ -149,7 +151,9 @@ if __name__ == "__main__":
         for svc, val in services_raw.items():
             if isinstance(val, (list, tuple)):
                 if len(val) == 0:
-                    logging.warning(f"Service '{svc}' has an empty list; defaulting to (None, 1)")
+                    logging.warning(
+                        f"Service '{svc}' has an empty list; defaulting to (None, 1)"
+                    )
                     sid, w = None, 1
                 elif len(val) == 1:
                     sid, w = val[0], 1
@@ -165,7 +169,9 @@ if __name__ == "__main__":
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
     try:
         with open(ymllocation, "r") as stream:
-            services_doc = yaml.safe_load(stream)  # equivalent to yaml.load(..., Loader=SafeLoader)
+            services_doc = yaml.safe_load(
+                stream
+            )  # equivalent to yaml.load(..., Loader=SafeLoader)
 
         if not isinstance(services_doc, dict) or "Services" not in services_doc:
             raise KeyError("'Services' key not found in YAML")
@@ -173,15 +179,14 @@ if __name__ == "__main__":
         ServicesRaw = services_doc["Services"]
         ServicesPairs = normalize_services(ServicesRaw)  # service -> (id, weight)
         Services = {svc: sid for svc, (sid, _) in ServicesPairs.items()}
-        ServicesRaw = {svc: [sid, weight] for svc, (sid, weight) in ServicesPairs.items()}
+        ServicesRaw = {
+            svc: [sid, weight] for svc, (sid, weight) in ServicesPairs.items()
+        }
 
     except FileNotFoundError:
         logging.error(f"YAML file not found: {ymllocation}", stack_info=True)
     except (yaml.YAMLError, KeyError, TypeError) as e:
         logging.error(f"Error reading or parsing YAML file: {e}", stack_info=True)
-
-
-
 
     ymllocation_hc = os.path.join(downloadhcdir, "parseyml.yml")
 
@@ -191,10 +196,10 @@ if __name__ == "__main__":
             services_hc = yaml.load(stream, Loader=SafeLoader)
             ServicesRaw_hc = services_hc["Services"]
             # Converts contents to useable dictionary
-            Services_hc =  {
+            Services_hc = {
                 svc: (val[0] if isinstance(val, (list, tuple)) else val)
                 for svc, val in ServicesRaw_hc.items()
-                }
+            }
         except yaml.YAMLError as e:
             logging.error(f"Error reading YAML file: {e}", stack_info=True)
             raise e

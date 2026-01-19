@@ -22,6 +22,7 @@ import argparse
 from datetime import datetime
 import logging
 
+
 def parse_args():
     """
     set up argparse to get command line arguments
@@ -137,7 +138,7 @@ if __name__ == "__main__":
             ServicesRaw = services_doc["Services"]
 
             # Convert Services back the original dictionary (service -> value)
-            # Remove Weights 
+            # Remove Weights
             Services = {
                 svc: (val[0] if isinstance(val, (list, tuple)) else val)
                 for svc, val in ServicesRaw.items()

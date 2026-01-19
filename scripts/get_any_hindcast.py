@@ -89,6 +89,7 @@ def do_cdsapi_call(
         )
         logging.info(f"Downloaded {fname}")
 
+
 def parse_args():
     """
     set up argparse to get command line arguments
@@ -113,17 +114,13 @@ def parse_args():
         required=True,
         help="variable to download, 2m_temperature, total_precipitation",
     )
-    parser.add_argument(
-        "--downloaddir", 
-        required=True, 
-        help="location to download to"
-        )
+    parser.add_argument("--downloaddir", required=True, help="location to download to")
 
     parser.add_argument(
         "--logdir",
         required=True,
         help="Path to log directory for logging output.",
-        )
+    )
 
     parser.add_argument(
         "--years",
@@ -180,7 +177,7 @@ def main():
             ServicesRaw = services_doc["Services"]
 
             # Convert Services back the original dictionary (service -> value)
-            # Remove Weights 
+            # Remove Weights
             Services = {
                 svc: (val[0] if isinstance(val, (list, tuple)) else val)
                 for svc, val in ServicesRaw.items()

@@ -53,7 +53,6 @@ def parse_args():
     )
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
 
-
     args = parser.parse_args()
     return args
 
@@ -104,16 +103,14 @@ if __name__ == "__main__":
             services_doc = yaml.load(stream, Loader=SafeLoader)
             ServicesRaw = services_doc["Services"]
 
-
             # Convert Services back the original dictionary (service -> value)
-            # Remove Weights 
+            # Remove Weights
             Services = {
                 svc: (val[0] if isinstance(val, (list, tuple)) else val)
                 for svc, val in ServicesRaw.items()
             }
         except yaml.YAMLError as e:
             logging.error(f"Error reading YAML file: {e}", stack_info=True)
-    
 
     # add arguments to config
     config = dict(

@@ -59,7 +59,7 @@ def parse_args():
     parser.add_argument(
         "--method",
         required=False,
-        default = None,
+        default=None,
         help="Changes the plotting look, use pmesh for pcolourmesh",
     )
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     Get the command line arguments using argparse
     Call the plotting functions to generate verification plots
     """
-    scores = ["spearman_corr", "pearson_corr","roc", "rocss", "rps", "rel", "bs"] 
+    scores = ["spearman_corr", "pearson_corr", "roc", "rocss", "rps", "rel", "bs"]
 
     # get command line args
     args = parse_args()
@@ -144,7 +144,7 @@ if __name__ == "__main__":
             ServicesRaw = services_doc["Services"]
 
             # Convert Services back the original dictionary (service -> value)
-            # Remove Weights 
+            # Remove Weights
             Services = {
                 svc: (val[0] if isinstance(val, (list, tuple)) else val)
                 for svc, val in ServicesRaw.items()

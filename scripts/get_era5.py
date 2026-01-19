@@ -30,7 +30,7 @@ def get_obs(obs_fname, config):
         config dictionary containing necessary arguments for cdsapi
 
     """
-    
+
     if os.path.exists(obs_fname):
         logging.warning(f"File {obs_fname} already exists")
         return obs_fname
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     area_str = args.area.replace(",", ":")
     var = args.variable
 
-    # add arguments to config dictionary used to pass parameters 
+    # add arguments to config dictionary used to pass parameters
     config = dict(
         start_month=month,
         leads_obs=leadtime_month,

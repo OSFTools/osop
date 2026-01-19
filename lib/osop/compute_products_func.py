@@ -14,7 +14,6 @@ from osop.util import get_tindex, index
 from osop.compare_terciles import update_config, mme_process_forecasts
 
 
-
 # Date and calendar libraries
 from dateutil.relativedelta import relativedelta
 import logging
@@ -37,7 +36,7 @@ def process_mme_products(array, output, aggr, config, sig, member_weight=0.1):
     # populate array and divide by members fractional weight
     if output[aggr] is None:
         output[aggr] = xr.zeros_like(array)
-    output[aggr] += (array * member_weight)
+    output[aggr] += array * member_weight
 
     save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{sig}".format(
         **config,
@@ -70,13 +69,15 @@ def mme_products_hindcast(services, config, productsdir):
     mme_combined_mean = {}
     mme_combined_anom = {}
 
+    services_values = {
+        origin: val[0] if isinstance(val, (list, tuple)) else val
+        for origin, val in services.items()
+    }
+    services_weights = {
+        origin: val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
+        for origin, val in services.items()
+    }
 
-    services_values = {origin: val[0] if isinstance(val, (list, tuple)) else val
-                        for origin, val in services.items()}
-    services_weights = {origin: val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
-                        for origin, val in services.items()}
-
-    
     for aggr in ["1m", "3m"]:
         mme_combined[aggr] = None
         mme_combined_mean[aggr] = None
@@ -90,8 +91,6 @@ def mme_products_hindcast(services, config, productsdir):
         for suffix, target in targets.items():
             for origin, system_value in services_values.items():
                 config_copy_hc = update_config(origin, system_value, config)
-                print("this is member",origin)
-                print("this is service_weights", services_weights[origin])
 
                 # Load and run each array, 1m-3m and tercile, mean and anom
                 file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{suffix}".format(
@@ -109,7 +108,7 @@ def mme_products_hindcast(services, config, productsdir):
                     aggr,
                     config,
                     suffix,
-                    member_weight=services_weights[origin]
+                    member_weight=services_weights[origin],
                 )
             # Save out final mme array
             output.to_netcdf(f"{productsdir}/{save_name}")

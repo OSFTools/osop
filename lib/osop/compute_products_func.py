@@ -90,6 +90,8 @@ def mme_products_hindcast(services, config, productsdir):
         for suffix, target in targets.items():
             for origin, system_value in services_values.items():
                 config_copy_hc = update_config(origin, system_value, config)
+                print("this is member",origin)
+                print("this is service_weights", services_weights[origin])
 
                 # Load and run each array, 1m-3m and tercile, mean and anom
                 file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{suffix}".format(

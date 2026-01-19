@@ -130,18 +130,21 @@ if __name__ == "__main__":
         var=var,
         hc_var=hc_var,
     )
-    # get remaning arguments from yml file
-    ymllocation = os.path.join(downloaddir, "parseyml.yml")
-
+    ymllocation = os.path.join(downloaddir, "parseyml.yml") # this is the added one
     with open(ymllocation, "r") as stream:
         try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
+            services_doc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw = services_doc["Services"]
+
+            # Convert Services back the original dictionary (service -> value)
+            # Remove Weights 
+            Services = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw.items()
+                }
         except yaml.YAMLError as e:
             logging.error(f"Error reading YAML file: {e}", stack_info=True)
-            raise e
+
 
     ymllocation_hc = os.path.join(downloadhcdir, "parseyml.yml")
 
@@ -149,8 +152,12 @@ if __name__ == "__main__":
         try:
             # Converts yaml document to python object
             services_hc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw_hc = services_hc["Services"]
             # Converts contents to useable dictionary
-            Services_hc = services_hc["Services"]
+            Services_hc =  {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw_hc.items()
+                }
         except yaml.YAMLError as e:
             logging.error(f"Error reading YAML file: {e}", stack_info=True)
             raise e
@@ -183,7 +190,16 @@ if __name__ == "__main__":
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
     elif centre == "mme":
         config["systemfc"] = Services["mme"]
-        mme_products(Services, config, productsfcdir)
+        ## Calculate fractional weights
+        sum_weights = {}
+        weights_sum = sum(n for _, n in ServicesRaw.values())
+        for serv, val in ServicesRaw.items():
+            version = val[0] if isinstance(val, (list, tuple)) else val
+            weight = val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
+            ServicesRaw[serv] = [version, weight / weights_sum]
+        ## Run mme calc
+        config["systemfc"] = Services["mme"]
+        mme_products(ServicesRaw, config, productsfcdir)
     else:
         if centre not in Services.keys():
             logging.error(f"Unknown system for C3S: {centre}")

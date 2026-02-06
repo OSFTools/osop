@@ -205,7 +205,9 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         r_corr = xr.concat(r_corr, dim="forecastMonth")
         r_corr_pval = xr.concat(r_corr_pval, dim="forecastMonth")
 
-        logging.info(f"Saving to netCDF file spearman correlation for {aggr}-aggregation")
+        logging.info(
+            f"Saving to netCDF file spearman correlation for {aggr}-aggregation"
+        )
         corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
 
         logging.info(f"Saving to netCDF file pvalue for {aggr}-aggregation")

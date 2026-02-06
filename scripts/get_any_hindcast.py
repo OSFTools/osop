@@ -89,6 +89,7 @@ def do_cdsapi_call(
         )
         logging.info(f"Downloaded {fname}")
 
+
 def parse_args():
     """
     set up argparse to get command line arguments
@@ -113,17 +114,13 @@ def parse_args():
         required=True,
         help="variable to download, 2m_temperature, total_precipitation",
     )
-    parser.add_argument(
-        "--downloaddir", 
-        required=True, 
-        help="location to download to"
-        )
+    parser.add_argument("--downloaddir", required=True, help="location to download to")
 
     parser.add_argument(
         "--logdir",
         required=True,
         help="Path to log directory for logging output.",
-        )
+    )
 
     parser.add_argument(
         "--years",
@@ -174,13 +171,17 @@ def main():
 
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
-
     with open(ymllocation, "r") as stream:
         try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
+            services_doc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw = services_doc["Services"]
+
+            # Convert Services back the original dictionary (service -> value)
+            # Remove Weights
+            Services = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw.items()
+            }
         except yaml.YAMLError as e:
             logging.error(f"Error reading YAML file: {e}", stack_info=True)
 

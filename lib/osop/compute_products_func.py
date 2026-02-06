@@ -12,7 +12,6 @@ import eccodes
 import matplotlib.pyplot as plt
 from osop.util import get_tindex, index
 from osop.compare_terciles import update_config, mme_process_forecasts
-import copy
 
 
 # Date and calendar libraries
@@ -20,25 +19,24 @@ from dateutil.relativedelta import relativedelta
 import logging
 
 
-def process_mme_products(array, n_members, output, aggr, config, sig):
+def process_mme_products(array, output, aggr, config, sig, member_weight=0.1):
     """
     Calculate anomalies and save them to netCDF files.
 
     Parameters:
     array (x-array): Target array.
-    n_members (int): Length of services for weights (to be added)
     output (x-array): Enters as an empty array
     aggr (str): 1m or 3m array
     config (dic): Configuration parameters.
     sig (str): Signifier for addition to save path for mean, anom or tercile mme.
-
+    member_weight (float): The fractional weight for the service, i.e. weight/sum of weights
     Returns:
     Returns x-array of the combined mme for 1 month and 3 month combined
     """
-    # populate array and divide by members.
+    # populate array and divide by members fractional weight
     if output[aggr] is None:
         output[aggr] = xr.zeros_like(array)
-    output[aggr] += array / n_members
+    output[aggr] += array * member_weight
 
     save_name = "{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{sig}".format(
         **config,
@@ -70,7 +68,16 @@ def mme_products_hindcast(services, config, productsdir):
     mme_combined = {}
     mme_combined_mean = {}
     mme_combined_anom = {}
-    n_members = len(services)
+
+    services_values = {
+        origin: val[0] if isinstance(val, (list, tuple)) else val
+        for origin, val in services.items()
+    }
+    services_weights = {
+        origin: val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
+        for origin, val in services.items()
+    }
+
     for aggr in ["1m", "3m"]:
         mme_combined[aggr] = None
         mme_combined_mean[aggr] = None
@@ -82,8 +89,8 @@ def mme_products_hindcast(services, config, productsdir):
             "anom.nc": mme_combined_anom,
         }
         for suffix, target in targets.items():
-            for origin, system in services.items():
-                config_copy_hc = update_config(origin, system, config)
+            for origin, system_value in services_values.items():
+                config_copy_hc = update_config(origin, system_value, config)
 
                 # Load and run each array, 1m-3m and tercile, mean and anom
                 file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{suffix}".format(
@@ -97,11 +104,11 @@ def mme_products_hindcast(services, config, productsdir):
                 )
                 output, save_name = process_mme_products(
                     xr.open_dataset(file_name),
-                    n_members,
                     target,
                     aggr,
                     config,
                     suffix,
+                    member_weight=services_weights[origin],
                 )
             # Save out final mme array
             output.to_netcdf(f"{productsdir}/{save_name}")

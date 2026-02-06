@@ -75,9 +75,11 @@ if __name__ == "__main__":
 
     # unpack args and reformat if needed.
 
-    logfile = os.path.join(args.logdir, 
-        f"plots_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt")
-    
+    logfile = os.path.join(
+        args.logdir,
+        f"plots_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+    )
+
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(
         level=loglev,
@@ -96,8 +98,10 @@ if __name__ == "__main__":
     plotsdir = args.plotsdir
     month = int(args.month)
     leads = args.leads
-    logging.info(f'Plotting FC, Centre: {centre}, Month: {month},'\
-                 f' Leads: {leads}, Location: {location}')
+    logging.info(
+        f"Plotting FC, Centre: {centre}, Month: {month},"
+        f" Leads: {leads}, Location: {location}"
+    )
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
@@ -130,18 +134,22 @@ if __name__ == "__main__":
         i=i,
         border=location,
     )
-    # get remaning arguments from yml file
+    # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
     with open(ymllocation, "r") as stream:
         try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
+            services_doc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw = services_doc["Services"]
+
+            # Convert Services back the original dictionary (service -> value)
+            # Remove Weights
+            Services = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw.items()
+            }
         except yaml.YAMLError as e:
             logging.error(f"Error reading YAML file: {e}", stack_info=True)
-            raise e
 
     if args.yearsfc:
         years = [int(yr) for yr in args.yearsfc.split(",")]

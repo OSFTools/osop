@@ -138,9 +138,8 @@ def test_plot_tercile_fc(mme):
 
     atitle = "Test plot"
     shpfile = cfeature.NaturalEarthFeature(
-                category="cultural", name='admin_0_countries', 
-                scale="10m", facecolor="none"
-            )
+        category="cultural", name="admin_0_countries", scale="10m", facecolor="none"
+    )
     fig = ens_plotting.plot_tercile_fc(mme, atitle, map_setting=shpfile)
 
 

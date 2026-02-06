@@ -22,6 +22,7 @@ import argparse
 from datetime import datetime
 import logging
 
+
 def parse_args():
     """
     set up argparse to get command line arguments
@@ -133,10 +134,15 @@ if __name__ == "__main__":
 
     with open(ymllocation, "r") as stream:
         try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
+            services_doc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw = services_doc["Services"]
+
+            # Convert Services back the original dictionary (service -> value)
+            # Remove Weights
+            Services = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw.items()
+            }
         except yaml.YAMLError as e:
             logging.error(f"Error reading YAML file: {e}", stack_info=True)
 

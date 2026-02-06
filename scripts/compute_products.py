@@ -53,7 +53,6 @@ def parse_args():
     )
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
 
-
     args = parser.parse_args()
     return args
 
@@ -101,10 +100,15 @@ if __name__ == "__main__":
 
     with open(ymllocation, "r") as stream:
         try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
+            services_doc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw = services_doc["Services"]
+
+            # Convert Services back the original dictionary (service -> value)
+            # Remove Weights
+            Services = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw.items()
+            }
         except yaml.YAMLError as e:
             logging.error(f"Error reading YAML file: {e}", stack_info=True)
 
@@ -136,8 +140,16 @@ if __name__ == "__main__":
         config["system"] = Services["eccc_gem5"]
         calc_products(config, downloaddir, productsdir)
     elif centre == "mme":
+        ## Calculate fractional weights
+        sum_weights = {}
+        weights_sum = sum(n for _, n in ServicesRaw.values())
+        for serv, val in ServicesRaw.items():
+            version = val[0] if isinstance(val, (list, tuple)) else val
+            weight = val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
+            ServicesRaw[serv] = [version, weight / weights_sum]
+        ## Run mme calc
         config["systemfc"] = Services["mme"]
-        calc_products_mme(Services, config, productsdir)
+        calc_products_mme(ServicesRaw, config, productsdir)
     else:
         if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")

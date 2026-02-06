@@ -76,6 +76,7 @@ def get_cmap(precip_cs=False, wmo_cs=True):
 
     return cmap_below, cmap_normal, cmap_above
 
+
 def fc_title(config):
     """
     Create a title string for the forecast plot based on the configuration.
@@ -93,8 +94,8 @@ def fc_title(config):
     )
     return atitle
 
-def plot_tercile_fc(
-    mme, atitle, var="precipitation", mask=None, map_setting="False"):
+
+def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="False"):
     """
     Function to plot a tercile forecast with different colormaps
     for each of three terciles. Uses a threshold of 40%
@@ -305,16 +306,14 @@ def plot_forecasts(productdir, plotsdir, config):
     map_setting = location(config)
     atitle = fc_title(config)
     fig = plot_tercile_fc(
-        plot_dataset_1m, atitle, var=variable, mask=None,
-        map_setting=map_setting
+        plot_dataset_1m, atitle, var=variable, mask=None, map_setting=map_setting
     )
-        # Save figure
+    # Save figure
     figname = f"{plotsdir}/{forecast_name_1m}.png"
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
 
     fig = plot_tercile_fc(
-        plot_dataset_3m,  atitle, var=variable, mask=None,
-        map_setting=map_setting
+        plot_dataset_3m, atitle, var=variable, mask=None, map_setting=map_setting
     )
     # Save figure
     figname = f"{plotsdir}/{forecast_name_3m}.png"

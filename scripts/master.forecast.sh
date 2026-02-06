@@ -60,22 +60,21 @@ years=2025
 # edit as approprite to the most up to date systems. 
 cat <<EOF > "$parseyml"
 Services:
-    ecmwf: 51
-    meteo_france: 9
-    dwd: 22
-    cmcc: 35
-    ncep: 2
-    jma: 3
-    eccc_can: 4
-    eccc_gem5: 5
-    ukmo: 604
-    bom: 2
-    mme: 1
+    ecmwf: [51,1]
+    meteo_france: [9,1]
+    dwd: [22,1]
+    cmcc: [35,1]
+    ncep: [2,1]
+    jma: [3,0]  
+    eccc_can: [4,1]
+    eccc_gem5: [5,1]
+    ukmo: [604,1]
+    mme: [1,0]
 EOF
 echo "YML file created: $parseyml"
 
 # loop over all centres of interest and get data
-for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc bom mme ;do  
+for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do  
     if [ "$centre" != "mme" ]; then
         set +e
         python get_any_hindcast.py \

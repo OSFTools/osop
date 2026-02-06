@@ -31,7 +31,9 @@ def update_config(origin, systemfc, config):
     return config_copy
 
 
-def mme_process_forecasts(months, suffix, Services, productsfcdir, config):
+def mme_process_forecasts(
+    months, suffix, Services, services_values, productsfcdir, config, services_weights
+):
     """
     Loads each tercile forecast and combines for mme.
 
@@ -39,17 +41,22 @@ def mme_process_forecasts(months, suffix, Services, productsfcdir, config):
     months (int): Set to None or value of month based on leads
     suffix (str): Used for naming between 3months or the imonth lead
     Services (list): List of services to combine
+    services_values(dict): list of service values i.e. ecmwf 51
     config (dict): The cofiguraiton parameters for the forecast
     productsfcdir (str): The location for the files to output too and get from
+    serives_weights(list): the weight of the service in context of mme
 
     Returns:
     mme_combined (array): The combined mme forecast array.
 
     """
+
     mme_combined = None
     n_members = len(Services)
-    for origin, systemfc in Services.items():
+    for origin, systemfc in services_values.items():
         config_copy = update_config(origin, systemfc, config)
+        member_weight = services_weights[origin]
+
         if suffix == "imonth":
             file_name = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}.forecast_percentages.nc".format(
                 fpath=productsfcdir, month=months, **config_copy
@@ -61,7 +68,7 @@ def mme_process_forecasts(months, suffix, Services, productsfcdir, config):
         ds = xr.open_dataset(file_name)
         if mme_combined is None:
             mme_combined = xr.zeros_like(ds)
-        mme_combined += ds / n_members
+        mme_combined += ds * member_weight
     return mme_combined
 
 
@@ -83,11 +90,26 @@ def mme_products(Services, config, productsfcdir):
     # Remove when happy
     del Services["jma"]
 
+    services_values = {
+        origin: val[0] if isinstance(val, (list, tuple)) else val
+        for origin, val in Services.items()
+    }
+    services_weights = {
+        origin: val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
+        for origin, val in Services.items()
+    }
+
     # turn the leads string into array to allow naming of individual months
     months_1m = list(range(len("{leads_str}".format(**config))))
     for month in months_1m:
         mme_products_1m = mme_process_forecasts(
-            month, "imonth", Services, productsfcdir, config
+            month,
+            "imonth",
+            Services,
+            services_values,
+            productsfcdir,
+            config,
+            services_weights,
         )
         mme_fname_1m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{month}".format(
             month=month, **config
@@ -96,7 +118,9 @@ def mme_products(Services, config, productsfcdir):
             f"{productsfcdir}/{mme_fname_1m}.forecast_percentages.nc"
         )
 
-    mme_products_3m = mme_process_forecasts(None, "3m", Services, productsfcdir, config)
+    mme_products_3m = mme_process_forecasts(
+        None, "3m", Services, services_values, productsfcdir, config, services_weights
+    )
     mme_fname_3m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
         **config
     )

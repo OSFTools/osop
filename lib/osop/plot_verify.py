@@ -312,47 +312,49 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
         pass
     else:
         raise BaseException(f"Unexpected data value matrix shape: {corrvalues.shape}")
-    
+
     if method == "pmesh":
         mesh = ax.pcolormesh(
-        corr[config["var"]].lon,
-        corr[config["var"]].lat,
-        corrvalues,
-        cmap="RdYlBu_r",
-        vmin=-1.0,
-        vmax=1.0,
-        shading="auto"
+            corr[config["var"]].lon,
+            corr[config["var"]].lat,
+            corrvalues,
+            cmap="RdYlBu_r",
+            vmin=-1.0,
+            vmax=1.0,
+            shading="auto",
         )
         cb = plt.colorbar(mesh, ax=ax, shrink=0.5)
         cb.ax.set_ylabel(score, fontsize=12)
         origylim = ax.get_ylim()
         # Add stippling for significance where p-value > 0.05
-        sig_mask = (corrpvalvalues > 0.05)
-        lon_grid, lat_grid = np.meshgrid(corr[config["var"]].lon, corr[config["var"]].lat)
-        ax.plot(lon_grid[sig_mask], lat_grid[sig_mask], 'k.', markersize=1)
-    else: 
+        sig_mask = corrpvalvalues > 0.05
+        lon_grid, lat_grid = np.meshgrid(
+            corr[config["var"]].lon, corr[config["var"]].lat
+        )
+        ax.plot(lon_grid[sig_mask], lat_grid[sig_mask], "k.", markersize=1)
+    else:
         plt.contourf(
             corr[config["var"]].lon,
             corr[config["var"]].lat,
             corrvalues,
             levels=np.linspace(-1.0, 1.0, 11),
             cmap="RdYlBu_r",
-            )
+        )
         cb = plt.colorbar(shrink=0.5)
         cb.ax.set_ylabel("{}".format(score), fontsize=12)
         origylim = ax.get_ylim()
-           # add stippling for significance
+        # add stippling for significance
         # where p value > 0.05
         # note can get NaN values in the pval matrix
         # where the standard deviation of one of the
         # fields is zero. Use nanmax not max
         plt.contourf(
-        corr_pval[config["var"]].lon,
-        corr_pval[config["var"]].lat,
-        corrpvalvalues,
-        levels=[np.nanmin(corrpvalvalues), 0.05, np.nanmax(corrpvalvalues)],
-        hatches=["", "..."],
-        colors="none",
+            corr_pval[config["var"]].lon,
+            corr_pval[config["var"]].lat,
+            corrpvalvalues,
+            levels=[np.nanmin(corrpvalvalues), 0.05, np.nanmax(corrpvalvalues)],
+            hatches=["", "..."],
+            colors="none",
         )
 
     # We need to ensure after running plt.contourf() the ylim hasn't changed
@@ -366,7 +368,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
     plt.tight_layout()
     figname = f"{plotdir}/{hcst_bname}.{aggr}.{score}.png"
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
-    logging.info(f"Saved figure to {figname}")  
+    logging.info(f"Saved figure to {figname}")
     plt.close()
 
 

@@ -57,7 +57,7 @@ method="pmesh" #Remove for smooth plotting on correlation plots
 cat <<EOF > "$parseyml"
 Services:
     ecmwf: [51,1]
-    meteo_france: [9,2]
+    meteo_france: [9,1]
     dwd: [22,1]
     cmcc: [35,1]
     ncep: [2,1]

@@ -194,7 +194,7 @@ if __name__ == "__main__":
             # Converts yaml document to python object
             services_hc = yaml.load(stream, Loader=SafeLoader)
             ServicesRaw_hc = services_hc["Services"]
-            # Converts contents to useable dictionary
+            # Converts contents to usable dictionary
             Services_hc = {
                 svc: (val[0] if isinstance(val, (list, tuple)) else val)
                 for svc, val in ServicesRaw_hc.items()

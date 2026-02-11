@@ -64,7 +64,7 @@ def mme_products_hindcast(services, config, productsdir):
     None
     Saves array (x-array) - The multi-model ensemble forecast percentages.
     """
-    # remove mme from the list thats worked on
+    # remove mme from the list that's' worked on
     del services["{origin}".format(**config)]
     # Remove when jma regridded
     del services["jma"]
@@ -323,5 +323,5 @@ def calc_products_mme(services, config, productsdir):
         **config
     )
 
-    # Combined the services to produce a mme for hindcast verifcation
+    # Combined the services to produce a mme for hindcast verification
     hcst = mme_products_hindcast(services, config, productsdir)

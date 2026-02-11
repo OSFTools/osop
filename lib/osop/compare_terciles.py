@@ -91,7 +91,7 @@ def mme_products(Services, config, productsfcdir):
     None
     Saves array (x-array) - The multi-model ensemble forecast percentages.
     """
-    # remove mme from the list thats worked on
+    # remove mme from the list that's worked on
     del Services["{origin}".format(**config)]
     # Remove when happy
     del Services["jma"]
@@ -178,7 +178,7 @@ def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fn
     Parameters
     ----------
     forecast_data (x-array): The re-indexed forecast data.
-    hindcast_terciles (x-array): The x-array that contains the matching tercile catagories.
+    hindcast_terciles (x-array): The x-array that contains the matching tercile categories.
     products_forecast (str): The location for the files to output too.
     forcast_fname (str): The name of the forecast data.
 
@@ -194,7 +194,7 @@ def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fn
     # Select for data
     fcst = fcst_3m[list(fcst_3m.data_vars)[0]]
 
-    # Form masks based on catagories
+    # Form masks based on categories
     lower, higher, middle = mask_cat(fcst, hindcast_terciles)
     total_percentage = xr.Dataset(
         {
@@ -217,7 +217,7 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
     Parameters
     ----------
     forecast_data (x-array): The re-indexed forecast data.
-    hindcast_terciles (x-array): The x-array that contains the matching tercile catagories.
+    hindcast_terciles (x-array): The x-array that contains the matching tercile categories.
     products_forecast (str): The location for the files to output too.
     forcast_fname (str): The name of the forecast data.
 
@@ -239,7 +239,7 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
         fc_one_month = forecast_data.isel(forecastMonth=i)[data_var]
         hctt = hindcast_terciles.isel(forecastMonth=i)
         fc_append_name = f"month_{i}"
-        # For each month form catagories
+        # For each month form categories
         lower, higher, middle = mask_cat(fc_one_month, hctt)
         total_percentage = xr.Dataset(
             {
@@ -260,7 +260,7 @@ def compute_forecast(config, downloaddir, products_hindcast, products_forecast):
     Args:
         config (dict): A dictionary containing the configuration parameters.
         downloaddir (str): The path to the download directory of the forecasts grib.
-        products_hindcast (str): The path to the tercile catagories from compute_products.
+        products_hindcast (str): The path to the tercile categories from compute_products.
         products_forecast (str): The output location for the products generated.
 
     Returns

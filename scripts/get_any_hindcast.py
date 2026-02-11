@@ -53,7 +53,7 @@ def do_cdsapi_call(
         month(int): start month of forecast
         leadtime_month(list): list of lead times for FC (int)
         area(list): 4 element list of floats with area for download
-        area_str(str): colon seperated area string
+        area_str(str): colon separated area string
         variable(str): variable for download
         downloaddir(str):directory to use for the downloads
         years(str): years to get data for (comma separated). Optional.

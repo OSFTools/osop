@@ -53,5 +53,5 @@ known-first-party = ["osop"]
 convention = "numpy"
 
 [tool.codespell]
-ignore-words-list = ""
+ignore-words-list = "NMME, MME"
 skip = "_build,*.css,*.ipynb,*.js,*.html,*.svg,*.xml,.git,generated"

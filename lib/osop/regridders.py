@@ -16,19 +16,19 @@ def regrid_cons_masked(source_in, var, target_in, thresh=0.5):
 
     Parameters
     ----------
-    source_in : dataset
-        Dataset to be regridded
+    source_in : xarray.Dataset
+        Dataset to be regridded.
     var : str
-        Variable name to use to find the mask
-    target_in : dataset
-        Dataset to use as the interpolation target
+        Variable name to use to find the mask.
+    target_in : xarray.Dataset
+        Dataset to use as the interpolation target.
     thresh : float, optional
-        Threshold to use for masking, default 0.5
+        Threshold to use for masking, by default 0.5.
 
     Returns
     -------
-    output : dataset
-        Interpolated dataset
+    xarray.Dataset
+        Interpolated dataset.
     """
     # make a source land-sea mask NAN = sea = 0
     # want to be able to regrid multiple times so have isel time=0
@@ -62,13 +62,19 @@ def interp_target(domain, res):
     Parameters
     ----------
     domain : dict
-        Dictionary containing x0,x1,y0,y1
+        Dictionary containing x0, x1, y0, y1.
     res : float
-        Resolution of the target grid in degrees
+        Resolution of the target grid in degrees.
 
     Returns
     -------
-        target(dataset): dataset to use an interpolation target
+    xarray.Dataset
+        Dataset to use as interpolation target.
+
+    Raises
+    ------
+    ValueError
+        If x0 >= x1 or y0 >= y1.
     """
     x0 = domain["x0"]
     x1 = domain["x1"]

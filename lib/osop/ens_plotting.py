@@ -23,13 +23,21 @@ from osop.plot_verify import location
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
     """Given a colormap, truncate it at bottom (minval) or top (maxval).
 
-    Args:
-        cmap - matplotlib color map to be truncated
-        minval(float) - 0 to 1, min value to truncate at
-        maxval(float) - 0 to 1, max value to truncate at
+    Parameters
+    ----------
+    cmap : matplotlib.colors.Colormap
+        Matplotlib color map to be truncated.
+    minval : float, optional
+        Minimum value to truncate at (0 to 1), by default 0.0.
+    maxval : float, optional
+        Maximum value to truncate at (0 to 1), by default 1.0.
+    n : int, optional
+        Number of color levels, by default 100.
 
-    Returns :
-        new_cmap - new LinearSegmentedColormap
+    Returns
+    -------
+    matplotlib.colors.LinearSegmentedColormap
+        New truncated colormap.
     """
     new_cmap = colors.LinearSegmentedColormap.from_list(
         "trunc({n},{a:.2f},{b:.2f})".format(n=cmap.name, a=minval, b=maxval),
@@ -42,10 +50,17 @@ def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
 def get_cmap(precip_cs=False, wmo_cs=True):
     """Return 3 colormaps for below, normal and above tercile forecasts.
 
-    If precip_cs True, return a colorscale for rainfall,
-    if false return colormap for temperature etc
-    If wmo_cs true based on WMO colorscales used in
-    LRF website else own version with single color
+    Parameters
+    ----------
+    precip_cs : bool, optional
+        If True, return a colorscale for rainfall, else for temperature, by default False.
+    wmo_cs : bool, optional
+        If True, use WMO colorscales, else use custom, by default True.
+
+    Returns
+    -------
+    tuple
+        Tuple of three colormaps: (below, normal, above).
     """
     # use greys for normal tercile always
     # to have first color saturated use truncate_colormap
@@ -80,11 +95,13 @@ def fc_title(config):
 
     Parameters
     ----------
-    - config: Dictionary containing configuration parameters.
+    config : dict
+        Dictionary containing configuration parameters.
 
     Returns
     -------
-    - atitle: Formatted title string.
+    str
+        Formatted title string.
     """
     lead = int(config["i"]) + 1
     atitle = (
@@ -97,16 +114,25 @@ def fc_title(config):
 def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="False"):
     """Plot a tercile forecast.
 
-    USes different colormaps for each of three terciles. Uses a threshold of 40% below which it does not plot.
+    Uses different colormaps for each of three terciles. Uses a threshold of 40% below which it does not plot.
 
     Parameters
     ----------
-    - mme: xarray DataArray with tercile forecasts
-    - atitle: Title for the plot
-    - plotsdir: Location to save the plot
-    - var: Variable name in the dataset
-    - mask: Optional dry mask as a DataArray
-    - map_setting: Optional map feature from cartopy
+    mme : xarray.Dataset
+        Tercile forecast dataset.
+    atitle : str
+        Title for the plot.
+    var : str, optional
+        Variable name in the dataset, by default "precipitation".
+    mask : xarray.DataArray, optional
+        Optional dry mask as a DataArray, by default None.
+    map_setting : object or str, optional
+        Optional map feature from cartopy, by default "False".
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The matplotlib figure object.
     """
     # Apply threshold mask
     LTHRESH = 40.0
@@ -223,12 +249,15 @@ def reformatt(data, variable):
 
     Parameters
     ----------
-    config (dict): The cofiguraiton parameters for the forecast
-    forecast_local (str): The location of the forecast_data set to be plotted
+    data : xarray.Dataset
+        The forecast percentage dataset.
+    variable : str
+        The variable name to use in the reformatted dataset.
 
     Returns
     -------
-    new_dataset (xarray): A reformatted version of the forecast data for ens_plotting functions.
+    xarray.Dataset
+        A reformatted version of the forecast data for ens_plotting functions.
     """
     try:
         # Stack the three layers into a new dimension C
@@ -257,14 +286,16 @@ def plot_forecasts(productdir, plotsdir, config):
 
     Parameters
     ----------
-    productdir (str): Location for dataset to be plot.
-    plotsdir (str): Location for plots to save too.
-    config (dict): Dictionary for parameters of the file/dataset.
+    productdir : str
+        Location for dataset to be plotted.
+    plotsdir : str
+        Location for plots to save to.
+    config : dict
+        Dictionary for parameters of the file/dataset.
 
     Returns
     -------
     None
-
     """
     # forecast data set info
     forecast_local_1m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}.forecast_percentages.nc".format(

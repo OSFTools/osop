@@ -3,10 +3,14 @@
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 
-"""Functions for computing scores from the hindcast and observation datasets. This includes both deterministic and probabilistic scores.
+"""Functions for computing scores from the hindcast and observation datasets.
 
-:note:
-    This script currently can only be used to create scores using ERA5 as the comparison dataset
+This includes both deterministic and probabilistic scores.
+
+Notes
+-----
+This script currently can only be used to create scores using ERA5 as the
+comparison dataset.
 
 """
 
@@ -33,13 +37,17 @@ def read_obs(obs_fname, config):
 
     Parameters
     ----------
-    obs_fname (str): The file path of the observation data file.
-    config (dict): A dictionary containing configuration parameters.
+    obs_fname : str
+        The file path of the observation data file.
+    config : dict
+        A dictionary containing configuration parameters.
 
     Returns
     -------
-    obs_ds (xarray.Dataset): Preprocessed observation data with monthly time resolution.
-    obs_ds_3m (xarray.Dataset): Preprocessed observation data with 3-monthly time resolution.
+    obs_ds : xarray.Dataset
+        Preprocessed observation data with monthly time resolution.
+    obs_ds_3m : xarray.Dataset
+        Preprocessed observation data with 3-monthly time resolution.
     """
     obs_ds = xr.open_dataset(obs_fname, engine="cfgrib")
 
@@ -83,17 +91,24 @@ def read_obs(obs_fname, config):
 
 
 def swap_dims(hcst, obs):
-    """Swap dimensions appropriately and align hindcast with observed dataset for deterministic verification measures.
+    """Swap dimensions and align hindcast with observed dataset.
+
+    Swap dimensions appropriately and align hindcast with observed dataset
+    for deterministic verification measures.
 
     Parameters
     ----------
-    hcst: the hindcast dataset.
-    obs: the matching observed dataset.
+    hcst : xarray.Dataset
+        The hindcast dataset.
+    obs : xarray.Dataset
+        The matching observed dataset.
 
     Returns
     -------
-    thishcst: the aligned hindcast dataset.
-    thisobs: the aligned observed dataset.
+    thishcst : xarray.Dataset
+        The aligned hindcast dataset.
+    thisobs : xarray.Dataset
+        The aligned observed dataset.
     """
     for this_fcmonth in hcst.forecastMonth.values:
         logger.debug(f"forecastMonth={this_fcmonth}")
@@ -109,17 +124,29 @@ def swap_dims(hcst, obs):
 
 
 def regrid_data(input_ds, target_ds):
-    """Regrids the dataset appropriately for its type (planned expansion for precipitation).
+    """Regrid dataset to match target grid resolution.
+
+    Regrids the dataset appropriately for its type (planned expansion
+    for precipitation).
 
     Parameters
     ----------
-    input_ds (xarray.Dataset): Data to be re-gridded
-    target_ds (xarray.Dataset): Data set with the target grid
+    input_ds : xarray.Dataset
+        Data to be re-gridded.
+    target_ds : xarray.Dataset
+        Data set with the target grid.
 
     Returns
     -------
-    output_ds (xarray.Dataset): Regridded dataset to be used for analysis
-    target_ds (xarray.Dataset): Matching target dataset (no changes)
+    output_ds : xarray.Dataset
+        Regridded dataset to be used for analysis.
+    target_ds : xarray.Dataset
+        Matching target dataset (no changes).
+
+    Raises
+    ------
+    KeyError
+        If alignment fails due to incompatible datasets.
     """
     try:
         regridder = xe.Regridder(input_ds, target_ds, "bilinear")
@@ -136,15 +163,23 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
     Parameters
     ----------
-    obs_ds (xarray.Dataset): Observation / reanalysis data, monthly resolution.
-    obs_ds_3m (xarray.Dataset): Observation / reanalysis 3-month aggregated data.
-    hcst_bname (str): Basename of the hindcast data.
-    scoresdir (str): Directory to save the output files.
-    productsdir (str): Directory to fetch files from.
+    obs_ds : xarray.Dataset
+        Observation / reanalysis data, monthly resolution.
+    obs_ds_3m : xarray.Dataset
+        Observation / reanalysis 3-month aggregated data.
+    hcst_bname : str
+        Basename of the hindcast data.
+    scoresdir : str
+        Directory to save the output files.
+    productsdir : str
+        Directory to fetch files from.
 
     Returns
     -------
     None
+
+    Notes
+    -----
     Saves spearman and pearson correlation and p-value to netCDF files.
     """
     # Loop over aggregations
@@ -226,19 +261,27 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
 
 def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
-    """Compute probabilistic scores and save the results to NetCDF files.
+    """Compute probabilistic scores and save results to NetCDF files.
 
     Parameters
     ----------
-    obs_ds(xarray.Dataset): Observation / Reanalysis monthly data.
-    obs_ds_3m (xarray.Dataset): Observation / Reanalysis 3-month aggregated data.
-    hcst_bname (str): Basename of the hindcast probabilities file.
-    scoresdir (str): Directory to save the output NetCDF files.
-    productsdir (str): Directory to fetch input files from.
+    obs_ds : xarray.Dataset
+        Observation / Reanalysis monthly data.
+    obs_ds_3m : xarray.Dataset
+        Observation / Reanalysis 3-month aggregated data.
+    hcst_bname : str
+        Basename of the hindcast probabilities file.
+    scoresdir : str
+        Directory to save the output NetCDF files.
+    productsdir : str
+        Directory to fetch input files from.
 
     Returns
     -------
     None
+
+    Notes
+    -----
     Saves probabilistic scores to NetCDF files.
     """
     # Define quantiles for tercile categories
@@ -366,15 +409,22 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
 
 def calc_scores(config, downloaddir, scoresdir, productsdir):
-    """Call code to calculate deterministic and probabilistic verification scores.
+    """Calculate deterministic and probabilistic verification scores.
 
-    Args:
-        config (dict): A dictionary containing the configuration parameters.
-        downloaddir (str): The path to the download directory.
+    Parameters
+    ----------
+    config : dict
+        A dictionary containing the configuration parameters.
+    downloaddir : str
+        The path to the download directory.
+    scoresdir : str
+        The path to the scores output directory.
+    productsdir : str
+        The path to the products directory.
 
     Returns
     -------
-        None
+    None
     """
     hcst_bname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
         **config

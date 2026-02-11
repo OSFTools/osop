@@ -3,9 +3,7 @@
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 
-"""
-Collection of constants used in the OSOP library
-"""
+"""Collection of constants used in the OSOP library."""
 
 # named domains corners - x = longitude, y = latitude
 DOMAINS = {

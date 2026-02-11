@@ -4,30 +4,32 @@
 # See LICENSE in the root of the repository for full licensing details.
 
 
-"""
-Code used to help with regridding for xarray
-"""
+"""Functions to help with regridding for xarray."""
 
-import xesmf as xe
-import xarray as xr
 import numpy as np
+import xarray as xr
+import xesmf as xe
 
 
 def regrid_cons_masked(source_in, var, target_in, thresh=0.5):
+    """Conservatively regrid a source data with a mask, with a tolerance for missing data of thresh.
+
+    Parameters
+    ----------
+    source_in : dataset
+        Dataset to be regridded
+    var : str
+        Variable name to use to find the mask
+    target_in : dataset
+        Dataset to use as the interpolation target
+    thresh : float, optional
+        Threshold to use for masking, default 0.5
+
+    Returns
+    -------
+    output : dataset
+        Interpolated dataset
     """
-    conservatively regrid a source data with a mask, with a tolerance
-    for missing data of thresh
-
-    Args:
-                source(dataset): dataset to be regridded
-        var(str):        variable name to use to find the mask
-        target(dataset): dataset to use as the interpolation target
-        theshold(float): threshold to use for masking, optional, default 0.5
-
-    Returns:
-                output(dataset): interpolated dataset
-    """
-
     # make a source land-sea mask NAN = sea = 0
     # want to be able to regrid multiple times so have isel time=0
     # don't want to modify source or target so take copies
@@ -55,17 +57,19 @@ def regrid_cons_masked(source_in, var, target_in, thresh=0.5):
 
 
 def interp_target(domain, res):
-    """
-    create an interpolation target for a specific domain
+    """Create an interpolation target for a specific domain.
 
-    Args:
-        domain(dict): dictionary containing x0,x1,y0,y1
-        res(float):    resolution of the target grid
+    Parameters
+    ----------
+    domain : dict
+        Dictionary containing x0,x1,y0,y1
+    res : float
+        Resolution of the target grid in degrees
 
-    Returns:
+    Returns
+    -------
         target(dataset): dataset to use an interpolation target
     """
-
     x0 = domain["x0"]
     x1 = domain["x1"]
     y0 = domain["y0"]

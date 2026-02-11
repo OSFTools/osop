@@ -3,19 +3,23 @@
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 
-# Libraries for working with multi-dimensional arrays
-import xarray as xr
-import numpy as np
+"""Plotting functions for verification plots."""
+
+import calendar
+import logging
 import os
 
-# Libraries for plotting and geospatial data visualisation
-from matplotlib import pyplot as plt
+logger = logging.getLogger(__name__)
+
+from cartopy import crs as ccrs
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
-from cartopy import crs as ccrs
-import calendar
-import logging
+
+# Libraries for plotting and geospatial data visualisation
+from matplotlib import pyplot as plt
+import numpy as np
+import xarray as xr
 
 CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
 
@@ -27,11 +31,13 @@ BORDER_OPT = {
 
 
 def location(config):
-    """
-    Prepares location specific POV borders for plots based on arguments in the config dictionary
+    """Prepare location specific POV borders for plots based on arguments in the config dictionary.
+
     Args:
         config (dict): A dictionary containing the configuration parameters.
-    Returns:
+
+    Returns
+    -------
         A Natural Earth data set name to go into the axis plot that's downloaded based on location; if no location set
         i.e. None - no borders will plot.
         If the name is misspelt then a key error will raise suggesting a check of location entry in the shell script.
@@ -67,15 +73,16 @@ def location(config):
 
 
 def prep_titles(config):
-    """
-    Prepare titles for the plot based on the arguments in the config dictionary.
+    """Prepare titles for the plot based on the arguments in the config dictionary.
+
     Currently this replicates the titles here:
     https://confluence.ecmwf.int/display/CKB/C3S+seasonal+forecasts+verification+plots
 
     Args:
         config (dict): A dictionary containing the configuration parameters.
 
-    Returns:
+    Returns
+    -------
         tuple: A tuple containing the prepared titles for the plot.
             The first element is the first line of the title.
             The second element is the second line of the title.
@@ -83,7 +90,7 @@ def prep_titles(config):
     """
     tit_line1 = "{origin} {system}".format(**config)
     tit_line2_base = (
-        f'Start month: {calendar.month_abbr[config["start_month"]].upper()}'
+        f"Start month: {calendar.month_abbr[config['start_month']].upper()}"
     )
 
     if config["aggr"] == "1m":
@@ -99,7 +106,7 @@ def prep_titles(config):
             for vm in [config["valid_month"] + shift for shift in range(3)]
         ]
         validmonths = [calendar.month_abbr[vm][0] for vm in validmonths]
-        tit_line2 = tit_line2_base + f' - Valid months: {"".join(validmonths)}'
+        tit_line2 = tit_line2_base + f" - Valid months: {''.join(validmonths)}"
     else:
         raise BaseException(f"Unexpected aggregation")
     tit_line3 = f"Verification period: {config['hcstarty']} - {config['hcendy']}"
@@ -109,10 +116,10 @@ def prep_titles(config):
 def plot_score(
     score_f, score_fname, category, config, score, titles, plotdir, score_title
 ):
-    """
-    Plot the score on a map.
+    """Plot the score on a map.
 
-    Parameters:
+    Parameters
+    ----------
     score_f (numpy.ndarray): The score data.
     category (str): The tercile category. Set to None if not relevant for the score.
     config (dict): Configuration parameters.
@@ -122,7 +129,8 @@ def plot_score(
     plotdir (str): The directory to save the plot.
     score_title (str): The name for the plot in the file directory.
 
-    Returns:
+    Returns
+    -------
     None
     """
     # choose a projection and set up an axes based on that
@@ -162,7 +170,7 @@ def plot_score(
             f"{score}".upper()
             + "\n"
             + titles[0]
-            + f' {config["var"]}'
+            + f" {config['var']}"
             + f" ({CATNAMES[category]})\n"
             + titles[1]
             + "\n"
@@ -175,7 +183,7 @@ def plot_score(
             f"{score}".upper()
             + "\n"
             + titles[0]
-            + f' {config["var"]}'
+            + f" {config['var']}"
             + f" ({CATNAMES[category]})\n"
             + titles[1]
             + "\n"
@@ -211,20 +219,23 @@ def plot_score(
     plt.savefig(
         os.path.join(plotdir, f"{info}.png"), bbox_inches="tight", pad_inches=0.01
     )
-    logging.info(f"Saved figure to {os.path.join(plotdir, f'{info}.png')}")
+    logger.info(f"Saved figure to {os.path.join(plotdir, f'{info}.png')}")
     plt.close()
 
 
 def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
-    """Plot reliability diagram
-    Parameters:
+    """Plot reliability diagram.
+
+    Parameters
+    ----------
     score_f (numpy.ndarray): The reliability score data.
     config (dict): Configuration parameters.
     score (str): The name of the score.
     plotdir (str): The directory to save the plot.
     score_title (str): The name for the plot in the file directory.
 
-    Returns:
+    Returns
+    -------
     None
     """
     info = score_fname
@@ -259,13 +270,15 @@ def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
             bbox_inches="tight",
             pad_inches=0.01,
         )
-        logging.info(f"Saved figure to {os.path.join(plotdir, f'{score_title}.png')}")
+        logger.info(f"Saved figure to {os.path.join(plotdir, f'{score_title}.png')}")
         plt.close()
 
 
 def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, method):
-    """Plot deterministic scores
-    Parameters:
+    """Plot deterministic scores.
+
+    Parameters
+    ----------
     scoresdir (str): The directory to fetch the input files from.
     plotdir (str): The directory to save the plot.
     hcst_bname (str): The basename of the hindcast file.
@@ -273,7 +286,8 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
     config (dict): Configuration parameters.
     titles (list): Titles for the plot.
 
-    Returns:
+    Returns
+    -------
     None
     """
     # Read the data files
@@ -302,7 +316,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
         corr[config["var"]].lat.size,
         corr[config["var"]].lon.size,
     ):
-        logging.info("Data values matrices need to be transposed")
+        logger.info("Data values matrices need to be transposed")
         corrvalues = corrvalues.T
         corrpvalvalues = corrpvalvalues.T
     elif corrvalues.shape == (
@@ -368,7 +382,7 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
     plt.tight_layout()
     figname = f"{plotdir}/{hcst_bname}.{aggr}.{score}.png"
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
-    logging.info(f"Saved figure to {figname}")
+    logger.info(f"Saved figure to {figname}")
     plt.close()
 
 

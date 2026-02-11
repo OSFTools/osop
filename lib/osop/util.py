@@ -55,7 +55,7 @@ def season_stats(dataset, start_year, end_year, stats=["mean"]):
     dataset = sel_season_time(dataset, start_year, end_year)
 
     # seasonal aggregation - meaning
-    # if want other aggreations will need more thought, probably using Iris
+    # if want other aggregations will need more thought, probably using Iris
     month_length = dataset.time.dt.days_in_month
 
     seasonal_ds = (dataset * month_length).resample(
@@ -109,7 +109,7 @@ def get_tindex(infile):
 
 # move
 def index(forecast_local, st_dim_name):
-    """Reindex and restyle the forcast grib.
+    """Reindex and restyle the forecast grib.
 
     This ensures that the data layout is consistent and compatible with hindcast terciles.
 

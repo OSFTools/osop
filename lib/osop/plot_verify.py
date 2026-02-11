@@ -46,7 +46,7 @@ def location(config):
         On second run - as this file is not used and download has already happened -  the plot will work fine.
         To avoid a second run each time a new data set is imported the try/except does the import for no reason and then the finally is used after
         to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed.
-        Relevent to Cartopy issue #2319 , #2477 amd #2534 - when resolved can be removed
+        Relevant to Cartopy issue #2319 , #2477 and #2534 - when resolved can be removed
     """
     if config["border"] in BORDER_OPT:
         border_set = BORDER_OPT[config["border"]]

@@ -92,8 +92,8 @@ def swap_dims(hcst, obs):
 
     Returns
     -------
-    thishcst: the alligned hindcast dataset.
-    thisobs: the alligned observed dataset.
+    thishcst: the aligned hindcast dataset.
+    thisobs: the aligned observed dataset.
     """
     for this_fcmonth in hcst.forecastMonth.values:
         logger.debug(f"forecastMonth={this_fcmonth}")
@@ -178,7 +178,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         thishcst_em_anom = (
             thishcst_em_anom if not is_fullensemble else thishcst_em_anom.mean("number")
         )
-        # Regrid if lattitude or longitude on a varied resolution or grid.
+        # Regrid if latitude or longitude on a varied resolution or grid.
         if not thishcst_em_mean["lat"].equals(
             this_obs_m_match["lat"]
         ) or not thishcst_em_mean["lon"].equals(this_obs_m_match["lon"]):
@@ -289,7 +289,7 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
             thisobs = xr.concat(l_probs_obs, dim="category")
 
-            # Regrid if lattitude or longitude on a varied resolution or grid.
+            # Regrid if latitude or longitude on a varied resolution or grid.
             if not thishcst["lat"].equals(thisobs["lat"]) or not thishcst["lon"].equals(
                 thisobs["lon"]
             ):

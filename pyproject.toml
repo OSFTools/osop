@@ -51,3 +51,7 @@ known-first-party = ["osop"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.codespell]
+ignore-words-list = ""
+skip = "_build,*.css,*.ipynb,*.js,*.html,*.svg,*.xml,.git,generated"

@@ -1,38 +1,37 @@
-"""
-(C) Crown Copyright, Met Office. All rights reserved.
+# (C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-"""
-
-# CDS API
-import cdsapi
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+"""Python script to download ERA5 reanalysis data for a specific month, area and variable."""
 
 import os
 
 # Disable warnings for data download via API
 import warnings
 
+import cdsapi
+
 warnings.filterwarnings("ignore")
 
 import argparse
-import logging
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_obs(obs_fname, config):
-    """
-    calls cdsapi for the requested period and area
-    retrieves monthly averaged reanalysis ERA5 data
+    """Call cdsapi for the requested period and area.
+
+    Retrieves monthly averaged reanalysis ERA5 data
 
     Args:
         obs_fname(str): fname to save to, and to check not already downloaded
         config dictionary containing necessary arguments for cdsapi
 
     """
-
     if os.path.exists(obs_fname):
-        logging.warning(f"File {obs_fname} already exists")
+        logger.warning(f"File {obs_fname} already exists")
         return obs_fname
 
     c = cdsapi.Client()
@@ -70,13 +69,12 @@ def get_obs(obs_fname, config):
 
 
 def parse_args():
-    """
-    set up argparse to get command line arguments
+    """Set up argparse to get command line arguments.
 
-    Returns:
+    Returns
+    -------
         args: argparse args object
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--month", required=True, help="start month for observations")
     parser.add_argument(
@@ -147,7 +145,7 @@ if __name__ == "__main__":
         var=var,
     )
 
-    logging.debug(config)
+    logger.debug(config)
 
     if args.years:
         config["hcstarty"] = int(args.years[0])
@@ -160,5 +158,5 @@ if __name__ == "__main__":
     obs_fname = "{fpath}/era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
         fpath=downloaddir, **config
     )
-    logging.info(f"Downloading obs filename: {obs_fname}")
+    logger.info(f"Downloading obs filename: {obs_fname}")
     get_obs(obs_fname, config)

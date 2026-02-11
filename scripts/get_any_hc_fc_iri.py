@@ -1,11 +1,10 @@
-"""
-(C) Crown Copyright, Met Office. All rights reserved.
+# (C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+"""Python script to get NMME models not avialable from C3S.
 
-Python script to get NMME models not avialable from C3S
-Using an interface as close to get_any_hc as possible
+Uses an interface as close to get_any_hc as possible
 
 usage: get_any_hc-fc_iri.py.py [-h] --centre CENTRE --month MONTH --leads LEADS
                            --area AREA --downloaddir DOWNLOADDIR
@@ -22,18 +21,17 @@ options:
                         location to download to
 """
 
-import os
-import sys
-import datetime as dt
-import cptdl
 import argparse
 import calendar
+import datetime as dt
+import os
+import sys
+
+import cptdl
 
 
 def round_month(month):
-    """
-    for month calculation, take remained when divided
-    by 12 but for multiples of 12, return 12
+    """For month calculation, take remained when divided by 12 but for multiples of 12, return 12.
 
     >>> print(round_month(1))
     1
@@ -51,9 +49,9 @@ def round_month(month):
 
 
 def get_target(month, leadtime_month):
-    """
-    Given the month + leadtime_month variables,
-    calculate a string such as Dec-Feb for the target
+    """Generate a string for the target season given the month and lead time in months.
+
+    Calculate a string such as Dec-Feb for the target
     Using the same convention as for C3S forecasts
     where month = 1 means the first month of the forecast
 
@@ -67,7 +65,6 @@ def get_target(month, leadtime_month):
     Jun-Aug
 
     """
-
     month1 = round_month(month + leadtime_month[0] - 1)
     month2 = round_month(month + leadtime_month[-1] - 1)
 
@@ -82,7 +79,6 @@ def get_target(month, leadtime_month):
 def get_iri_nnme(
     model, variable, month, leadtime_month, l_fc, area, area_str, downloaddir, year=None
 ):
-
     # VARIABLES = ["PRCP","T2M"]
     VARIABLES = variable
     if l_fc:
@@ -192,10 +188,7 @@ def get_iri_nnme(
 
 
 def parse_args():
-    """
-    set up argparse to get command line arguments
-    """
-
+    """Set up argparse to get command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True, help="model to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
@@ -225,13 +218,11 @@ def parse_args():
 
 
 def main():
-    """
-    Called when this is run as a script
-    Get the command line arguments using argparse
-    Call the main funciton to do the actual
-    cptdl call to IRI
-    """
+    """Execute the script to download IRI data.
 
+    Get the command line arguments using argparse.
+    Call the main function to do the actual cptdl call to IRI.
+    """
     # get command line args
     args = parse_args()
 

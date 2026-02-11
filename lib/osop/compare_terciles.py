@@ -4,22 +4,27 @@
 # See LICENSE in the root of the repository for full licensing details.
 
 # Libraries for working with multi-dimensional arrays
-import xarray as xr
-import pandas as pd
-from osop.util import get_tindex, index
+"""Functions to compare terciles for forecasts and hindcasts."""
+
 import copy
+
+import pandas as pd
+import xarray as xr
+
+from osop.util import get_tindex, index
 
 
 def update_config(origin, systemfc, config):
-    """
-    Creates a copy of the config dict to be used for repeated load in of tercile forecasts
+    """Create a copy of the config dict to be used for repeated load in of tercile forecasts.
 
-    Parameters:
+    Parameters
+    ----------
     Origin (Str): The service to be loaded
     Systemfc (Str): The service version
     config (Dict): The dictionary to be copied and variated
 
-    Returns:
+    Returns
+    -------
     Config_copy (Dict): The copy of the dictionary with new updated names
     """
     config_copy = copy.deepcopy(config)
@@ -34,10 +39,10 @@ def update_config(origin, systemfc, config):
 def mme_process_forecasts(
     months, suffix, Services, services_values, productsfcdir, config, services_weights
 ):
-    """
-    Loads each tercile forecast and combines for mme.
+    """Load each tercile forecast and combines for MME.
 
-    Parameters:
+    Parameters
+    ----------
     months (int): Set to None or value of month based on leads
     suffix (str): Used for naming between 3months or the imonth lead
     Services (list): List of services to combine
@@ -46,11 +51,11 @@ def mme_process_forecasts(
     productsfcdir (str): The location for the files to output too and get from
     serives_weights(list): the weight of the service in context of mme
 
-    Returns:
+    Returns
+    -------
     mme_combined (array): The combined mme forecast array.
 
     """
-
     mme_combined = None
     n_members = len(Services)
     for origin, systemfc in services_values.items():
@@ -73,15 +78,16 @@ def mme_process_forecasts(
 
 
 def mme_products(Services, config, productsfcdir):
-    """
-    Loads each tercile forecast and combines for mme.
+    """Load each tercile forecast and combines for MME.
 
-    Parameters:
+    Parameters
+    ----------
     Services (list): List of services to combine
     config (dict): The cofiguraiton parameters for the forecast
     productsfcdir (str): The location for the files to output too and get from
 
-    Returns:
+    Returns
+    -------
     None
     Saves array (x-array) - The multi-model ensemble forecast percentages.
     """
@@ -130,13 +136,14 @@ def mme_products(Services, config, productsfcdir):
 
 
 def percentage(array):
-    """
-    Takes a boolean mask for a forecast dataset and returns the percentage of Trues
+    """Take a boolean mask for a forecast dataset and return the percentage of Trues.
 
-    Parameters:
+    Parameters
+    ----------
     array (x-array): The input boolean mask
 
-    Returns:
+    Returns
+    -------
     array_percentage (x-array): The percentage values
     """
     array_concact = xr.concat(array, dim="number")
@@ -147,33 +154,36 @@ def percentage(array):
 
 
 def mask_cat(fcst, terciles):
-    """
-    Creates a boolean mask for where the forecast value falls.
-    Parameters:
+    """Create a boolean mask for where the forecast value falls.
+
+    Parameters
+    ----------
     fcst (x-array): The forecast array
     hcst_terciles (x-array): The hindcast terciles
 
-    Returns:
+    Returns
+    -------
     cat (lower,higher,middle) masks (array): The boolean mask
     """
-
     v = list(terciles.data_vars)[0]
     lo, hi = [terciles[v].sel(category=c) for c in (0, 1)]
     return fcst < lo, fcst > hi, (fcst > lo) & (fcst < hi)
 
 
 def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fname):
-    """
-    Produces the three month tercile forecast data in the form of
-    an x-array that contains the month, the percentage and the lat-lon coordinates.
+    """Produce a three month tercile forecast.
 
-    Parameters:
+    This takes data in the form of an xarray that contains the month, the percentage and the lat-lon coordinates.
+
+    Parameters
+    ----------
     forecast_data (x-array): The re-indexed forecast data.
     hindcast_terciles (x-array): The x-array that contains the matching tercile catagories.
     products_forecast (str): The location for the files to output too.
     forcast_fname (str): The name of the forecast data.
 
-    Returns:
+    Returns
+    -------
     None
     Saves output data-array that contains the percent values for each tercile and co-ord.
 
@@ -200,17 +210,19 @@ def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fn
 
 
 def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fname):
-    """
-    Produces the one month tercile forecast data in the form of
-    an x-array that contains the month, the percentage and the lat-lon coordinates.
+    """Produce a one month tercile forecast.
 
-    Parameters:
+    This takes data in the form of an xarray that contains the month, the percentage and the lat-lon coordinates.
+
+    Parameters
+    ----------
     forecast_data (x-array): The re-indexed forecast data.
     hindcast_terciles (x-array): The x-array that contains the matching tercile catagories.
     products_forecast (str): The location for the files to output too.
     forcast_fname (str): The name of the forecast data.
 
-    Returns:
+    Returns
+    -------
     None
     Saves output data-array that contains the percent values for each tercile and co-ord.
 
@@ -243,8 +255,7 @@ def one_month(forecast_data, hindcast_terciles, products_forecast, forecast_fnam
 
 
 def compute_forecast(config, downloaddir, products_hindcast, products_forecast):
-    """
-    Calls code to calculate tercile forecast data for 1 month forecasts.
+    """Calculate tercile forecast data for 1 month forecasts.
 
     Args:
         config (dict): A dictionary containing the configuration parameters.
@@ -252,7 +263,8 @@ def compute_forecast(config, downloaddir, products_hindcast, products_forecast):
         products_hindcast (str): The path to the tercile catagories from compute_products.
         products_forecast (str): The output location for the products generated.
 
-    Returns:
+    Returns
+    -------
         None
     """
     # hindcast data set info

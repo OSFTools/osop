@@ -1,45 +1,34 @@
-"""
-(C) Crown Copyright, Met Office. All rights reserved.
+# (C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+"""Tests for ens_plotting module."""
 
-
-
-Tests for ens_plotting module
-"""
-
-from matplotlib.testing.decorators import image_comparison
-import matplotlib.pyplot as plt
-import numpy as np
-import xarray as xr
-import pytest
 import cartopy.feature as cfeature
+import matplotlib.pyplot as plt
+from matplotlib.testing.decorators import image_comparison
+import numpy as np
+import pytest
+import xarray as xr
 
 from osop import ens_plotting
 
 
 def test_truncate_colormap():
-    """
-    Test truncate_colormap function
-    """
+    """Test truncate_colormap function."""
     cmap = ens_plotting.truncate_colormap(plt.cm.Greys, minval=0.2)
     assert cmap.name == "trunc(Greys,0.20,1.00)"
 
 
 def test_get_cmap_defaults():
-    """
-    Test get_cmap function with defaults (precip_cs=False, wmo_cs=True)
-    """
+    """Test get_cmap function with defaults (precip_cs=False, wmo_cs=True)."""
     cmap_below, cmap_normal, cmap_above = ens_plotting.get_cmap()
     names = [cmap_below.name, cmap_normal.name, cmap_above.name]
     assert names == ["trunc(Blues,0.20,1.00)", "trunc(Greys,0.20,1.00)", "YlOrRd"]
 
 
 def test_get_cmap_wmo_cs_precip():
-    """
-    Test get_cmap function for precip with WMO colours
-    """
+    """Test get_cmap function for precip with WMO colours."""
     cmap_below, cmap_normal, cmap_above = ens_plotting.get_cmap(
         precip_cs=True, wmo_cs=True
     )
@@ -48,9 +37,7 @@ def test_get_cmap_wmo_cs_precip():
 
 
 def test_get_cmap_nwmo_temp():
-    """
-    Test get_cmap function for not precip and not WMO colors
-    """
+    """Test get_cmap function for not precip and not WMO colors."""
     cmap_below, cmap_normal, cmap_above = ens_plotting.get_cmap(
         precip_cs=False, wmo_cs=False
     )
@@ -63,9 +50,7 @@ def test_get_cmap_nwmo_temp():
 
 
 def test_get_cmap_wmo_temp():
-    """
-    Test get_cmap function for precip and non WMO colors
-    """
+    """Test get_cmap function for precip and non WMO colors."""
     cmap_below, cmap_normal, cmap_above = ens_plotting.get_cmap(
         precip_cs=True, wmo_cs=False
     )
@@ -79,7 +64,6 @@ def test_get_cmap_wmo_temp():
 
 @pytest.fixture
 def mme():
-
     # create dummy data. 3x3 grid with 3 members
     # below starts at 0, up to 0.8
     b = np.linspace(0.0, 0.8, 9).reshape(3, 3)
@@ -132,10 +116,7 @@ def mask():
     style="mpl20",
 )
 def test_plot_tercile_fc(mme):
-    """
-    Test plot_tercile_fc function
-    """
-
+    """Test plot_tercile_fc function."""
     atitle = "Test plot"
     shpfile = cfeature.NaturalEarthFeature(
         category="cultural", name="admin_0_countries", scale="10m", facecolor="none"
@@ -151,11 +132,7 @@ def test_plot_tercile_fc(mme):
     style="mpl20",
 )
 def test_plot_tercile_fc_mask(mme, mask):
-    """
-    Test plot_tercile_fc function with mask, no coastlines,
-    plotting temperature
-    """
-
+    """Test plot_tercile_fc function with mask, no coastlines, plotting temperature."""
     atitle = "Test plot"
     mme = mme.rename({"precipitation": "temperature"})
     fig = ens_plotting.plot_tercile_fc(

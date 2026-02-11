@@ -26,7 +26,8 @@ def parse_args():
 
     Returns
     -------
-        args: argparse args object
+    argparse.Namespace
+        Parsed command line arguments.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--location", required=True)
@@ -71,9 +72,13 @@ def parse_args():
 
 if __name__ == "__main__":
     """
-    Called when this is run as a script
-    Get the command line arguments using argparse
-    Call the plotting functions to generate verification plots
+    Called when this is run as a script.
+
+    Gets the command line arguments using argparse and calls the plotting functions to generate verification plots.
+
+    Returns
+    -------
+    None
     """
     scores = ["spearman_corr", "pearson_corr", "roc", "rocss", "rps", "rel", "bs"]
 

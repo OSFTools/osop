@@ -1,0 +1,26 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+# https://pre-commit.ci/
+ci:
+  autofix_prs: false
+  autofix_commit_msg: "style: pre-commit fixes"
+  autoupdate_commit_msg: "chore: update pre-commit hooks"
+  autoupdate_schedule: "monthly"
+
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+        # Prevent giant files from being committed.
+    -   id: check-added-large-files
+        # Check whether files parse as valid Python.
+    -   id: check-ast
+        # Check for file name conflicts on case-insensitive filesytems.
+    -   id: check-case-conflict
+        # Check for files that contain merge conflict strings.
+    -   id: check-merge-conflict
+        # Check for debugger imports and py37+ `breakpoint()` calls in Python source.
+    -   id: debug-statements
+        # Don't commit to main branch.
+    -   id: no-commit-to-branch

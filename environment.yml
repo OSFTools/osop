@@ -13,3 +13,4 @@ dependencies:
   - black
   - sphinx
   - myst-parser
+  - pre-commit

@@ -18,7 +18,7 @@ set -eu
 # this conda env gives an error on load, so
 # can't use -u option
 set +u
-conda activate osop 
+conda activate osop-simple
 set -u
 
 # pick download location

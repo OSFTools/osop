@@ -7,15 +7,19 @@
 
 Download from C3S for the common period of hindcasts 1993-2016 or for any arbitrary period.
 
-Usage:
-    python get_any_hindcast.py --centre <centre> --month <month> --leads <leads> \
-        --area <area> --downloaddir <downloaddir> --years <years>
-    centre: modelling centre
-    month: start month of forecast
-    leads: forecast range in months (comma separated)
-    area: sub-area in degrees for retrieval (comma separated N,W,S,E)
-    downloaddir: location to download to
-    years: Years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.
+usage: python get_any_hindcast.py --centre CENTRE --month MONTH --leads LEADSs
+        --area AREA --variable VARIABLE --downloaddir DOWNLOADDIR --years YEARS
+
+options:
+--centre CENTRE       centre to download
+--month MONTH         start month for hindcasts/forecasts
+--leads LEADS         forecast range in months (comma separated)
+--area AREA           sub-area in degrees for retrieval (comma separated N,W,S,E)
+--variable VARIABLE   variable to download, 2m_temperature, total_precipitation
+--forecast            optional - default to false i.e. hindcast
+--downloaddir DOWNLOADDIR
+                      location to download to
+--years YEARS         years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.
 """
 
 import argparse
@@ -47,18 +51,30 @@ def do_cdsapi_call(
 
     Retrieve monthly mean seasonal data of t2m and total precip from the requested model.
 
-    Args:
-        centre(str): modelling centre
-        system(str): model version
-        month(int): start month of forecast
-        leadtime_month(list): list of lead times for FC (int)
-        area(list): 4 element list of floats with area for download
-        area_str(str): colon separated area string
-        variable(str): variable for download
-        downloaddir(str):directory to use for the downloads
-        years(str): years to get data for (comma separated). Optional.
-                    Default is hindcast period 1993-2016.
+    Parameters
+    ----------
+    centre : str
+        Modelling centre.
+    system : str
+        Model version.
+    month : int
+        Start month of forecast.
+    leadtime_month : list of int
+        List of lead times for FC.
+    area : list of float
+        4 element list of floats with area for download.
+    area_str : str
+        Colon separated area string.
+    variable : str
+        Variable for download.
+    downloaddir : str
+        Directory to use for the downloads.
+    years : list of str or str, optional
+        Years to get data for (comma separated). Default is hindcast period 1993-2016.
 
+    Returns
+    -------
+    None
     """
     leads_str = "".join([str(mon) for mon in leadtime_month])
 
@@ -95,7 +111,8 @@ def parse_args():
 
     Returns
     -------
-        args: argparse args object
+    argparse.Namespace
+        Parsed command line arguments.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--centre", required=True, help="centre to download")
@@ -134,8 +151,12 @@ def parse_args():
 def main():
     """Execute the script to download seasonal forecast data.
 
-    Get the command line arguments using argparse and call the cdsapi
+    Gets the command line arguments using argparse and calls cdsapi
     to download the requested data.
+
+    Returns
+    -------
+    None
     """
     # get command line args
     args = parse_args()

@@ -23,12 +23,19 @@ logger = logging.getLogger(__name__)
 def get_obs(obs_fname, config):
     """Call cdsapi for the requested period and area.
 
-    Retrieves monthly averaged reanalysis ERA5 data
+    Retrieves monthly averaged reanalysis ERA5 data.
 
-    Args:
-        obs_fname(str): fname to save to, and to check not already downloaded
-        config dictionary containing necessary arguments for cdsapi
+    Parameters
+    ----------
+    obs_fname : str
+        Filename to save to, and to check not already downloaded.
+    config : dict
+        Dictionary containing necessary arguments for cdsapi.
 
+    Returns
+    -------
+    str
+        The filename where data is saved.
     """
     if os.path.exists(obs_fname):
         logger.warning(f"File {obs_fname} already exists")
@@ -73,7 +80,8 @@ def parse_args():
 
     Returns
     -------
-        args: argparse args object
+    argparse.Namespace
+        Parsed command line arguments.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--month", required=True, help="start month for observations")
@@ -100,11 +108,14 @@ def parse_args():
 
 if __name__ == "__main__":
     """
-    Called when this is run as a script
-    Get the command line arguments using argparse
-    Call the main function to do download era5
-    """
+    Called when this is run as a script.
 
+    Gets the command line arguments using argparse and calls the main function to download ERA5.
+
+    Returns
+    -------
+    None
+    """
     # get command line args
     args = parse_args()
 

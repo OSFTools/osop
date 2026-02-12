@@ -2,23 +2,25 @@
 
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
+
 """Python script to get NMME models not available from C3S.
 
-Uses an interface as close to get_any_hc as possible
+This script uses an interface as close to get_any_hc as possible.
 
-usage: get_any_hc-fc_iri.py.py [-h] --centre CENTRE --month MONTH --leads LEADS
-                           --area AREA --downloaddir DOWNLOADDIR
+usage: get_any_hc-fc_iri.py.py [-h] --model MODEL --month MONTH --variable VARIABLE --leads LEADS
+                               --forecast FORECAST --year YEAR --area AREA --downloaddir DOWNLOADDIR
 
 options:
-  -h, --help            show this help message and exit
-  --model MODEL         model to download
-  --month MONTH         start month for hindcasts/forecasts
-  --leads LEADS         forecast range in months (comma separated)
-  --area AREA           sub-area in degrees for retrieval (comma separated
-                        N,W,S,E)
-  --forecast            optional - default to false i.e. hindcast
-  --downloaddir DOWNLOADDIR
-                        location to download to
+-h, --help            show this help message and exit
+--model MODEL         model to download
+--month MONTH         start month for hindcasts/forecasts
+--variable VARIABLE   variable to download, 2m_temperature, total_precipitation
+--leads LEADS         forecast range in months (comma separated)
+--forecast            optional - default to false i.e. hindcast
+--year YEAR           year for forecast (required if --forecast is true)
+--area AREA           sub-area in degrees for retrieval (comma separated N,W,S,E)
+--downloaddir DOWNLOADDIR
+                      location to download to
 """
 
 import argparse
@@ -31,15 +33,26 @@ import cptdl
 
 
 def round_month(month):
-    """For month calculation, take remained when divided by 12 but for multiples of 12, return 12.
+    """For month calculation, take remainder when divided by 12 but for multiples of 12, return 12.
 
+    Parameters
+    ----------
+    month : int
+        The month as an integer.
+
+    Returns
+    -------
+    int
+        The rounded month.
+
+    Examples
+    --------
     >>> print(round_month(1))
     1
     >>> print(round_month(12))
     12
     >>> print(round_month(13))
     1
-
     """
     month_out = month % 12
     if month_out == 0:
@@ -51,10 +64,23 @@ def round_month(month):
 def get_target(month, leadtime_month):
     """Generate a string for the target season given the month and lead time in months.
 
-    Calculate a string such as Dec-Feb for the target
-    Using the same convention as for C3S forecasts
-    where month = 1 means the first month of the forecast
+    Calculates a string such as 'Dec-Feb' for the target, using the same convention as for C3S forecasts,
+    where month = 1 means the first month of the forecast.
 
+    Parameters
+    ----------
+    month : int
+        The starting month.
+    leadtime_month : list of int
+        List of lead times in months.
+
+    Returns
+    -------
+    str
+        The target season string.
+
+    Examples
+    --------
     >>> month = 11
     >>> leadtime_month =[2, 3, 4]
     >>> print(get_target(month, leadtime_month))
@@ -63,7 +89,6 @@ def get_target(month, leadtime_month):
     >>> month = 5
     >>> print(get_target(month, leadtime_month))
     Jun-Aug
-
     """
     month1 = round_month(month + leadtime_month[0] - 1)
     month2 = round_month(month + leadtime_month[-1] - 1)
@@ -79,6 +104,33 @@ def get_target(month, leadtime_month):
 def get_iri_nnme(
     model, variable, month, leadtime_month, l_fc, area, area_str, downloaddir, year=None
 ):
+    """Download IRI NMME data for a given model, variable, and configuration.
+
+    Parameters
+    ----------
+    model : str
+        Model to download.
+    variable : list of str
+        List of variables to download.
+    month : int
+        Start month for hindcasts/forecasts.
+    leadtime_month : list of int
+        Forecast range in months.
+    l_fc : bool
+        If True, download forecast; if False, download hindcast.
+    area : list of float
+        Sub-area in degrees for retrieval (N, W, S, E).
+    area_str : str
+        Area string for filenames.
+    downloaddir : str
+        Location to download to.
+    year : int, optional
+        Year for forecast (required if l_fc is True).
+
+    Returns
+    -------
+    None
+    """
     # VARIABLES = ["PRCP","T2M"]
     VARIABLES = variable
     if l_fc:
@@ -188,7 +240,13 @@ def get_iri_nnme(
 
 
 def parse_args():
-    """Set up argparse to get command line arguments."""
+    """Set up argparse to get command line arguments.
+
+    Returns
+    -------
+    argparse.Namespace
+        Parsed command line arguments.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True, help="model to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
@@ -220,8 +278,11 @@ def parse_args():
 def main():
     """Execute the script to download IRI data.
 
-    Get the command line arguments using argparse.
-    Call the main function to do the actual cptdl call to IRI.
+    Gets the command line arguments using argparse and calls the main function to do the actual cptdl call to IRI.
+
+    Returns
+    -------
+    None
     """
     # get command line args
     args = parse_args()

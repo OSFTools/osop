@@ -33,20 +33,25 @@ BORDER_OPT = {
 def location(config):
     """Prepare location specific POV borders for plots based on arguments in the config dictionary.
 
-    Args:
-        config (dict): A dictionary containing the configuration parameters.
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration parameters.
 
     Returns
     -------
-        A Natural Earth data set name to go into the axis plot that's downloaded based on location; if no location set
-        i.e. None - no borders will plot.
-        If the name is misspelt then a key error will raise suggesting a check of location entry in the shell script.
-    Redundancy:
-        Natural Earth has a download issue that searches for a file that doesn't exist; a partial import is managed regardless
-        On second run - as this file is not used and download has already happened -  the plot will work fine.
-        To avoid a second run each time a new data set is imported the try/except does the import for no reason and then the finally is used after
-        to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed.
-        Relevant to Cartopy issue #2319 , #2477 and #2534 - when resolved can be removed
+    object or str
+        A Natural Earth data set name to go into the axis plot that's downloaded based on location.
+        If no location set (i.e. None), no borders will plot.
+        If the name is misspelt then a KeyError will be raised suggesting a check of location entry in the shell script.
+
+    Notes
+    -----
+    Natural Earth has a download issue that searches for a file that doesn't exist; a partial import is managed regardless.
+    On second run - as this file is not used and download has already happened - the plot will work fine.
+    To avoid a second run each time a new data set is imported the try/except does the import for no reason and then the finally is used after
+    to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed.
+    Relevant to Cartopy issue #2319 , #2477 and #2534 - when resolved can be removed.
     """
     if config["border"] in BORDER_OPT:
         border_set = BORDER_OPT[config["border"]]
@@ -78,15 +83,16 @@ def prep_titles(config):
     Currently this replicates the titles here:
     https://confluence.ecmwf.int/display/CKB/C3S+seasonal+forecasts+verification+plots
 
-    Args:
-        config (dict): A dictionary containing the configuration parameters.
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration parameters.
 
     Returns
     -------
-        tuple: A tuple containing the prepared titles for the plot.
-            The first element is the first line of the title.
-            The second element is the second line of the title.
-            The third elementis the third line of the title.
+    tuple of str
+        Tuple containing the prepared titles for the plot:
+        (first line, second line, third line).
     """
     tit_line1 = "{origin} {system}".format(**config)
     tit_line2_base = (
@@ -120,14 +126,22 @@ def plot_score(
 
     Parameters
     ----------
-    score_f (numpy.ndarray): The score data.
-    category (str): The tercile category. Set to None if not relevant for the score.
-    config (dict): Configuration parameters.
-    score (str): The name of the score.
-    titles (list): Titles for the plot.
-    plotdir (str): The directory to save the plot.
-    plotdir (str): The directory to save the plot.
-    score_title (str): The name for the plot in the file directory.
+    score_f : numpy.ndarray
+        The score data.
+    score_fname : str
+        The score filename.
+    category : str or int or None
+        The tercile category. Set to None if not relevant for the score.
+    config : dict
+        Configuration parameters.
+    score : str
+        The name of the score.
+    titles : list
+        Titles for the plot.
+    plotdir : str
+        The directory to save the plot.
+    score_title : str
+        The name for the plot in the file directory.
 
     Returns
     -------
@@ -228,11 +242,20 @@ def plot_rel(score_f, score_fname, config, score, plotdir, titles, score_title):
 
     Parameters
     ----------
-    score_f (numpy.ndarray): The reliability score data.
-    config (dict): Configuration parameters.
-    score (str): The name of the score.
-    plotdir (str): The directory to save the plot.
-    score_title (str): The name for the plot in the file directory.
+    score_f : numpy.ndarray
+        The reliability score data.
+    score_fname : str
+        The score filename.
+    config : dict
+        Configuration parameters.
+    score : str
+        The name of the score.
+    plotdir : str
+        The directory to save the plot.
+    titles : list
+        Titles for the plot.
+    score_title : str
+        The name for the plot in the file directory.
 
     Returns
     -------
@@ -279,12 +302,22 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
 
     Parameters
     ----------
-    scoresdir (str): The directory to fetch the input files from.
-    plotdir (str): The directory to save the plot.
-    hcst_bname (str): The basename of the hindcast file.
-    aggr (str): The aggregation period.
-    config (dict): Configuration parameters.
-    titles (list): Titles for the plot.
+    scoresdir : str
+        The directory to fetch the input files from.
+    plotdir : str
+        The directory to save the plot.
+    hcst_bname : str
+        The basename of the hindcast file.
+    aggr : str
+        The aggregation period.
+    config : dict
+        Configuration parameters.
+    score : str
+        The name of the score.
+    titles : list
+        Titles for the plot.
+    method : str
+        Plotting method.
 
     Returns
     -------
@@ -387,6 +420,25 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
 
 
 def generate_plots(config, titles, scoresdir, plotdir, method):
+    """Generate verification plots for the given configuration.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration parameters.
+    titles : list
+        Titles for the plot.
+    scoresdir : str
+        Directory containing score files.
+    plotdir : str
+        Directory to save plots.
+    method : str
+        Plotting method.
+
+    Returns
+    -------
+    None
+    """
     ## read in the data
     score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc".format(
         **config

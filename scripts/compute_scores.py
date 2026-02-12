@@ -4,7 +4,8 @@
 # See LICENSE in the root of the repository for full licensing details.
 """Script to compute scores for a given set of hindcasts and observations.
 
-:note:
+Notes
+-----
     This script currently can only be used to create scores using ERA5 as the comparison dataset
 """
 

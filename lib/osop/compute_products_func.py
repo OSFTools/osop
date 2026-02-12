@@ -27,14 +27,25 @@ def process_mme_products(array, output, aggr, config, sig, member_weight=0.1):
 
     Parameters
     ----------
-    array (x-array): Target array.
-    output (x-array): Enters as an empty array
-    aggr (str): 1m or 3m array
-    config (dic): Configuration parameters.
-    sig (str): Signifier for addition to save path for mean, anom or tercile mme.
-    member_weight (float): The fractional weight for the service, i.e. weight/sum of weights
-    Returns:
-    Returns x-array of the combined mme for 1 month and 3 month combined
+    array : xarray.DataArray
+        Target array.
+    output : dict
+        Enters as an empty array.
+    aggr : str
+        '1m' or '3m' array.
+    config : dict
+        Configuration parameters.
+    sig : str
+        Signifier for addition to save path for mean, anom or tercile mme.
+    member_weight : float, optional
+        The fractional weight for the service, i.e. weight/sum of weights.
+
+    Returns
+    -------
+    xarray.DataArray
+        The combined mme for 1 month and 3 month combined.
+    str
+        The save name for the output file.
     """
     # populate array and divide by members fractional weight
     if output[aggr] is None:
@@ -51,18 +62,24 @@ def process_mme_products(array, output, aggr, config, sig, member_weight=0.1):
 
 
 def mme_products_hindcast(services, config, productsdir):
-    """Load each indexed datasets and combines for MME.
+    """Load each indexed dataset and combine for MME.
 
     Parameters
     ----------
-    Services (list): List of services to combine
-    config (dict): The cofiguraiton parameters for the forecast
-    productsfcdir (str): The location for the files to output too and get from
+    services : dict
+        List of services to combine.
+    config : dict
+        The configuration parameters for the forecast.
+    productsdir : str
+        The location for the files to output to and get from.
 
     Returns
     -------
     None
-    Saves array (x-array) - The multi-model ensemble forecast percentages.
+
+    Notes
+    -----
+    Saves array (xarray.DataArray) - The multi-model ensemble forecast percentages.
     """
     # remove mme from the list that's' worked on
     del services["{origin}".format(**config)]
@@ -122,16 +139,23 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
 
     Parameters
     ----------
-    hcst_fname (str): File path of the hindcast grib file.
-    hcst_bname (str): Base name of the hindcast grib file.
-    config (dict): Configuration parameters.
-    st_dim_name (str): Name of the start date dimension (important for lagged models)
-    productsdir (str): Directory path to save the netCDF files.
+    hcst : xarray.Dataset
+        Hindcast dataset.
+    hcst_bname : str
+        Base name of the hindcast grib file.
+    config : dict
+        Configuration parameters.
+    productsdir : str
+        Directory path to save the netCDF files.
 
     Returns
     -------
-    saves 1 month and 3 month anomalies to netCDF files
-    returns a tuple of xarray datasets containing the original hindcast data and the 3-month aggregated data.
+    tuple of xarray.Dataset
+        The original hindcast data and the 3-month aggregated data.
+
+    Notes
+    -----
+    Saves 1 month and 3 month anomalies to netCDF files.
     """
     logger.debug("Re-arranging time metadata in xr.Dataset object")
     # Add start_month to the xr.Dataset
@@ -186,18 +210,28 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
 
 
 def get_thresh(icat, quantiles, xrds, dims=["number", "start_date"]):
-    """Calculate the boundaries of forecast categories defined by quantiles e.g. terciles.
+    """Calculate the boundaries of forecast categories defined by quantiles (e.g. terciles).
 
-    Args:
-        icat (int): The category number. 0 (lower than), 1 (normal), 2 (higher than).
-        quantiles (list): The list of quantiles. Use [1/3., 2/3.] for terciles.
-        xrds (xarray.Dataset): The dataset containing the hindcast data.
-        dims (list, optional): The dimensions to consider when calculating the quantiles.
-            Defaults to ['number', 'start_date'].
+    Parameters
+    ----------
+    icat : int
+        The category number. 0 (lower than), 1 (normal), 2 (higher than).
+    quantiles : list of float
+        The list of quantiles. Use [1/3., 2/3.] for terciles.
+    xrds : xarray.Dataset
+        The dataset containing the hindcast data.
+    dims : list of str, optional
+        The dimensions to consider when calculating the quantiles. Defaults to ['number', 'start_date'].
 
     Returns
     -------
-        tuple: A tuple containing the lower and upper boundaries for the forecast category.
+    tuple of xarray.DataArray or float
+        A tuple containing the lower and upper boundaries for the forecast category.
+
+    Raises
+    ------
+    ValueError
+        If any of the specified dimensions are not present in the dataset.
     """
     if not all(elem in xrds.sizes for elem in dims):
         raise ValueError(
@@ -225,19 +259,29 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir):
     """Calculate probabilities for tercile categories.
 
     Counts members within each category and saves them to netCDF files.
-    This function computes the tercile thresholds for both 1-month and 3-month aggregated hindcast data.
+    This function computes the tercile thresholds for both 1-month and 3-month aggregated hindcast data
     and saves them to netCDF files.
 
-    Args:
-        hcst_bname (str): Basename of hincast file.
-        hcst (xarray.Dataset): The dataset containing the hindcast data.
-        hcst_3m (xarray.Dataset): The dataset containing the 3-month aggregated hindcast data.
-        productsdir (str): Directory path to save the netCDF files.
+    Parameters
+    ----------
+    config : dict
+        Configuration parameters.
+    hcst_bname : str
+        Basename of hindcast file.
+    hcst : xarray.Dataset
+        The dataset containing the hindcast data.
+    hcst_3m : xarray.Dataset
+        The dataset containing the 3-month aggregated hindcast data.
+    productsdir : str
+        Directory path to save the netCDF files.
 
     Returns
     -------
-        NA
-        Saves tercile forecasts to netcdf file.
+    None
+
+    Notes
+    -----
+    Saves tercile forecasts to netCDF file.
     """
     logger.debug("Computing probabilities (tercile categories)")
     quantiles = [1 / 3.0, 2 / 3.0]
@@ -287,9 +331,18 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir):
 def calc_products(config, downloaddir, productsdir):
     """Calculate anomalies and tercile probabilities for a given hindcast dataset.
 
-    Args:
-        config (dict): Configuration parameters.
-        downloaddir (str): Directory path to save the netCDF files.
+    Parameters
+    ----------
+    config : dict
+        Configuration parameters.
+    downloaddir : str
+        Directory path to save the netCDF files.
+    productsdir : str
+        Directory path to save the netCDF files.
+
+    Returns
+    -------
+    None
     """
     hcst_bname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
         **config
@@ -312,12 +365,20 @@ def calc_products(config, downloaddir, productsdir):
 
 
 def calc_products_mme(services, config, productsdir):
-    """Calculate anomalies and tercile probabilities for a the mme combined data.
+    """Calculate anomalies and tercile probabilities for the MME combined data.
 
-    Args:
-        Services (dict): All the services intended for the mme.
-        config (dict): Configuration parameters.
-        downloaddir (str): Directory path to save the netCDF files.
+    Parameters
+    ----------
+    services : dict
+        All the services intended for the MME.
+    config : dict
+        Configuration parameters.
+    productsdir : str
+        Directory path to save the netCDF files.
+
+    Returns
+    -------
+    None
     """
     hcst_bname = "{origin}_{systemfc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
         **config

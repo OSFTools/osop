@@ -15,4 +15,3 @@ dependencies:
   - myst-parser
   - pre-commit
   - ruff
-  - conda-lock

@@ -1,7 +1,7 @@
 # Objective Seasonal Outlook Package (OSOP)
 ### OSOP is a python library to support objective seasonal forecasting.
 
-[![pre-commit](https://results.pre-commit.ci/badge/github/OSFTools/osop/main.svg)](https://results.pre-commit.ci/latest/github/OSFTools/osop/main) ![Codecov](https://img.shields.io/codecov/c/github/OSFTools/osop?style=flat-square&logo=codecov&color=%23F01F7A)
+[![pre-commit](https://results.pre-commit.ci/badge/github/OSFTools/osop/main.svg)](https://results.pre-commit.ci/latest/github/OSFTools/osop/main) [![codecov](https://codecov.io/gh/OSFTools/osop/graph/badge.svg?token=F1HEJYFPH2)](https://codecov.io/gh/OSFTools/osop)
 
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/OSFTools/osop?style=flat-square)   ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/OSFTools/osop?style=flat-square)  ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/OSFTools/osop/main?style=flat-square) [![contributors](https://img.shields.io/github/contributors/OSFTools/osop?style=flat-square)](https://github.com/OSFTools/osop/graphs/contributors)
 

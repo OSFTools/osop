@@ -28,3 +28,7 @@ Submitting changes
    [Contributor Licence Agreement](https://cla-assistant.io/OSFTools/osop/)
    (CLA), if you have not already done so.
 1. We will review your code.
+
+Code Coverage
+-------------
+https://codecov.io/gh/OSFTools/osop/graphs/tree.svg?token=F1HEJYFPH2

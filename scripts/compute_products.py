@@ -1,33 +1,33 @@
-"""
-(C) Crown Copyright, Met Office. All rights reserved.
+# (C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-"""
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+"""Script to compute products from downloaded data."""
 
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
+from datetime import datetime
+import logging
 
 # import functions
 import os
+
 import yaml
 from yaml.loader import SafeLoader
-import logging
-from datetime import datetime
-
 
 # import needed local functions
 from osop.compute_products_func import calc_products, calc_products_mme
 
+logger = logging.getLogger(__name__)
+
 
 def parse_args():
-    """
-    set up argparse to get command line arguments
+    """Set up argparse to get command line arguments.
 
-    Returns:
+    Returns
+    -------
         args: argparse args object
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
                 for svc, val in ServicesRaw.items()
             }
         except yaml.YAMLError as e:
-            logging.error(f"Error reading YAML file: {e}", stack_info=True)
+            logger.error(f"Error reading YAML file: {e}", stack_info=True)
 
     # add arguments to config
     config = dict(
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         leads_str=leads_str,
         var=variable,
     )
-    logging.debug(config)
+    logger.debug(config)
 
     if args.years:
         config["hcstarty"] = args.years[0]

@@ -1,20 +1,21 @@
-"""
-(C) Crown Copyright, Met Office. All rights reserved.
+# (C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-"""
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+"""Tests for regridders module."""
 
 import os
-import xarray as xr
+
 import numpy as np
-from osop.regridders import regrid_cons_masked, interp_target
 import pytest
+import xarray as xr
+
+from osop.regridders import interp_target, regrid_cons_masked
 
 TEST_DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data")
 
 
-# supress warning from Cython usually ignoed by numpy
+# suppress warning from Cython usually ignored by numpy
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 def test_regrid_cons_masked():
     source = xr.open_dataset(f"{TEST_DATA}/chirps_test.nc", chunks={})
@@ -39,7 +40,7 @@ def test_regrid_cons_masked():
 
 
 def test_interp_target():
-    """Test interp_target function"""
+    """Test interp_target function."""
     domain = {"x0": -1.0, "x1": 2.0, "y0": 35.0, "y1": 39.0}
     res = 1.0
     result = interp_target(domain, res)
@@ -63,7 +64,7 @@ def test_interp_target():
 
 
 def test_interp_target_raises_x():
-    """Test interp_target function raises an error for x0 >= x1"""
+    """Test interp_target function raises an error for x0 >= x1."""
     domain = {"x0": 2.0, "x1": -1.0, "y0": 35.0, "y1": 39.0}
     res = 1.0
     with pytest.raises(
@@ -73,7 +74,7 @@ def test_interp_target_raises_x():
 
 
 def test_interp_target_raises_y():
-    """Test interp_target function raises an error for y0 >= y1"""
+    """Test interp_target function raises an error for y0 >= y1."""
     domain = {"x0": -1.0, "x1": 2.0, "y0": 39.0, "y1": 35.0}
     res = 1.0
     with pytest.raises(

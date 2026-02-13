@@ -42,6 +42,12 @@ jobs:
           echo "CACHE_PERIOD=$(date +%Y).$(expr $(date +%U) / ${CACHE_WEEKS})" >> ${GITHUB_ENV}
           echo "CONDA_FILE=./osop-spec-file.txt" >> ${GITHUB_ENV}
 
+      - name: "conda package cache"
+        uses: ./.github/workflows/composite/conda-pkg-cache
+        with:
+          cache_build: 6
+          cache_period: ${{ env.CACHE_PERIOD }}
+          env_name: ${{ env.ENV_NAME }}
           
       - name: "conda install"
         uses: conda-incubator/setup-miniconda@v3

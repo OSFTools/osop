@@ -49,7 +49,7 @@ jobs:
           miniforge-version: latest
           channels: conda-forge
           activate-environment: ${{ env.ENV_NAME }}
-          environment-file: osop-spec-file.txt
+          environment-file: environment.yml
           auto-update-conda: false
 
       - name: "conda environment cache"

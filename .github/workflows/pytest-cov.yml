@@ -1,23 +1,73 @@
-name: Run tests and upload coverage
+name: ci-test-coverage
 
-on: 
-  push
+on:
+  push:
+    branches:
+      - "main"
+      - "v*x"
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+  
 jobs:
   test:
-    name: Run tests and collect coverage
+    name: Run pytest and coverage
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    env:
+      ENV_NAME: "osop-simple"
+    
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: "environment configure"
+        env:
+          # Maximum cache period (in weeks) before forcing a cache refresh.
+          CACHE_WEEKS: 2
+        run: |
+          echo "CACHE_PERIOD=$(date +%Y).$(expr $(date +%U) / ${CACHE_WEEKS})" >> ${GITHUB_ENV}
 
-      - name: Install dependencies
-        run: pip install pytest pytest-cov
+      - name: "conda package cache"
+        uses: ./.github/workflows/composite/conda-pkg-cache
+        with:
+          cache_build: 6
+          cache_period: ${{ env.CACHE_PERIOD }}
+          env_name: ${{ env.ENV_NAME }}
+          
+      - name: "conda install"
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          activate-environment: ${{ env.ENV_NAME }}
+          auto-update-conda: false
+
+      - name: "conda environment cache"
+        uses: ./.github/workflows/composite/conda-env-cache
+        with:
+          cache_build: 6
+          cache_period: ${{ env.CACHE_PERIOD }}
+          env_name: ${{ env.ENV_NAME }}
+          install_packages: "pip"
+
+      - name: "conda info"
+        run: |
+          conda info
+          conda list
 
       - name: Run tests
         run: pytest --cov --cov-branch --cov-report=xml

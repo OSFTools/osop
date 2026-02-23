@@ -23,6 +23,20 @@ from osop.util import get_tindex, index
 
 def valid_time(output, save_name): 
     """
+    Inputs Valid_time into the array for later comparions in score to obs 
+    Parameters
+    ----------
+    output : xarray.DataArray
+        Target array.
+    save_name : string, save path
+     
+
+    Returns
+    -------
+    output : xarray.DataArray
+        The same array with valid datetime in the correct format
+    "
+
     """
     #Build valid_time if it is missing
     if "valid_time" not in output.coords:

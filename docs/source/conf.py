@@ -1,9 +1,10 @@
-# Configuration file for the Sphinx documentation builder.
+"""Configuration file for the Sphinx documentation builder."""
+
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-import sys
 from pathlib import Path
+import sys
 
 sys.path.insert(0, str(Path("..", "..", "lib").resolve()))
 

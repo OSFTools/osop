@@ -53,7 +53,7 @@ OSOP is an Open Source project hosted on Github.  Anyone with a GitHub account m
 ## Tests
 
 To run tests 
- 1. add the lib directory of this repo to your PYTHONPATH environemnt variable
+ 1. add the lib directory of this repo to your PYTHONPATH environment variable
  2. run pytest
 
 <h6 align="center">

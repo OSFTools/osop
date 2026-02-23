@@ -1,36 +1,36 @@
+# (C) Crown Copyright, Met Office. All rights reserved.
+
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+"""Script to compute scores for a given set of hindcasts and observations.
+
+Notes
+-----
+    This script currently can only be used to create scores using ERA5 as the comparison dataset
 """
-(C) Crown Copyright, Met Office. All rights reserved.
-
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-
-This script currently can only be used to create scores using ERA5 as the comparison dataset
-
-"""
-
-import os
-import yaml
-from yaml.loader import SafeLoader
-
-
-# import local modules for function usage
-from osop.compute_scores_func import calc_scores
-
 
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
 from datetime import datetime
 import logging
+import os
+
+import yaml
+from yaml.loader import SafeLoader
+
+# import local modules for function usage
+from osop.compute_scores_func import calc_scores
+
+logger = logging.getLogger(__name__)
 
 
 def parse_args():
-    """
-    set up argparse to get command line arguments
+    """Set up argparse to get command line arguments.
 
-    Returns:
+    Returns
+    -------
         args: argparse args object
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument(
@@ -69,11 +69,10 @@ def parse_args():
 
 
 if __name__ == "__main__":
-
     """
     Called when this is run as a script
     Get the command line arguments using argparse
-    Call the main funciton to do the actual
+    Call the main function to do the actual
     calculation of verification metrics
     """
 
@@ -129,7 +128,7 @@ if __name__ == "__main__":
         var=var,
         hc_var=hc_var,
     )
-    # get remaning arguments from yml file
+    # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
     with open(ymllocation, "r") as stream:
@@ -144,7 +143,7 @@ if __name__ == "__main__":
                 for svc, val in ServicesRaw.items()
             }
         except yaml.YAMLError as e:
-            logging.error(f"Error reading YAML file: {e}", stack_info=True)
+            logger.error(f"Error reading YAML file: {e}", stack_info=True)
 
     if args.years:
         config["hcstarty"] = args.years[0]
@@ -158,7 +157,7 @@ if __name__ == "__main__":
     else:
         config["obs_name"] = "era5"
 
-    logging.debug(config)
+    logger.debug(config)
     # hindcast info
     if centre == "eccc":
         # two models aka systems are live - call twice with each system number

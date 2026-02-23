@@ -3,38 +3,52 @@
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 
-# This script currently can only be used to create scores using ERA5 as the comparison dataset
+"""Functions for computing scores from the hindcast and observation datasets.
 
-# Libraries for working with multi-dimensional arrays
+This includes both deterministic and probabilistic scores.
+
+Notes
+-----
+This script currently can only be used to create scores using ERA5 as the
+comparison dataset.
+
+"""
+
 import logging
-import xarray as xr
-import pandas as pd
+
+logger = logging.getLogger(__name__)
+
 import numpy as np
-
-
-# Forecast verification metrics with xarray
-import xskillscore as xs
+import pandas as pd
+import xarray as xr
 
 # Regridding packages needed for JMA
 import xesmf as xe
+
+# Forecast verification metrics with xarray
+import xskillscore as xs
 
 # import needed local functions
 from osop.compute_products_func import get_thresh
 
 
 def read_obs(obs_fname, config):
+    """Read observation data from a file and calculate 3 month averages.
+
+    Parameters
+    ----------
+    obs_fname : str
+        The file path of the observation data file.
+    config : dict
+        A dictionary containing configuration parameters.
+
+    Returns
+    -------
+    obs_ds : xarray.Dataset
+        Preprocessed observation data with monthly time resolution.
+    obs_ds_3m : xarray.Dataset
+        Preprocessed observation data with 3-monthly time resolution.
     """
-    Read observation data from a file and calculate 3 month averages.
-
-    Parameters:
-    obs_fname (str): The file path of the observation data file.
-    config (dict): A dictionary containing configuration parameters.
-
-    Returns:
-    obs_ds (xarray.Dataset): Preprocessed observation data with monthly time resolution.
-    obs_ds_3m (xarray.Dataset): Preprocessed observation data with 3-monthly time resolution.
-    """
-
     obs_ds = xr.open_dataset(obs_fname, engine="cfgrib")
 
     # Renaming to match hindcast names
@@ -61,7 +75,7 @@ def read_obs(obs_fname, config):
 
     # Calculate 3-month aggregations
     # NOTE rolling() assigns the label to the end of the N month period
-    logging.debug("Calculate observation 3-monthly aggregations")
+    logger.debug("Calculate observation 3-monthly aggregations")
     obs_ds_3m = obs_ds.rolling(valid_time=3).mean()
     obs_ds_3m = obs_ds_3m.where(
         obs_ds_3m.forecastMonth >= int(config["leads"][2]), drop=True
@@ -77,73 +91,99 @@ def read_obs(obs_fname, config):
 
 
 def swap_dims(hcst, obs):
-    """
-    Swaps dimensions appropriately and aligns hindcast with observed dataset
+    """Swap dimensions and align hindcast with observed dataset.
+
+    Swap dimensions appropriately and align hindcast with observed dataset
     for deterministic verification measures.
 
-    Parameters:
-    hcst: the hindcast dataset.
-    obs: the matching observed dataset.
+    Parameters
+    ----------
+    hcst : xarray.Dataset
+        The hindcast dataset.
+    obs : xarray.Dataset
+        The matching observed dataset.
 
-    Returns:
-    thishcst: the alligned hindcast dataset.
-    thisobs: the alligned observed dataset.
+    Returns
+    -------
+    thishcst : xarray.Dataset
+        The aligned hindcast dataset.
+    thisobs : xarray.Dataset
+        The aligned observed dataset.
     """
-
     for this_fcmonth in hcst.forecastMonth.values:
-        logging.debug(f"forecastMonth={this_fcmonth}")
+        logger.debug(f"forecastMonth={this_fcmonth}")
         thishcst = hcst.sel(forecastMonth=this_fcmonth).swap_dims(
             {"start_date": "valid_time"}
         )
         thishcst["valid_time"] = thishcst.valid_time.dt.strftime("%Y-%m")
-        logging.debug(thishcst["valid_time"])
-        logging.debug(obs["valid_time"])
+        logger.debug(thishcst["valid_time"])
+        logger.debug(obs["valid_time"])
         thisobs = obs.where(obs.valid_time == thishcst.valid_time, drop=True)
 
         return thishcst, thisobs
 
 
 def regrid_data(input_ds, target_ds):
-    """
-    Regrids the dataset appropriately for its type (planned expansion for precipitation)
+    """Regrid dataset to match target grid resolution.
 
-    Parameters:
-    input_ds (xarray.Dataset): Data to be re-gridded
-    target_ds (xarray.Dataset): Data set with the target grid
+    Regrids the dataset appropriately for its type (planned expansion
+    for precipitation).
 
-    Returns:
-    output_ds (xarray.Dataset): Regridded dataset to be used for analysis
-    target_ds (xarray.Dataset): Matching target dataset (no changes)
+    Parameters
+    ----------
+    input_ds : xarray.Dataset
+        Data to be re-gridded.
+    target_ds : xarray.Dataset
+        Data set with the target grid.
+
+    Returns
+    -------
+    output_ds : xarray.Dataset
+        Regridded dataset to be used for analysis.
+    target_ds : xarray.Dataset
+        Matching target dataset (no changes).
+
+    Raises
+    ------
+    KeyError
+        If alignment fails due to incompatible datasets.
     """
     try:
         regridder = xe.Regridder(input_ds, target_ds, "bilinear")
         output_ds = regridder(input_ds, keep_attrs=True)
     except Exception as e:
-        logging.error(f"Alignment failed {e}: {e}")
+        logger.error(f"Alignment failed {e}: {e}")
         raise KeyError("Alignment failed: please check dataset entry")
 
     return output_ds, target_ds
 
 
 def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
-    """
-    Compute deterministic scores.
+    """Compute deterministic scores.
 
-    Parameters:
-    obs_ds (xarray.Dataset): Observation / reanalysis data, monthly resolution.
-    obs_ds_3m (xarray.Dataset): Observation / reanalysis 3-month aggregated data.
-    hcst_bname (str): Basename of the hindcast data.
-    scoresdir (str): Directory to save the output files.
-    productsdir (str): Directory to fetch files from.
+    Parameters
+    ----------
+    obs_ds : xarray.Dataset
+        Observation / reanalysis data, monthly resolution.
+    obs_ds_3m : xarray.Dataset
+        Observation / reanalysis 3-month aggregated data.
+    hcst_bname : str
+        Basename of the hindcast data.
+    scoresdir : str
+        Directory to save the output files.
+    productsdir : str
+        Directory to fetch files from.
 
-    Returns:
+    Returns
+    -------
     None
+
+    Notes
+    -----
     Saves spearman and pearson correlation and p-value to netCDF files.
     """
-
     # Loop over aggregations
     for aggr in ["1m", "3m"]:
-
         if aggr == "1m":
             o = obs_ds
         elif aggr == "3m":
@@ -151,7 +191,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         else:
             raise ValueError(f"Unknown aggregation {aggr}")
 
-        logging.debug(f"Computing deterministic scores for {aggr}-aggregation")
+        logger.debug(f"Computing deterministic scores for {aggr}-aggregation")
 
         # Reading mean file
         h = xr.open_dataset(f"{productsdir}/{hcst_bname}.{aggr}.ensmean.nc")
@@ -173,7 +213,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         thishcst_em_anom = (
             thishcst_em_anom if not is_fullensemble else thishcst_em_anom.mean("number")
         )
-        # Regrid if lattitude or longitude on a varied resolution or grid.
+        # Regrid if latitude or longitude on a varied resolution or grid.
         if not thishcst_em_mean["lat"].equals(
             this_obs_m_match["lat"]
         ) or not thishcst_em_mean["lon"].equals(this_obs_m_match["lon"]):
@@ -205,34 +245,43 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         r_corr = xr.concat(r_corr, dim="forecastMonth")
         r_corr_pval = xr.concat(r_corr_pval, dim="forecastMonth")
 
-        logging.info(
+        logger.info(
             f"Saving to netCDF file spearman correlation for {aggr}-aggregation"
         )
         corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr.nc")
 
-        logging.info(f"Saving to netCDF file pvalue for {aggr}-aggregation")
+        logger.info(f"Saving to netCDF file pvalue for {aggr}-aggregation")
         corr_pval.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.spearman_corr_pval.nc")
 
-        logging.info(f"Saving to netCDF file pearson for {aggr}-aggregation")
+        logger.info(f"Saving to netCDF file pearson for {aggr}-aggregation")
         r_corr.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr.nc")
 
-        logging.info(f"Saving to netCDF file pearson pvalue for {aggr}-aggregation")
+        logger.info(f"Saving to netCDF file pearson pvalue for {aggr}-aggregation")
         r_corr_pval.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr_pval.nc")
 
 
 def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
-    """
-    Compute probabilistic scores and save the results to NetCDF files.
+    """Compute probabilistic scores and save results to NetCDF files.
 
-    Parameters:
-    obs_ds(xarray.Dataset): Observation / Reanalysis monthly data.
-    obs_ds_3m (xarray.Dataset): Observation / Reanalysis 3-month aggregated data.
-    hcst_bname (str): Basename of the hindcast probabilities file.
-    scoresdir (str): Directory to save the output NetCDF files.
-    productsdir (str): Directory to fetch input files from.
+    Parameters
+    ----------
+    obs_ds : xarray.Dataset
+        Observation / Reanalysis monthly data.
+    obs_ds_3m : xarray.Dataset
+        Observation / Reanalysis 3-month aggregated data.
+    hcst_bname : str
+        Basename of the hindcast probabilities file.
+    scoresdir : str
+        Directory to save the output NetCDF files.
+    productsdir : str
+        Directory to fetch input files from.
 
-    Returns:
+    Returns
+    -------
     None
+
+    Notes
+    -----
     Saves probabilistic scores to NetCDF files.
     """
     # Define quantiles for tercile categories
@@ -247,7 +296,7 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         else:
             raise BaseException(f"Unknown aggregation {aggr}")
 
-        logging.debug(f"Computing probabilistic scores for {aggr}-aggregation")
+        logger.debug(f"Computing probabilistic scores for {aggr}-aggregation")
 
         # Read hindcast probabilities file
         probs_hcst = xr.open_dataset(
@@ -275,7 +324,6 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
             thiso = o.where(o.valid_time == thishcst.valid_time, drop=True)
 
             for icat in range(numcategories):
-
                 o_lo, o_hi = get_thresh(icat, quantiles, thiso, dims=["valid_time"])
                 probo = 1.0 * np.logical_and(thiso > o_lo, thiso <= o_hi)
                 if "quantile" in probo:
@@ -284,7 +332,7 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
 
             thisobs = xr.concat(l_probs_obs, dim="category")
 
-            # Regrid if lattitude or longitude on a varied resolution or grid.
+            # Regrid if latitude or longitude on a varied resolution or grid.
             if not thishcst["lat"].equals(thisobs["lat"]) or not thishcst["lon"].equals(
                 thisobs["lon"]
             ):
@@ -318,7 +366,6 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
                 bscat = list()
                 relcat = list()
                 for cat in thisobs[var_obs].category:
-
                     thisobscat = thisobs[var_obs].sel(category=cat)
                     thishcstcat = thishcst[var].sel(category=cat)
 
@@ -345,34 +392,40 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         bs = xr.concat(l_bs, dim="forecastMonth")
         rel = xr.concat(l_rel, dim="forecastMonth")
 
-        logging.info(f"Saving to netCDF file rps for {aggr}-aggregation")
+        logger.info(f"Saving to netCDF file rps for {aggr}-aggregation")
         rps.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.rps.nc")
 
-        logging.info(f"Saving to netCDF file bs for {aggr}-aggregation")
+        logger.info(f"Saving to netCDF file bs for {aggr}-aggregation")
         bs.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.bs.nc")
 
-        logging.info(f"Saving to netCDF file roc for {aggr}-aggregation")
+        logger.info(f"Saving to netCDF file roc for {aggr}-aggregation")
         roc.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.roc.nc")
 
-        logging.info(f"Saving to netCDF file rocss for {aggr}-aggregation")
+        logger.info(f"Saving to netCDF file rocss for {aggr}-aggregation")
         rocss.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.rocss.nc")
 
-        logging.info(f"Saving to netCDF file rel for {aggr}-aggregation")
+        logger.info(f"Saving to netCDF file rel for {aggr}-aggregation")
         rel.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.rel.nc")
 
 
 def calc_scores(config, downloaddir, scoresdir, productsdir):
+    """Calculate deterministic and probabilistic verification scores.
+
+    Parameters
+    ----------
+    config : dict
+        A dictionary containing the configuration parameters.
+    downloaddir : str
+        The path to the download directory.
+    scoresdir : str
+        The path to the scores output directory.
+    productsdir : str
+        The path to the products directory.
+
+    Returns
+    -------
+    None
     """
-    Calls code to calculate deterministic and probabilistic verification scores.
-
-    Args:
-        config (dict): A dictionary containing the configuration parameters.
-        downloaddir (str): The path to the download directory.
-
-    Returns:
-        None
-    """
-
     hcst_bname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
         **config
     )

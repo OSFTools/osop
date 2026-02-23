@@ -3,56 +3,66 @@
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 
-"""
-A module with utility functions for seasonal FCs
-"""
+"""A module with utility functions for seasonal forecasts."""
 
-import xarray as xr
-import eccodes
-import pandas as pd
 import logging
+
+import eccodes
+
+logger = logging.getLogger(__name__)
+import pandas as pd
+import xarray as xr
 
 
 def sel_season_time(dataset, start_year, end_year):
-    """
-    Extract the data for the specified years starting with Dec of
-    first year and ending with Nov of last year
+    """Extract data for specified years from Dec of first year to Nov of last year.
 
-    Parameters:
-    dataset: xarray.Dataset - the data to extract the time from
-    start_year: int - the start year of the period to extract
-    end_year: int - the end year of the period to extract
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        The data to extract the time from.
+    start_year : int
+        The start year of the period to extract.
+    end_year : int
+        The end year of the period to extract.
 
-    Returns:
-    dataset: xarray.Dataset - the data with the time extracted
+    Returns
+    -------
+    xarray.Dataset
+        The data with the time extracted.
     """
     return dataset.sel(time=slice(str(start_year) + "-12-01", str(end_year) + "-11-30"))
 
 
 def season_stats(dataset, start_year, end_year, stats=["mean"]):
-    """
-    Calculate the climatology mean and quantiles for a dataset
-    over a given time period for standard meteorological seasons
+    """Calculate the climatology mean and quantiles for a dataset.
+
+    This is done over a given time period for standard meteorological seasons
     and the categories of the terciles for each season.
 
-    Parameters:
-        dataset: xarray.Dataset - the data to calculate the stats on
-        start_year: int - the start year of the period to calculate the stats
-        end_year: int - the end year of the period to calculate the stats
-        domain: list - the domain to calculate the stats over [lat_min, lat_max, lon_min, lon_max] or string with name of domain
-        regrid: string - the regrid method to use, default is 'cons_masked'
-        stats: list - the statistics to calculate, default is ['mean']
-            options: ['mean', 'seas_ts'], seas_ts is the seasonal time series for all years
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        The data to calculate the stats on.
+    start_year : int
+        The start year of the period to calculate the stats.
+    end_year : int
+        The end year of the period to calculate the stats.
+    stats : list, optional
+        The statistics to calculate, default is ['mean'].
+        Options: ['mean', 'seas_ts'], where seas_ts is the seasonal time series
+        for all years.
 
-    Returns:
-        ds_stats: dictionary - a dictionary with the calculated stats as xarray.Datasets
-
+    Returns
+    -------
+    dict
+        A dictionary with the calculated stats as xarray.Datasets.
     """
     # select the time period
     dataset = sel_season_time(dataset, start_year, end_year)
 
     # seasonal aggregation - meaning
-    # if want other aggreations will need more thought, probably using Iris
+    # if want other aggregations will need more thought, probably using Iris
     month_length = dataset.time.dt.days_in_month
 
     seasonal_ds = (dataset * month_length).resample(
@@ -80,15 +90,18 @@ def season_stats(dataset, start_year, end_year, stats=["mean"]):
 
 
 def get_tindex(infile):
-    """
-    Use eccodes to check if there is an indexing time dimension
+    """Use eccodes to check if there is an indexing time dimension.
 
-    Parameters:
-        infile(str): name of file to check
-    Returns:
-        st_dim_name (str): name of time dimension to use for indexing.
-        (time for burst ensmeble and indexing_time for lagged)
+    Parameters
+    ----------
+    infile : str
+        Name of file to check.
 
+    Returns
+    -------
+    str
+        Name of time dimension to use for indexing. Returns 'time' for burst
+        ensemble and 'indexing_time' for lagged.
     """
     f = open(infile, "rb")
     gid = eccodes.codes_grib_new_from_file(f)
@@ -106,19 +119,24 @@ def get_tindex(infile):
 
 # move
 def index(forecast_local, st_dim_name):
+    """Reindex and restyle the forecast grib.
+
+    This ensures that the data layout is consistent and compatible with
+    hindcast terciles.
+
+    Parameters
+    ----------
+    forecast_local : str
+        File location for the grib file.
+    st_dim_name : str
+        Name of the start date dimension (important for lagged models).
+
+    Returns
+    -------
+    xarray.Dataset
+        A re-indexed x-array for forecast data.
     """
-    Reindex and restyle the forcast grib so that the data layout is consistent
-    and compatiable with hindcast terciles.
-
-    Parameters:
-    forecast_local (str): File location for the grib file.
-    st_dim_name (str): Name of the start date dimension (important for lagged models)
-
-    Returns:
-    A re-indexed x-array for forecast data.
-    """
-
-    logging.debug("Reading Forecast data from file")
+    logger.debug("Reading Forecast data from file")
     forecast_data = xr.open_dataset(
         forecast_local,
         engine="cfgrib",

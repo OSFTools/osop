@@ -1,33 +1,39 @@
+# (C) Crown Copyright, Met Office. All rights reserved.
+
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+
+"""Script to download monthly mean seasonal data.
+
+Download from C3S for the common period of hindcasts 1993-2016 or for any arbitrary period.
+
+usage: python get_any_hindcast.py --centre CENTRE --month MONTH --leads LEADSs
+        --area AREA --variable VARIABLE --downloaddir DOWNLOADDIR --years YEARS
+
+options:
+--centre CENTRE       centre to download
+--month MONTH         start month for hindcasts/forecasts
+--leads LEADS         forecast range in months (comma separated)
+--area AREA           sub-area in degrees for retrieval (comma separated N,W,S,E)
+--variable VARIABLE   variable to download, 2m_temperature, total_precipitation
+--forecast            optional - default to false i.e. hindcast
+--downloaddir DOWNLOADDIR
+                      location to download to
+--years YEARS         years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.
 """
-(C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-
-Script to download monthly mean seasonal data 
-from C3S for the common period of hindcasts 
-1993-2016 or for any arbitrary period.
-
-Usage:
-    python get_any_hindcast.py --centre <centre> --month <month> --leads <leads> \
-        --area <area> --downloaddir <downloaddir> --years <years>
-    centre: modelling centre
-    month: start month of forecast
-    leads: forecast range in months (comma separated)
-    area: sub-area in degrees for retrieval (comma separated N,W,S,E)
-    downloaddir: location to download to
-    years: Years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.
-"""
+import argparse
+from datetime import datetime
+import logging
+import os
 
 import cdsapi
-import argparse
-import os
 import yaml
 from yaml.loader import SafeLoader
-import logging
-from datetime import datetime
 
 # Ensure the top level directory has been added to PYTHONPATH
+
+logger = logging.getLogger(__name__)
 
 
 def do_cdsapi_call(
@@ -41,25 +47,35 @@ def do_cdsapi_call(
     downloaddir,
     years="hc",
 ):
+    """Call cdsapi for the requested period and area.
+
+    Retrieve monthly mean seasonal data of t2m and total precip from the requested model.
+
+    Parameters
+    ----------
+    centre : str
+        Modelling centre.
+    system : str
+        Model version.
+    month : int
+        Start month of forecast.
+    leadtime_month : list of int
+        List of lead times for FC.
+    area : list of float
+        4 element list of floats with area for download.
+    area_str : str
+        Colon separated area string.
+    variable : str
+        Variable for download.
+    downloaddir : str
+        Directory to use for the downloads.
+    years : list of str or str, optional
+        Years to get data for (comma separated). Default is hindcast period 1993-2016.
+
+    Returns
+    -------
+    None
     """
-    calls cdsapi for the requested period and area
-    retrieves monthly mean seasonal data of t2m and total precip
-    from the requested model
-
-    Args:
-        centre(str): modelling centre
-        system(str): model version
-        month(int): start month of forecast
-        leadtime_month(list): list of lead times for FC (int)
-        area(list): 4 element list of floats with area for download
-        area_str(str): colon seperated area string
-        variable(str): variable for download
-        downloaddir(str):directory to use for the downloads
-        years(str): years to get data for (comma separated). Optional.
-                    Default is hindcast period 1993-2016.
-
-    """
-
     leads_str = "".join([str(mon) for mon in leadtime_month])
 
     # set a default set of years that are the common period of hindcasts
@@ -68,7 +84,7 @@ def do_cdsapi_call(
 
     fname = f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
     if os.path.exists(fname):
-        logging.warning(f"File {fname} already exists")
+        logger.warning(f"File {fname} already exists")
 
     else:
         c = cdsapi.Client()
@@ -87,17 +103,17 @@ def do_cdsapi_call(
             },
             f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
         )
-        logging.info(f"Downloaded {fname}")
+        logger.info(f"Downloaded {fname}")
 
 
 def parse_args():
-    """
-    set up argparse to get command line arguments
+    """Set up argparse to get command line arguments.
 
-    Returns:
-        args: argparse args object
+    Returns
+    -------
+    argparse.Namespace
+        Parsed command line arguments.
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
@@ -133,13 +149,15 @@ def parse_args():
 
 
 def main():
-    """
-    Called when this is run as a script
-    Get the command line arguments using argparse
-    Call the main function to do the actual
-    cdsapi call
-    """
+    """Execute the script to download seasonal forecast data.
 
+    Gets the command line arguments using argparse and calls cdsapi
+    to download the requested data.
+
+    Returns
+    -------
+    None
+    """
     # get command line args
     args = parse_args()
 
@@ -183,11 +201,11 @@ def main():
                 for svc, val in ServicesRaw.items()
             }
         except yaml.YAMLError as e:
-            logging.error(f"Error reading YAML file: {e}", stack_info=True)
+            logger.error(f"Error reading YAML file: {e}", stack_info=True)
 
     area = [float(pt) for pt in args.area.split(",")]
     if len(area) != 4:
-        logging.error(f"Need 4 points for area: {area}", stack_info=True)
+        logger.error(f"Need 4 points for area: {area}", stack_info=True)
         raise ValueError(f"Need 4 points for area: {area}")
     if args.years:
         years = [int(yr) for yr in args.years.split(",")]
@@ -220,7 +238,7 @@ def main():
         )
     else:
         if centre not in Services.keys():
-            logging.error(f"Unknown system for C3S: {centre}", stack_info=True)
+            logger.error(f"Unknown system for C3S: {centre}", stack_info=True)
             raise ValueError(f"Unknown system for C3S: {centre}")
         do_cdsapi_call(
             centre,

@@ -52,7 +52,7 @@ month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
 variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
-location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
+location="None" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 years=2025
 
 

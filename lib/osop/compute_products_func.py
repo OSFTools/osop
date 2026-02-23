@@ -21,6 +21,47 @@ import xarray as xr
 from osop.compare_terciles import mme_process_forecasts, update_config
 from osop.util import get_tindex, index
 
+def valid_time(output, save_name): 
+    """
+    """
+    #Build valid_time if it is missing
+    if "valid_time" not in output.coords:
+        if "start_date" in output.coords and "forecastMonth" in output.coords:
+            sd = pd.to_datetime(output["start_date"].values)            
+            fm = output["forecastMonth"].values.astype(int)             
+
+                        
+            vt_list = [
+                [pd.Timestamp(std) + relativedelta(months=int(f) - 1) for f in fm]
+                for std in sd
+            ]
+            vt_2d = np.array(vt_list, dtype="datetime64[ns]")  
+            output = output.assign_coords(
+                valid_time=(("start_date", "forecastMonth"), vt_2d)
+            )
+                        
+            # Wrap as a DataArray with the correct dims and coords
+            vt_da = xr.DataArray(
+                data=vt_2d,
+                dims=("start_date", "forecastMonth"),
+                coords={"start_date": output["start_date"], "forecastMonth": output["forecastMonth"]},
+                name="valid_time",
+            )
+
+            # Assign as a coordinate
+            output = output.assign_coords(valid_time=vt_da)
+        else:
+            logging.warning("MME: cannot build valid_time; missing 'start_date' or 'forecastMonth' in %s", save_name)
+
+                #Ensure datetime64 dtype for valid_time 
+    if "valid_time" in output.coords:
+        vt_da = output["valid_time"]
+        vt_vals = np.asarray(vt_da.values)
+        if vt_vals.dtype != "datetime64[ns]":
+            vt_vals = vt_vals.astype("datetime64[ns]")
+        output = output.assign_coords(valid_time=(vt_da.dims, vt_vals))
+    return output
+
 
 def process_mme_products(array, output, aggr, config, sig, member_weight=0.1):
     """Calculate anomalies and save them to netCDF files.
@@ -129,6 +170,8 @@ def mme_products_hindcast(services, config, productsdir):
                     suffix,
                     member_weight=services_weights[origin],
                 )
+                #rebuild valid time
+                output = valid_time(output, save_name)
             # Save out final mme array
             output.to_netcdf(f"{productsdir}/{save_name}")
     return

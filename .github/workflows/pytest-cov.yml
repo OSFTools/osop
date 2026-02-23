@@ -72,10 +72,10 @@ jobs:
           conda list
 
       - name: Run tests
-        run: pytest --cov --cov-branch --cov-report=html
+        run: pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=src tests/ | tee pytest-coverage.txt
 
-      - name: "Upload coverage report"
-        uses: actions/upload-artifact@v4
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
         with:
-          name: coverage-html
-          path: htmlcov/        
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml      

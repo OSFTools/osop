@@ -28,6 +28,10 @@ jobs:
     env:
       ENV_NAME: "osop-simple"
     
+    permissions:
+      contents: read        # For checkout and comparing commits
+      pull-requests: write  # For creating/updating PR comments
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6

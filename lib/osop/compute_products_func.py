@@ -29,12 +29,12 @@ def valid_time(output, save_name):
     ----------
     output : xarray.DataArray
         Target array.
-    save_name : string, save path
+    save_name : str
+        save path
 
     Returns
     -------
-    output : xarray.DataArray
-        The same array with valid datetime in the correct format
+    output : xarray.DataArray.
     """
     #Build valid_time if it is missing
     if "valid_time" not in output.coords:

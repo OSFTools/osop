@@ -34,7 +34,7 @@ def valid_time(output, save_name):
 
     Returns
     -------
-    output : xarray.DataArray
+    xarray.DataArray
         The updated array.
     """
     #Build valid_time if it is missing

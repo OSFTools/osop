@@ -30,11 +30,12 @@ def valid_time(output, save_name):
     output : xarray.DataArray
         Target array.
     save_name : str
-        save path
+        Save path.
 
     Returns
     -------
-    output : xarray.DataArray.
+    output : xarray.DataArray
+        The updated array.
     """
     #Build valid_time if it is missing
     if "valid_time" not in output.coords:

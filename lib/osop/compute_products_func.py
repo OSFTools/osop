@@ -37,7 +37,7 @@ def valid_time(output, save_name):
     xarray.DataArray
         The updated array.
     """
-    #Build valid_time if it is missing
+    # Build valid_time if it is missing
     if "valid_time" not in output.coords:
         if "start_date" in output.coords and "forecastMonth" in output.coords:
             sd = pd.to_datetime(output["start_date"].values)
@@ -56,16 +56,22 @@ def valid_time(output, save_name):
             vt_da = xr.DataArray(
                 data=vt_2d,
                 dims=("start_date", "forecastMonth"),
-                coords={"start_date": output["start_date"], "forecastMonth": output["forecastMonth"]},
+                coords={
+                    "start_date": output["start_date"],
+                    "forecastMonth": output["forecastMonth"],
+                },
                 name="valid_time",
             )
 
             # Assign as a coordinate
             output = output.assign_coords(valid_time=vt_da)
         else:
-            logger.debug("MME: cannot build valid_time; missing 'start_date' or 'forecastMonth' in %s", save_name)
+            logger.debug(
+                "MME: cannot build valid_time; missing 'start_date' or 'forecastMonth' in %s",
+                save_name,
+            )
 
-    #Ensure datetime64 dtype for valid_time
+    # Ensure datetime64 dtype for valid_time
     if "valid_time" in output.coords:
         vt_da = output["valid_time"]
         vt_vals = np.asarray(vt_da.values)
@@ -182,7 +188,7 @@ def mme_products_hindcast(services, config, productsdir):
                     suffix,
                     member_weight=services_weights[origin],
                 )
-                #rebuild valid time
+                # rebuild valid time
                 output = valid_time(output, save_name)
             # Save out final mme array
             output.to_netcdf(f"{productsdir}/{save_name}")

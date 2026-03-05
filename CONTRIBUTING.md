@@ -1,7 +1,7 @@
 How to contribute
 =================
 
-OSOP welcomes contributions by users to help develop 
+OSOP welcomes contributions by users to help develop
 the toolkit in line with their user needs.
 This page lists the guidelines for contributors which
 will help ease the process of getting your hard work accepted back into
@@ -28,7 +28,3 @@ Submitting changes
    [Contributor Licence Agreement](https://cla-assistant.io/OSFTools/osop/)
    (CLA), if you have not already done so.
 1. We will review your code.
-
-Code Coverage
--------------
-https://codecov.io/gh/OSFTools/osop/graphs/tree.svg?token=F1HEJYFPH2

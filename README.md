@@ -1,8 +1,6 @@
 # Objective Seasonal Outlook Package (OSOP)
 ### OSOP is a python library to support objective seasonal forecasting.
 
-[![pre-commit](https://results.pre-commit.ci/badge/github/OSFTools/osop/main.svg)](https://results.pre-commit.ci/latest/github/OSFTools/osop/main) [![codecov](https://codecov.io/gh/OSFTools/osop/graph/badge.svg?token=F1HEJYFPH2)](https://codecov.io/gh/OSFTools/osop)
-
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/OSFTools/osop?style=flat-square)   ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/OSFTools/osop?style=flat-square)  ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/OSFTools/osop/main?style=flat-square) [![contributors](https://img.shields.io/github/contributors/OSFTools/osop?style=flat-square)](https://github.com/OSFTools/osop/graphs/contributors)
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) ![GitHub License](https://img.shields.io/github/license/OSFTools/osop?style=flat-square)  
@@ -18,14 +16,14 @@ To get started with OSOP, start by cloning this github repo:
 
 </details>
 
-Then, set-up a conda environment. The conda environement contains all the packages you will need to run this library.
+Then, set-up a conda environment. The conda environment contains all the packages you will need to run this library.
 <details> <summary>Create conda environment</summary>
  
 ```bash
    conda env create --file environment.yml
 ```
 
- You will need to activate your conda environement everytime you want to use this library
+ You will need to activate your conda environment every time you want to use this library
  
  ```bash
     conda activate osop-simple

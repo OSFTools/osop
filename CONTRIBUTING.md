@@ -1,7 +1,7 @@
 How to contribute
 =================
 
-OSOP welcomes contributions by users to help develop 
+OSOP welcomes contributions by users to help develop
 the toolkit in line with their user needs.
 This page lists the guidelines for contributors which
 will help ease the process of getting your hard work accepted back into

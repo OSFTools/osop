@@ -1,35 +1,35 @@
+# (C) Crown Copyright, Met Office. All rights reserved.
+
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+"""Script to create forecast plots for a given month, lead time and location.
+
+Notes
+-----
+    This script currently can only be used to create scores using ERA5 as the comparison dataset
+
 """
-(C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-
-This script currently can only be used to create scores using ERA5 as the comparison dataset
-
-"""
-
+# Ensure the top level directory has been added to PYTHONPATH
+import argparse
 from datetime import datetime
+import logging
 import os
+
 import yaml
 from yaml.loader import SafeLoader
-import logging
 
 # import local modules for function usage
 from osop.ens_plotting import plot_forecasts
 
 
-# Ensure the top level directory has been added to PYTHONPATH
-import argparse
-
-
 def parse_args():
-    """
-    set up argparse to get command line arguments
+    """Set up argparse to get command line arguments.
 
-    Returns:
+    Returns
+    -------
         args: argparse args object
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--location", required=True, help="location; type None for all")
     parser.add_argument("--centre", required=True, help="centre to download")
@@ -62,11 +62,10 @@ def parse_args():
 
 
 if __name__ == "__main__":
-
     """
     Called when this is run as a script
     Get the command line arguments using argparse
-    Call the main funciton to do the actual
+    Call the main function to do the actual
     calculation of verification metrics
     """
 
@@ -75,9 +74,11 @@ if __name__ == "__main__":
 
     # unpack args and reformat if needed.
 
-    logfile = os.path.join(args.logdir, 
-        f"plots_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt")
-    
+    logfile = os.path.join(
+        args.logdir,
+        f"plots_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+    )
+
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(
         level=loglev,
@@ -89,6 +90,8 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M",
     )
 
+    logger = logging.getLogger(__name__)
+
     location = args.location
     centre = args.centre
     downloaddir = args.downloaddir
@@ -96,8 +99,10 @@ if __name__ == "__main__":
     plotsdir = args.plotsdir
     month = int(args.month)
     leads = args.leads
-    logging.info(f'Plotting FC, Centre: {centre}, Month: {month},'\
-                 f' Leads: {leads}, Location: {location}')
+    logger.info(
+        f"Plotting FC, Centre: {centre}, Month: {month},"
+        f" Leads: {leads}, Location: {location}"
+    )
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
@@ -114,7 +119,7 @@ if __name__ == "__main__":
     elif hc_var == "total_precipitation":
         var = "total_precipitation"
     else:
-        logging.error(f"Unknown hindcast variable: {hc_var}")
+        logger.error(f"Unknown hindcast variable: {hc_var}")
         raise ValueError(f"Unknown hindcast variable: {hc_var}")
 
     # add arguments to config
@@ -130,18 +135,22 @@ if __name__ == "__main__":
         i=i,
         border=location,
     )
-    # get remaning arguments from yml file
+    # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
     with open(ymllocation, "r") as stream:
         try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
+            services_doc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw = services_doc["Services"]
+
+            # Convert Services back the original dictionary (service -> value)
+            # Remove Weights
+            Services = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw.items()
+            }
         except yaml.YAMLError as e:
-            logging.error(f"Error reading YAML file: {e}", stack_info=True)
-            raise e
+            logger.error(f"Error reading YAML file: {e}", stack_info=True)
 
     if args.yearsfc:
         years = [int(yr) for yr in args.yearsfc.split(",")]
@@ -151,7 +160,7 @@ if __name__ == "__main__":
         config["fcstarty"] = 1993
         config["fcendy"] = 2016
 
-    logging.debug(config)
+    logger.debug(config)
     for x in i:
         config["i"] = x
         if centre == "eccc":
@@ -164,8 +173,8 @@ if __name__ == "__main__":
             plot_forecasts(productsfcdir, plotsdir, config)
         else:
             if centre not in Services.keys():
-                logging.error(f"Unknown system for C3S: {centre}")
+                logger.error(f"Unknown system for C3S: {centre}")
                 raise ValueError(f"Unknown system for C3S: {centre}")
             config["systemfc"] = Services[centre]
             plot_forecasts(productsfcdir, plotsdir, config)
-    logging.info("Completed forecast plots successfully")
+    logger.info("Completed forecast plots successfully")

@@ -1,35 +1,38 @@
+# (C) Crown Copyright, Met Office. All rights reserved.
+
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+
+"""Script to calculate forecast products for a given centre, variable, month and lead time.
+
+Notes
+-----
+    This script currently can only be used to create scores using ERA5 as the comparison dataset
+
 """
-(C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-
-This script currently can only be used to create scores using ERA5 as the comparison dataset
-
-"""
-
+# Ensure the top level directory has been added to PYTHONPATH
+import argparse
 from datetime import datetime
+import logging
 import os
+
 import yaml
 from yaml.loader import SafeLoader
-import logging
 
 # import local modules for function usage
 from osop.compare_terciles import compute_forecast, mme_products
 
-
-# Ensure the top level directory has been added to PYTHONPATH
-import argparse
+logger = logging.getLogger(__name__)
 
 
 def parse_args():
-    """
-    set up argparse to get command line arguments
+    """Set up argparse to get command line arguments.
 
-    Returns:
+    Returns
+    -------
         args: argparse args object
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
@@ -68,19 +71,20 @@ def parse_args():
 
 
 if __name__ == "__main__":
-
     """
     Called when this is run as a script
     Get the command line arguments using argparse
-    Call the main funciton to do the actual
+    Call the main function to do the actual
     calculation of verification metrics
     """
 
     # get command line args
     args = parse_args()
 
-    logfile = os.path.join(args.logdir, 
-                           f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt")
+    logfile = os.path.join(
+        args.logdir,
+        f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+    )
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(
         level=loglev,
@@ -100,8 +104,7 @@ if __name__ == "__main__":
     productsfcdir = args.productsfcdir
     month = int(args.month)
     leads = args.leads
-    logging.info(f'Doing FC products, Centre: {centre}, Month: {month},'\
-                 f' Leads: {leads}')
+    logger.info(f"Doing FC products, Centre: {centre}, Month: {month}, Leads: {leads}")
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
@@ -116,7 +119,7 @@ if __name__ == "__main__":
     elif hc_var == "total_precipitation":
         var = "tprate"
     else:
-        logging.error(f"Unknown hindcast variable: {hc_var}")
+        logger.error(f"Unknown hindcast variable: {hc_var}")
         raise ValueError(f"Unknown hindcast variable: {hc_var}")
 
     # add arguments to config
@@ -130,18 +133,60 @@ if __name__ == "__main__":
         var=var,
         hc_var=hc_var,
     )
-    # get remaning arguments from yml file
-    ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
-    with open(ymllocation, "r") as stream:
-        try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
-        except yaml.YAMLError as e:
-            logging.error(f"Error reading YAML file: {e}", stack_info=True)
-            raise e
+    def normalize_services(services_raw):
+        """Services_raw(dict): config file from the passed through yml.
+
+        Normalize a mapping of service -> value into service -> (id, weight)
+        Accepts:
+        - scalar (e.g., 51)                 -> (51, 1)
+        - [id] or (id,)                     -> (id, 1)
+        - [id, weight] or (id, weight, ...) -> (id, weight) (first two only)
+        - []                                -> (None, 1) with a warning
+        """
+        if not isinstance(services_raw, dict):
+            raise TypeError("'Services' must be a mapping of service -> [id, weight]")
+
+        normalized = {}
+        for svc, val in services_raw.items():
+            if isinstance(val, (list, tuple)):
+                if len(val) == 0:
+                    logger.warning(
+                        f"Service '{svc}' has an empty list; defaulting to (None, 1)"
+                    )
+                    sid, w = None, 1
+                elif len(val) == 1:
+                    sid, w = val[0], 1
+                else:
+                    sid, w = val[0], val[1]
+            else:
+                # scalar
+                sid, w = val, 1
+
+            normalized[svc] = (sid, w)
+        return normalized
+
+    ymllocation = os.path.join(downloaddir, "parseyml.yml")
+    try:
+        with open(ymllocation, "r") as stream:
+            services_doc = yaml.safe_load(
+                stream
+            )  # equivalent to yaml.load(..., Loader=SafeLoader)
+
+        if not isinstance(services_doc, dict) or "Services" not in services_doc:
+            raise KeyError("'Services' key not found in YAML")
+
+        ServicesRaw = services_doc["Services"]
+        ServicesPairs = normalize_services(ServicesRaw)  # service -> (id, weight)
+        Services = {svc: sid for svc, (sid, _) in ServicesPairs.items()}
+        ServicesRaw = {
+            svc: [sid, weight] for svc, (sid, weight) in ServicesPairs.items()
+        }
+
+    except FileNotFoundError:
+        logger.error(f"YAML file not found: {ymllocation}", stack_info=True)
+    except (yaml.YAMLError, KeyError, TypeError) as e:
+        logger.error(f"Error reading or parsing YAML file: {e}", stack_info=True)
 
     ymllocation_hc = os.path.join(downloadhcdir, "parseyml.yml")
 
@@ -149,10 +194,14 @@ if __name__ == "__main__":
         try:
             # Converts yaml document to python object
             services_hc = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services_hc = services_hc["Services"]
+            ServicesRaw_hc = services_hc["Services"]
+            # Converts contents to usable dictionary
+            Services_hc = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw_hc.items()
+            }
         except yaml.YAMLError as e:
-            logging.error(f"Error reading YAML file: {e}", stack_info=True)
+            logger.error(f"Error reading YAML file: {e}", stack_info=True)
             raise e
 
     if args.years:
@@ -183,12 +232,21 @@ if __name__ == "__main__":
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
     elif centre == "mme":
         config["systemfc"] = Services["mme"]
-        mme_products(Services, config, productsfcdir)
+        ## Calculate fractional weights
+        sum_weights = {}
+        weights_sum = sum(n for _, n in ServicesRaw.values())
+        for serv, val in ServicesRaw.items():
+            version = val[0] if isinstance(val, (list, tuple)) else val
+            weight = val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
+            ServicesRaw[serv] = [version, weight / weights_sum]
+        ## Run mme calc
+        config["systemfc"] = Services["mme"]
+        mme_products(ServicesRaw, config, productsfcdir)
     else:
         if centre not in Services.keys():
-            logging.error(f"Unknown system for C3S: {centre}")
+            logger.error(f"Unknown system for C3S: {centre}")
             raise ValueError(f"Unknown system for C3S: {centre}")
         config["systemfc"] = Services[centre]
         config["systemhc"] = Services_hc[centre]
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
-    logging.info("Completed forecast products successfully")
+    logger.info("Completed forecast products successfully")

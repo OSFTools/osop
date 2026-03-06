@@ -1,32 +1,34 @@
-"""
-(C) Crown Copyright, Met Office. All rights reserved.
+# (C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-"""
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+"""Script to plot verification scores for seasonal forecasts."""
 
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
+from datetime import datetime
+import logging
 
 # Import functions
 import os
+
 import yaml
 from yaml.loader import SafeLoader
-import logging
-from datetime import datetime
 
 # import needed local functions
 from osop.plot_verify import generate_plots, prep_titles
 
+logger = logging.getLogger(__name__)
+
 
 def parse_args():
-    """
-    set up argparse to get command line arguments
+    """Set up argparse to get command line arguments.
 
-    Returns:
-        args: argparse args object
+    Returns
+    -------
+    argparse.Namespace
+        Parsed command line arguments.
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--location", required=True)
     parser.add_argument("--centre", required=True, help="centre to download")
@@ -59,7 +61,7 @@ def parse_args():
     parser.add_argument(
         "--method",
         required=False,
-        default = None,
+        default=None,
         help="Changes the plotting look, use pmesh for pcolourmesh",
     )
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
@@ -70,11 +72,15 @@ def parse_args():
 
 if __name__ == "__main__":
     """
-    Called when this is run as a script
-    Get the command line arguments using argparse
-    Call the plotting functions to generate verification plots
+    Called when this is run as a script.
+
+    Gets the command line arguments using argparse and calls the plotting functions to generate verification plots.
+
+    Returns
+    -------
+    None
     """
-    scores = ["spearman_corr", "pearson_corr","roc", "rocss", "rps", "rel", "bs"] 
+    scores = ["spearman_corr", "pearson_corr", "roc", "rocss", "rps", "rel", "bs"]
 
     # get command line args
     args = parse_args()
@@ -133,20 +139,24 @@ if __name__ == "__main__":
         var=var,
     )
 
-    logging.debug(config)
+    logger.debug(config)
 
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
     with open(ymllocation, "r") as stream:
         try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
-        except yaml.YAMLError as e:
-            logging.error(f"Error reading YAML file: {e}", stack_info=True)
+            services_doc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw = services_doc["Services"]
 
+            # Convert Services back the original dictionary (service -> value)
+            # Remove Weights
+            Services = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw.items()
+            }
+        except yaml.YAMLError as e:
+            logger.error(f"Error reading YAML file: {e}", stack_info=True)
     if args.years:
         config["hcstarty"] = args.years[0]
         config["hcendy"] = args.years[1]

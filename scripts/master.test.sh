@@ -18,7 +18,7 @@ set -eu
 # this conda env gives an error on load, so
 # can't use -u option
 set +u
-conda activate osop 
+conda activate osop-simple
 set -u
 
 # pick download location
@@ -60,6 +60,7 @@ Services:
     eccc_can: 2
     eccc_gem5: 3
     ukmo: 602
+    bom: 2
 EOF
 echo "YML file created: $parseyml"
 

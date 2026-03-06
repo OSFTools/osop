@@ -1,33 +1,33 @@
-"""
-(C) Crown Copyright, Met Office. All rights reserved.
+# (C) Crown Copyright, Met Office. All rights reserved.
 
-This file is part of osop and is released under the BSD 3-Clause license.
-See LICENSE in the root of the repository for full licensing details.
-"""
+# This file is part of osop and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+"""Script to compute products from downloaded data."""
 
 # Ensure the top level directory has been added to PYTHONPATH
 import argparse
+from datetime import datetime
+import logging
 
 # import functions
 import os
+
 import yaml
 from yaml.loader import SafeLoader
-import logging
-from datetime import datetime
-
 
 # import needed local functions
 from osop.compute_products_func import calc_products, calc_products_mme
 
+logger = logging.getLogger(__name__)
+
 
 def parse_args():
-    """
-    set up argparse to get command line arguments
+    """Set up argparse to get command line arguments.
 
-    Returns:
+    Returns
+    -------
         args: argparse args object
     """
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--centre", required=True, help="centre to download")
     parser.add_argument("--month", required=True, help="start month for hindcasts")
@@ -52,7 +52,6 @@ def parse_args():
         help="Years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
-
 
     args = parser.parse_args()
     return args
@@ -101,12 +100,17 @@ if __name__ == "__main__":
 
     with open(ymllocation, "r") as stream:
         try:
-            # Converts yaml document to python object
-            services = yaml.load(stream, Loader=SafeLoader)
-            # Converts contents to useable dictionary
-            Services = services["Services"]
+            services_doc = yaml.load(stream, Loader=SafeLoader)
+            ServicesRaw = services_doc["Services"]
+
+            # Convert Services back the original dictionary (service -> value)
+            # Remove Weights
+            Services = {
+                svc: (val[0] if isinstance(val, (list, tuple)) else val)
+                for svc, val in ServicesRaw.items()
+            }
         except yaml.YAMLError as e:
-            logging.error(f"Error reading YAML file: {e}", stack_info=True)
+            logger.error(f"Error reading YAML file: {e}", stack_info=True)
 
     # add arguments to config
     config = dict(
@@ -117,7 +121,7 @@ if __name__ == "__main__":
         leads_str=leads_str,
         var=variable,
     )
-    logging.debug(config)
+    logger.debug(config)
 
     if args.years:
         config["hcstarty"] = args.years[0]
@@ -136,8 +140,16 @@ if __name__ == "__main__":
         config["system"] = Services["eccc_gem5"]
         calc_products(config, downloaddir, productsdir)
     elif centre == "mme":
+        ## Calculate fractional weights
+        sum_weights = {}
+        weights_sum = sum(n for _, n in ServicesRaw.values())
+        for serv, val in ServicesRaw.items():
+            version = val[0] if isinstance(val, (list, tuple)) else val
+            weight = val[1] if isinstance(val, (list, tuple)) and len(val) > 1 else 1
+            ServicesRaw[serv] = [version, weight / weights_sum]
+        ## Run mme calc
         config["systemfc"] = Services["mme"]
-        calc_products_mme(Services, config, productsdir)
+        calc_products_mme(ServicesRaw, config, productsdir)
     else:
         if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")

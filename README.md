@@ -3,7 +3,10 @@
 
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/OSFTools/osop?style=flat-square)   ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/OSFTools/osop?style=flat-square)  ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/OSFTools/osop/main?style=flat-square) [![contributors](https://img.shields.io/github/contributors/OSFTools/osop?style=flat-square)](https://github.com/OSFTools/osop/graphs/contributors)
 
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) ![GitHub License](https://img.shields.io/github/license/OSFTools/osop?style=flat-square)  
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) ![GitHub License](https://img.shields.io/github/license/OSFTools/osop?style=flat-square)
+
+<!-- Pytest Coverage Comment:Begin -->
+<!-- Pytest Coverage Comment:End -->
 
 ## 🚀 Getting Started
 To get started with OSOP, start by cloning this github repo:
@@ -31,7 +34,7 @@ Then, set-up a conda environment. The conda environment contains all the package
 
 </details>
 
-Now dive into the [User Guide](docs/source/user_guide.md) to learn more about downloading data and creating forecast products.
+**Now dive into the [User Guide](docs/source/user_guide.md) to learn more about downloading data and creating forecast products.**
 
 ## 🌱 Contributing
 > \[!TIP]

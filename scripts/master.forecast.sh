@@ -27,11 +27,13 @@ productsdir=$SCRATCH/seafoam/data/master/forecast/products
 scoresdir=$SCRATCH/seafoam/data/master/forecast/scores
 plotdir=$SCRATCH/seafoam/data/master/forecast/plots
 logdir=$SCRATCH/seafoam/data/master/forecast/logfiles
+pycptdir=$SCRATCH/seafoam/data/master/forecast/pycpt
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir
 mkdir -p $productsdir
 mkdir -p $scoresdir
+mkdir -p $pycptdir
 
 #locations for hindcast relatives
 productshcdir=$SCRATCH/seafoam/data/master/hindcast/products
@@ -51,9 +53,10 @@ parseyml="$downloaddir/parseyml.yml"
 month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
-variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
-location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
-years=2025
+variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
+location="None" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
+years=2024
+pycpt="True" #True or False --> True you want pycpt 
 
 
 # Services in use: 
@@ -74,7 +77,7 @@ EOF
 echo "YML file created: $parseyml"
 
 # loop over all centres of interest and get data
-for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do  
+for centre in ecmwf  ;do  
     if [ "$centre" != "mme" ]; then
         set +e
         python get_any_hindcast.py \
@@ -109,7 +112,9 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do
         --productshcdir $productshcdir \
         --productsfcdir $productsdir \
         --yearsfc $years \
-        --logdir $logdir
+        --logdir $logdir \
+        --pycpt $pycpt \
+        --pycptdir $pycptdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

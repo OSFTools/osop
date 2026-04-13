@@ -40,13 +40,13 @@ export PYTHONPATH=${PYTHONPATH:+$PYTHONPATH:}$lib_path
 #create a yml file to pass dictionary parameters
 parseyml="$downloaddir/parseyml.yml"
 
-# set parameters 
+# set parameters
 month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
-variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
+variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
-method="pmesh" #Changes plot looks, remove for standard.
+method="pmesh" #Remove for smooth plotting on correlation plots
 
 # Services in use:
 cat <<EOF > "$parseyml"
@@ -84,7 +84,7 @@ fi
 
 # loop over all centres of interest and get data
 #for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do 
-for centre in meteo_france ;do 
+for centre in ecmwf ;do 
     set +e
     python get_any_hindcast.py \
         --centre $centre \

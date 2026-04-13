@@ -27,11 +27,13 @@ productsdir=$SCRATCH/seafoam/data/master/hindcast/products
 scoresdir=$SCRATCH/seafoam/data/master/hindcast/scores
 plotdir=$SCRATCH/seafoam/data/master/hindcast/plots
 logdir=$SCRATCH/seafoam/data/master/hindcast/logfiles
+pycptdir=$SCRATCH/seafoam/data/master/hindcast/pycpt
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir
 mkdir -p $productsdir
 mkdir -p $scoresdir
+mkdir -p $pycptdir
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
@@ -46,9 +48,11 @@ parseyml="$downloaddir/parseyml.yml"
 month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
-variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
+variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 method="pmesh" #Remove for smooth plotting on correlation plots
+pycpt="True" #True or False --> True you want pycpt, auto sets to off
+predictand_area="45,-30,-2.5,60" #Obs area for predictand - if pycpt set to off, ignores (N,W,S,E)
 
 # Services in use:
 # First column service, second column weight
@@ -77,7 +81,10 @@ python get_era5.py \
     --area $area \
     --downloaddir $downloaddir \
     --logdir $logdir \
-    --variable $variable
+    --variable $variable \
+    --predictand_area $predictand_area \
+    --pycpt $pycpt \
+    --pycptdir $pycptdir
 exitcode=$?
 set -e
 if [ $exitcode -eq 0 ]; then
@@ -87,7 +94,7 @@ else
 fi
 
 # loop over all centres of interest and get data #for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do 
-for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do 
+for centre in ecmwf ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
     if [ "$centre" != "mme" ]; then
         set +e
         python get_any_hindcast.py \
@@ -97,7 +104,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do
             --area $area \
             --variable $variable\
             --downloaddir $downloaddir \
-            --logdir $logdir
+            --logdir $logdir 
         exitcode=$?
         set -e
         if [ $exitcode -eq 0 ]; then
@@ -116,7 +123,9 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do
         --variable $variable \
         --downloaddir $downloaddir \
         --productsdir $productsdir \
-        --logdir $logdir
+        --logdir $logdir \
+        --pycpt $pycpt \
+        --pycptdir $pycptdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

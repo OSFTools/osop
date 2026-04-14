@@ -26,11 +26,12 @@ import xarray as xr
 import pandas as pd
 from osop.util import get_tindex
 
-# cfgrib with eccodes also needs to be added to the environment/kernal situation pypt_lock 
+# cfgrib with eccodes also needs to be added to the environment/kernal situation pypt_lock
+
 
 def _build_backend_kwargs(cfgrib_kwargs, is_lagged, st_dim_name):
     """Build cfgrib backend kwargs for GRIB file opening.
-    
+
     Parameters:
     cfgrib_kwargs : dict, optional
         User-provided keyword arguments
@@ -38,7 +39,7 @@ def _build_backend_kwargs(cfgrib_kwargs, is_lagged, st_dim_name):
         Whether this is a lagged ensemble
     st_dim_name : str
         Name of the start date dimension ('time' or 'indexing_time')
-    
+
     Returns:
     dict
         Backend kwargs for xr.open_dataset
@@ -53,10 +54,10 @@ def _build_backend_kwargs(cfgrib_kwargs, is_lagged, st_dim_name):
 
 def _standardize_dims(ds, is_lagged, st_dim_name):
     """Standardize dimension names for downstream processing.
-    
+
     For lagged: indexing_time to time, forecastMonth to step, lat/lon to Y/X
     For burst: lat/lon to Y/X only
-    
+
     Parameters
     ds : xarray.Dataset
         Dataset to rename
@@ -64,7 +65,7 @@ def _standardize_dims(ds, is_lagged, st_dim_name):
         Whether this is a lagged ensemble
     st_dim_name : str
         Name of the start date dimension
-    
+
     Returns
     xarray.Dataset
         Dataset with standardized dimension names
@@ -85,7 +86,7 @@ def _standardize_dims(ds, is_lagged, st_dim_name):
             rename_dict["latitude"] = "Y"
         if "longitude" in ds.dims:
             rename_dict["longitude"] = "X"
-    
+
     if rename_dict:
         ds = ds.rename(rename_dict)
     return ds
@@ -93,13 +94,13 @@ def _standardize_dims(ds, is_lagged, st_dim_name):
 
 def _reconstruct_valid_time(ds):
     """Reconstruct valid_time from time and step coordinates.
-    
+
     Handles both ECMWF style (timedelta steps) and UKMO style (lead month indices).
-    
+
     Parameters
     ds : xarray.Dataset
         Dataset with time and step coordinates
-    
+
     Returns
     xarray.Dataset
         Dataset with valid_time coordinate added
@@ -107,12 +108,10 @@ def _reconstruct_valid_time(ds):
     # Check if we can reconstruct valid_time: need step and a time coordinate/dim
     has_step = "step" in ds.dims and "step" in ds.coords
     has_time = "time" in ds.dims or "time" in ds.coords
-    
+
     if not (has_step and has_time):
         return ds
-    
 
-    
     # Get time values (handle both dim and scalar coord cases)
     if "time" in ds.dims:
         time_vals = ds.time.values
@@ -121,10 +120,10 @@ def _reconstruct_valid_time(ds):
         # time is a scalar coordinate
         time_vals = np.atleast_1d(ds.time.values)
         time_is_dim = False
-    
+
     # Check if step is timedelta (ECMWF-like) or numeric (UKMO lead months)
     step_vals = ds.step.values
-    
+
     if np.issubdtype(step_vals.dtype, np.timedelta64):
         # ECMWF style: step is timedeltas, just add directly
         if time_is_dim:
@@ -146,78 +145,73 @@ def _reconstruct_valid_time(ds):
                 for lead_month in step_vals:
                     # Add lead_month months to init time
                     target = t + pd.DateOffset(months=int(lead_month))
-                    row.append(np.datetime64(target, 'ns'))
+                    row.append(np.datetime64(target, "ns"))
                 time_2d.append(row)
-            valid_time_2d = np.array(time_2d, dtype='datetime64[ns]')
+            valid_time_2d = np.array(time_2d, dtype="datetime64[ns]")
             valid_time_dims = ("time", "step")
         else:
             # For scalar time, create 1D array of valid times across steps
             row = []
             for lead_month in step_vals:
-                target = pd.to_datetime(time_vals[0]) + pd.DateOffset(months=int(lead_month))
-                row.append(np.datetime64(target, 'ns'))
-            valid_time_2d = np.array(row, dtype='datetime64[ns]')
+                target = pd.to_datetime(time_vals[0]) + pd.DateOffset(
+                    months=int(lead_month)
+                )
+                row.append(np.datetime64(target, "ns"))
+            valid_time_2d = np.array(row, dtype="datetime64[ns]")
             valid_time_dims = ("step",)
-    
+
     # Create DataArray with proper coordinates
-    ds = ds.assign_coords(
-        valid_time=(valid_time_dims, valid_time_2d)
-    )
-    
+    ds = ds.assign_coords(valid_time=(valid_time_dims, valid_time_2d))
+
     return ds
 
 
 def grib_exist(grib_file, cfgrib_kwargs=None):
     """
     Check grib file exists and open, with automatic lagged ensemble detection.
-    
-    For lagged ensemble datasets (UKMO), automatically reindexes to align 
+
+    For lagged ensemble datasets (UKMO), automatically reindexes to align
     multiple initialization dates into a single "start_date" dimension.
-    
+
     Parameters
     grib_file : str
         Path to grib file
     cfgrib_kwargs : dict, optional
         Additional keyword arguments for cfgrib backend
-    
+
     Returns
     xarray.Dataset
         Opened dataset, with consistent dimension naming (time/lat/lon)
     """
-    
+
     file = Path(grib_file)
     if file.is_file():
         next
     else:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), grib_file)
-    
+
     # Detect if this is a lagged ensemble (has indexingDate key in GRIB metadata)
     st_dim_name = get_tindex(grib_file)
     is_lagged = st_dim_name == "indexing_time"
-    
-    
+
     # Build backend kwargs and open dataset
     bkw = _build_backend_kwargs(cfgrib_kwargs, is_lagged, st_dim_name)
-    ds = xr.open_dataset(
-        grib_file,
-        engine="cfgrib",
-        backend_kwargs=bkw
-    )
-    
+    ds = xr.open_dataset(grib_file, engine="cfgrib", backend_kwargs=bkw)
+
     # Standardize dimension names
     ds = _standardize_dims(ds, is_lagged, st_dim_name)
-    
+
     # Reconstruct valid_time for lagged ensembles
     if is_lagged:
         ds = _reconstruct_valid_time(ds)
-    
+
     return ds
 
 
 def choose_month_starts(i_slice, VT_start, VT_start_next, VT_start_prev, off):
     """
     Select correct month start and next month start based on encoding offset.
-    Use on hindcasts to entail wether time stamps are listed for start of veryfying month. 
+    Use on hindcasts to entail wether time stamps are listed for start of veryfying month.
 
     i_slice (slice): Slice object indexing into flattened VT arrays for a hindcast year
     VT_start (numpy.ndarray): First day of each verifying month
@@ -232,9 +226,9 @@ def choose_month_starts(i_slice, VT_start, VT_start_next, VT_start_prev, off):
 
     if off == 1:  # Choose month offset based on binary choice for hindcasts
         month_start = VT_start[i_slice]  # Slice as appropriate
-        next_start = VT_start_next[i_slice] # This month next month
+        next_start = VT_start_next[i_slice]  # This month next month
     elif off == 2:
-        month_start = VT_start_prev[i_slice] # last month, this month
+        month_start = VT_start_prev[i_slice]  # last month, this month
         next_start = VT_start[i_slice]
     else:
         raise RuntimeError("Internal: offset must be 1 or 2.")

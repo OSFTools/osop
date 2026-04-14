@@ -165,44 +165,54 @@ if __name__ == "__main__":
         area_str=area_str,
         leads_str=leads_str,
         var=var,
-        predictand_bounds=predict_bounds,
-        predictand_string=predict_str
     )
 
-    predict_config = dict(
+    logger.debug(config)
+    
+
+    if args.years:
+        config["hcstarty"] = int(args.years[0])
+        config["hcendy"] = int(args.years[1])
+        
+    else:
+        config["hcstarty"] = 1993
+        config["hcendy"] = 2016
+        
+
+    ## obs info
+    obs_fname = "{fpath}/era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
+        fpath=downloaddir, **config
+    )
+    
+    logger.info(f"Downloading obs filename: {obs_fname}")
+    get_obs(obs_fname, config)
+
+    if pycpt == "True":
+        predict_config = dict(
         start_month=month,
         leads_obs=leadtime_month,
         area=predict_bounds,
         area_str=predict_str,
         leads_str=leads_str,
         var=var,
-    )
+        )
 
-    logger.debug(config)
-    logger.debug(predict_config)
+        logger.debug(predict_config)
 
-    if args.years:
-        config["hcstarty"] = int(args.years[0])
-        config["hcendy"] = int(args.years[1])
-        predict_config["hcstarty"] = int(args.years[0])
-        predict_config["hcendy"] = int(args.years[1])
-    else:
-        config["hcstarty"] = 1993
-        config["hcendy"] = 2016
-        predict_config["hcstarty"] = 1993
-        predict_config["hcendy"] = 2016
-
-    ## obs info
-    obs_fname = "{fpath}/era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
-        fpath=downloaddir, **config
-    )
-    predict_obs_fname = "{fpath}/predictand_era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
+         
+        if args.years:
+            predict_config["hcstarty"] = int(args.years[0])
+            predict_config["hcendy"] = int(args.years[1])
+        else:
+            
+            predict_config["hcstarty"] = 1993
+            predict_config["hcendy"] = 2016
+        
+        predict_obs_fname = "{fpath}/predictand_era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
         fpath=downloaddir, **predict_config
-    )
-    logger.info(f"Downloading obs filename: {obs_fname}")
-    get_obs(obs_fname, config)
+        )
 
-    if pycpt == "True":
+        
         get_obs(predict_obs_fname, predict_config)
-        process_grib_to_pycpt(config, downloaddir, pycptdir, "obs", steps_to_sum=3,lead_months=1,)
+        process_grib_to_pycpt(predict_config, downloaddir, pycptdir, "obs", steps_to_sum=3,lead_months=1,)
 

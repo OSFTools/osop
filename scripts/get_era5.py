@@ -98,7 +98,7 @@ def parse_args():
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
     parser.add_argument("--pycptdir", required=True, help="location to store pycpt files")
     parser.add_argument("--pycpt", required=True, help="pycpt calibration: True or False")
-    parser.add_argument("--predictand_area", required=False, help="predictand extent for obs")
+    parser.add_argument("--predictand_area", nargs="?", default=None, help="predictand extent for obs (comma separated N,W,S,E)")
     parser.add_argument("--variable", required=True, help="variable to download")
     parser.add_argument(
         "--years",
@@ -152,6 +152,12 @@ if __name__ == "__main__":
     area_str = args.area.replace(",", ":")
     var = args.variable
     if pycpt == "True":
+        if args.predictand_area is None:
+                raise ValueError(
+                    "pycpt is True but --predictand_area was not provided. "
+                    "Please specify --predictand_area as N,W,S,E."
+                )
+        
         predict_bounds = [float(pt) for pt in args.predictand_area.split(",")]
         predict_str = args.predictand_area.replace(",", ":")
     else:
@@ -187,7 +193,7 @@ if __name__ == "__main__":
     logger.info(f"Downloading obs filename: {obs_fname}")
     get_obs(obs_fname, config)
 
-    if pycpt == "True":
+    if pycpt == "True":    
         predict_config = dict(
         start_month=month,
         leads_obs=leadtime_month,

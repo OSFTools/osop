@@ -162,7 +162,7 @@ if __name__ == "__main__":
         calc_products(config, downloaddir, productsdir)
 
     if pycpt == "True":
-            if centre == "eccc": 
+            if centre == "eccc":
                 config["system"] = Services["eccc_can"]
                 process_grib_to_pycpt(config, downloaddir, pycptdir, "hindcast", steps_to_sum=3,lead_months=1,)
 

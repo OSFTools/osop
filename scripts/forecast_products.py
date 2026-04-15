@@ -109,7 +109,7 @@ if __name__ == "__main__":
     month = int(args.month)
     leads = args.leads
     logger.info(f"Doing FC products, Centre: {centre}, Month: {month}, Leads: {leads}")
-    pycpt = args.pycpt 
+    pycpt = args.pycpt
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     logger.info("Completed forecast products successfully")
 
     if pycpt == "True":
-        if centre == "eccc": 
+        if centre == "eccc":
             config["systemfc"] = Services["eccc_can"]
             config["systemhc"] = Services_hc["eccc_can"]
             process_grib_to_pycpt(config, downloaddir, pycptdir, "forecast", steps_to_sum=3,lead_months=1,)
@@ -277,5 +277,5 @@ if __name__ == "__main__":
     else:
         print("Pycpt calibration off")
 
-        
+
 

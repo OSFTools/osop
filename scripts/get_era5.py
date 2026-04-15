@@ -16,6 +16,7 @@ warnings.filterwarnings("ignore")
 import argparse
 from datetime import datetime
 import logging
+
 from osop.pycpt_convert import process_grib_to_pycpt
 
 logger = logging.getLogger(__name__)
@@ -157,7 +158,7 @@ if __name__ == "__main__":
                     "pycpt is True but --predictand_area was not provided. "
                     "Please specify --predictand_area as N,W,S,E."
                 )
-        
+
         predict_bounds = [float(pt) for pt in args.predictand_area.split(",")]
         predict_str = args.predictand_area.replace(",", ":")
     else:
@@ -174,26 +175,26 @@ if __name__ == "__main__":
     )
 
     logger.debug(config)
-    
+
 
     if args.years:
         config["hcstarty"] = int(args.years[0])
         config["hcendy"] = int(args.years[1])
-        
+
     else:
         config["hcstarty"] = 1993
         config["hcendy"] = 2016
-        
+
 
     ## obs info
     obs_fname = "{fpath}/era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
         fpath=downloaddir, **config
     )
-    
+
     logger.info(f"Downloading obs filename: {obs_fname}")
     get_obs(obs_fname, config)
 
-    if pycpt == "True":    
+    if pycpt == "True":
         predict_config = dict(
         start_month=month,
         leads_obs=leadtime_month,
@@ -205,20 +206,20 @@ if __name__ == "__main__":
 
         logger.debug(predict_config)
 
-         
+
         if args.years:
             predict_config["hcstarty"] = int(args.years[0])
             predict_config["hcendy"] = int(args.years[1])
         else:
-            
+
             predict_config["hcstarty"] = 1993
             predict_config["hcendy"] = 2016
-        
+
         predict_obs_fname = "{fpath}/predictand_era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
         fpath=downloaddir, **predict_config
         )
 
-        
+
         get_obs(predict_obs_fname, predict_config)
         process_grib_to_pycpt(predict_config, downloaddir, pycptdir, "obs", steps_to_sum=3,lead_months=1,)
 

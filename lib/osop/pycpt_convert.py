@@ -7,24 +7,27 @@
 
 Notes
 -----
-Grib formatt comes in with several restructural needs to be used for pycpt. 
-This set - checks that the grib exists, calculates seconds in a season frame to then convert tprate to total precip, 
-deals with meta handles i.e. lon/lat needs to be renamed to X/Y. Shifts lead times by 1 to allign with pycpt/iri conventions 
-(ECMWF uses 1 to represent a iri leadtime of 0) and finally needs to shift times to sit in the middle of a month frame rather than the start. 
+Grib formatt comes in with several restructural needs to be used for pycpt.
+This set - checks that the grib exists, calculates seconds in a season frame to then convert tprate to total precip,
+deals with meta handles i.e. lon/lat needs to be renamed to X/Y. Shifts lead times by 1 to allign with pycpt/iri conventions
+(ECMWF uses 1 to represent a iri leadtime of 0) and finally needs to shift times to sit in the middle of a month frame rather than the start.
 
-The end result it spits out is a nc file that can be directly used by pycpt for calibrated forecasting. 
+The end result it spits out is a nc file that can be directly used by pycpt for calibrated forecasting.
 
 """
 import logging
+
 logger = logging.getLogger(__name__)
 
+import datetime as dt
 import errno
 import os
-import datetime as dt
-import numpy as np
 from pathlib import Path
-import xarray as xr
+
+import numpy as np
 import pandas as pd
+import xarray as xr
+
 from osop.util import get_tindex
 
 # cfgrib with eccodes also needs to be added to the environment/kernal situation pypt_lock
@@ -33,7 +36,8 @@ from osop.util import get_tindex
 def _build_backend_kwargs(cfgrib_kwargs, is_lagged, st_dim_name):
     """Build cfgrib backend kwargs for GRIB file opening.
 
-    Parameters:
+    Parameters
+    ----------
     cfgrib_kwargs : dict, optional
         User-provided keyword arguments
     is_lagged : bool
@@ -41,7 +45,8 @@ def _build_backend_kwargs(cfgrib_kwargs, is_lagged, st_dim_name):
     st_dim_name : str
         Name of the start date dimension ('time' or 'indexing_time')
 
-    Returns:
+    Returns
+    -------
     dict
         Backend kwargs for xr.open_dataset
     """
@@ -60,6 +65,7 @@ def _standardize_dims(ds, is_lagged, st_dim_name):
     For burst: lat/lon to Y/X only
 
     Parameters
+    ----------
     ds : xarray.Dataset
         Dataset to rename
     is_lagged : bool
@@ -68,6 +74,7 @@ def _standardize_dims(ds, is_lagged, st_dim_name):
         Name of the start date dimension
 
     Returns
+    -------
     xarray.Dataset
         Dataset with standardized dimension names
     """
@@ -99,10 +106,12 @@ def _reconstruct_valid_time(ds):
     Handles both ECMWF style (timedelta steps) and UKMO style (lead month indices).
 
     Parameters
+    ----------
     ds : xarray.Dataset
         Dataset with time and step coordinates
 
     Returns
+    -------
     xarray.Dataset
         Dataset with valid_time coordinate added
     """
@@ -168,23 +177,23 @@ def _reconstruct_valid_time(ds):
 
 
 def grib_exist(grib_file, cfgrib_kwargs=None):
-    """
-    Check grib file exists and open, with automatic lagged ensemble detection.
+    """Check grib file exists and open, with automatic lagged ensemble detection.
 
     For lagged ensemble datasets (UKMO), automatically reindexes to align
     multiple initialization dates into a single "start_date" dimension.
 
     Parameters
+    ----------
     grib_file : str
         Path to grib file
     cfgrib_kwargs : dict, optional
         Additional keyword arguments for cfgrib backend
 
     Returns
+    -------
     xarray.Dataset
         Opened dataset, with consistent dimension naming (time/lat/lon)
     """
-
     file = Path(grib_file)
     if file.is_file():
         next
@@ -205,15 +214,15 @@ def grib_exist(grib_file, cfgrib_kwargs=None):
     # Reconstruct valid_time for lagged ensembles
     if is_lagged:
         logger.debug(f"{grib_file} detected as lagged")
-        
+
         ds = _reconstruct_valid_time(ds)
     logger.info(f"{grib_file} successfully found and opened")
     return ds
 
 
 def choose_month_starts(i_slice, VT_start, VT_start_next, VT_start_prev, off):
-    """
-    Select correct month start and next month start based on encoding offset.
+    """Select correct month start and next month start based on encoding offset.
+
     Use on hindcasts to entail wether time stamps are listed for start of veryfying month.
 
     i_slice (slice): Slice object indexing into flattened VT arrays for a hindcast year
@@ -222,11 +231,12 @@ def choose_month_starts(i_slice, VT_start, VT_start_next, VT_start_prev, off):
     VT_start_prev (numpy.ndarray): First day of month preceding each verifying month
     off (int): Offset indicator (1 or 2) determining which month boundaries to use
 
-    Returns:
+    Returns
+    -------
     month_start (numpy.ndarray): Start date of verifying month
     next_start (numpy.ndarray): Start date of next month (exclusive season end)
-    """
 
+    """
     if off == 1:  # Choose month offset based on binary choice for hindcasts
         month_start = VT_start[i_slice]  # Slice as appropriate
         next_start = VT_start_next[i_slice]  # This month next month
@@ -239,13 +249,13 @@ def choose_month_starts(i_slice, VT_start, VT_start_next, VT_start_prev, off):
 
 
 def calculate_month_metrics(month_start, next_start):
-    """
-    Calculate midpoint and duration in seconds for a month.
+    """Calculate midpoint and duration in seconds for a month.
 
     month_start (datetime-like): Start of month
     next_start (datetime-like): Start of next month
 
-    Returns:
+    Returns
+    -------
     mid (datetime64): Midpoint between month_start and next_start
     sec (float or numpy.ndarray): Total seconds in the month
     """
@@ -268,10 +278,10 @@ def _get_time_coordinate(ds):
 
 
 def _detect_hindcast_offsets(vt_vals, S_vals, time_n):
-    """
-    Detect valid_time encoding offset for each hindcast year.
+    """Detect valid_time encoding offset for each hindcast year.
 
-    Returns:
+    Returns
+    -------
     offset_arr (numpy.ndarray): Offset value (1 or 2) for each year
     uniform_offset (bool): True if all years use the same offset
     """
@@ -303,8 +313,7 @@ def _build_vt_month_arrays(vt_vals):
 
 
 def _accumulate_simple_months(vt_vals, return_xr=False):
-    """
-    Accumulate month metrics for obs/forecast (1D valid_time).
+    """Accumulate month metrics for obs/forecast (1D valid_time).
 
     Returns lists of Ti, Tm, Te, Sec for conversion to arrays.
     """
@@ -323,19 +332,18 @@ def _accumulate_simple_months(vt_vals, return_xr=False):
 
 
 def time_handle(ds, cast):
-    """
-    Handle time coordinates for forecast and hindcast data.
+    """Handle time coordinates for forecast and hindcast data.
 
     ds (xarray.Dataset): Dataset containing valid_time coordinate
     cast (str): Either "forecast", "hindcast", or "obs" to determine processing mode
 
-    Returns:
+    Returns
+    -------
     Ti (numpy.ndarray): Initial time (month start) as datetime64[ns]
     Tm (numpy.ndarray): Mid time (month midpoint) as datetime64[ns]
     Te (numpy.ndarray): End time (next month start) as datetime64[ns]
     Sec (xarray.DataArray or numpy.ndarray): Seconds per month
     """
-
     if "valid_time" not in ds.coords and "time" not in ds.coords:
         raise ValueError("Missing 'valid_time'; cannot derive month boundaries.")
 
@@ -388,7 +396,7 @@ def time_handle(ds, cast):
             Tm_list.append(mid)
             Te_list.append(next_start)
             Sec_list.append(sec)
-        
+
         logger.info(" Time meta data success")
         return (
             np.stack(Ti_list, axis=0).astype("datetime64[ns]"),
@@ -399,16 +407,15 @@ def time_handle(ds, cast):
 
 
 def _prepare_data(ds):
-    """
-    Extract and preprocess variable: renaming coords and averaging ensemble members.
+    """Extract and preprocess variable: renaming coords and averaging ensemble members.
 
     ds (xarray.Dataset): Dataset containing data variable to process
 
-    Returns:
+    Returns
+    -------
     F (xarray.DataArray): Processed data array with renamed coordinates
     var_name (str): Name of the variable extracted
     """
-
     var_name = next(iter(ds.data_vars))
     F = ds[var_name]
 
@@ -416,8 +423,7 @@ def _prepare_data(ds):
 
 
 def _accumulate_monthly(F, var_name, Sec, cast, scale=1000.0):
-    """
-    Convert precipitation to monthly totals in mm.
+    """Convert precipitation to monthly totals in mm.
 
     F (xarray): The input dataset
     Var_name (str): The variable (precip,t2m)
@@ -434,7 +440,6 @@ def _accumulate_monthly(F, var_name, Sec, cast, scale=1000.0):
     Temperature:
       unchanged
     """
-
     if cast == "obs" and var_name == "tp":
         days = Sec / 86400.0
         monthly_mm = F * days * scale
@@ -462,14 +467,14 @@ def _accumulate_monthly(F, var_name, Sec, cast, scale=1000.0):
 
 
 def _finalize_season(F_season, lon_wrap="-180..180", out_var="aprod"):
-    """
-     Clean coordinates, transpose to TYX, wrap longitude, and set attributes.
+    """Clean coordinates, transpose to TYX, wrap longitude, and set attributes.
 
     F_season (xarray.DataArray): Seasonal data array to finalize
     lon_wrap (str): Longitude wrapping style ("-180..180" or "0..360")
     out_var (str): Output variable name for renaming
 
-    Returns:
+    Returns
+    -------
     F_season (xarray.DataArray): Finalized seasonal data array in TYX format
     """
     # Keep only PyCPT-required coords
@@ -505,14 +510,14 @@ def _finalize_season(F_season, lon_wrap="-180..180", out_var="aprod"):
 
 
 def _compute_season_bounds(Ti_vals, Te_vals, Tm_vals=None):
-    """
-    Extract season boundaries and compute midpoint.
+    """Extract season boundaries and compute midpoint.
 
     Ti_vals (numpy.ndarray): Initial times (month starts)
     Te_vals (numpy.ndarray): End times (next month starts)
     Tm_vals (numpy.ndarray, optional): Monthly midpoint times for averaging
 
-    Returns:
+    Returns
+    -------
     Ti_season (numpy.datetime64): Season start date
     Te_season (numpy.datetime64): Season end date (exclusive)
     Tf_season (numpy.datetime64): Season end date (inclusive)
@@ -609,10 +614,10 @@ def meta_handle(
     lon_wrap="-180..180",
     out_var="aprod",
 ):
-    """
-    Process forecast, hindcast, or obs data into PyCPT-compatible seasonal format.
+    """Process forecast, hindcast, or obs data into PyCPT-compatible seasonal format.
 
-    Parameters:
+    Parameters
+    ----------
     - ds: xarray.Dataset with climate model data
     - Ti, Tm, Te: Time coordinate arrays (initial, mid, end times)
     - Sec: Seconds per month (1D for forecast, 2D for hindcast)
@@ -621,7 +626,6 @@ def meta_handle(
     - lead_months: Months after initialization to start season (hindcast only; forecast uses first steps)
     - out_var: Output variable name (auto-detected from var_name otherwise)
     """
-
     F, var_name = _prepare_data(ds)
     S_vals = _extract_init_times(ds)
     is_forecast = Ti.ndim == 1
@@ -818,8 +822,7 @@ def meta_handle(
 
 
 def save_out(F_season, grib_path, nc_path=None, out_var=None):
-    """
-    Save processed seasonal data to NetCDF file with PyCPT-compatible structure.
+    """Save processed seasonal data to NetCDF file with PyCPT-compatible structure.
 
     F_season (xarray): input ds
     grib_path (str): Name]
@@ -830,7 +833,6 @@ def save_out(F_season, grib_path, nc_path=None, out_var=None):
         Saves output array to products
 
     """
-
     grib_path = Path(grib_path)
     save_name = grib_path.with_name(f"{grib_path}.pycpt.nc")
 
@@ -897,11 +899,10 @@ def process_grib_to_pycpt(
     lead_months=1,
     cfgrib_kwargs=None,
 ):
-    """
-    Host function to process a GRIB file into a PyCPT-compatible NetCDF.
+    """Host function to process a GRIB file into a PyCPT-compatible NetCDF.
 
-
-    Parameters:
+    Parameters
+    ----------
     grib_file : str or Path
         Input GRIB file path
     cast : str
@@ -919,11 +920,11 @@ def process_grib_to_pycpt(
     cfgrib_kwargs : dict, optional
         Extra backend kwargs for cfgrib
 
-    Returns:
+    Returns
+    -------
     xarray.DataArray
         Final seasonal PyCPT-compatible data
     """
-
     if cast == "hindcast":
         cast_bname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
             **config

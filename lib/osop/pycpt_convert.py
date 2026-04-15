@@ -15,7 +15,8 @@ deals with meta handles i.e. lon/lat needs to be renamed to X/Y. Shifts lead tim
 The end result it spits out is a nc file that can be directly used by pycpt for calibrated forecasting. 
 
 """
-
+import logging
+logger = logging.getLogger(__name__)
 
 import errno
 import os
@@ -203,8 +204,10 @@ def grib_exist(grib_file, cfgrib_kwargs=None):
 
     # Reconstruct valid_time for lagged ensembles
     if is_lagged:
+        logger.debug(f"{grib_file} detected as lagged")
+        
         ds = _reconstruct_valid_time(ds)
-
+    logger.info(f"{grib_file} successfully found and opened")
     return ds
 
 
@@ -385,7 +388,8 @@ def time_handle(ds, cast):
             Tm_list.append(mid)
             Te_list.append(next_start)
             Sec_list.append(sec)
-
+        
+        logger.info(" Time meta data success")
         return (
             np.stack(Ti_list, axis=0).astype("datetime64[ns]"),
             np.stack(Tm_list, axis=0).astype("datetime64[ns]"),
@@ -879,7 +883,7 @@ def save_out(F_season, grib_path, nc_path=None, out_var=None):
             "history": f"Built from {grib_path.name}",
         }
     )
-
+    logger.info(f"Conversion of {save_name} to pycpt success")
     ds_out.to_netcdf(f"{nc_path}/{save_name}", encoding=enc)
     return
 
@@ -937,11 +941,12 @@ def process_grib_to_pycpt(
         )
         cast_fname = f"{downloaddir}/{cast_bname}.grib"
     else:
-        print("need to switch to raise error")
+        raise AttributeError("Cast type must be obs, forecast or hindcast")
 
     nc_path = f"{pycptdir}"
 
     ds = grib_exist(cast_fname, cfgrib_kwargs=cfgrib_kwargs)
+    logger.info(f"Rearragning time meta data for {cast_bname}")
     Ti, Tm, Te, Sec = time_handle(ds, cast)
     F_season = meta_handle(
         ds=ds,

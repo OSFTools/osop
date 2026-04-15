@@ -53,8 +53,12 @@ def parse_args():
         help="Years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
-    parser.add_argument("--pycpt", required=True, help="pycpt calibration: True or False ")
-    parser.add_argument("--pycptdir", required=True, help="location to save pycpt files too")
+    parser.add_argument(
+        "--pycpt", required=True, help="pycpt calibration: True or False "
+    )
+    parser.add_argument(
+        "--pycptdir", required=True, help="location to save pycpt files too"
+    )
 
     args = parser.parse_args()
     return args
@@ -162,19 +166,40 @@ if __name__ == "__main__":
         calc_products(config, downloaddir, productsdir)
 
     if pycpt == "True":
-            if centre == "eccc":
-                config["system"] = Services["eccc_can"]
-                process_grib_to_pycpt(config, downloaddir, pycptdir, "hindcast", steps_to_sum=3,lead_months=1,)
+        if centre == "eccc":
+            config["system"] = Services["eccc_can"]
+            process_grib_to_pycpt(
+                config,
+                downloaddir,
+                pycptdir,
+                "hindcast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
 
-                config["system"] = Services["eccc_gem5"]
-                process_grib_to_pycpt(config, downloaddir, pycptdir, "hindcast", steps_to_sum=3,lead_months=1,)
-            elif centre == "mme":
-                print("skipping, no grib for mme")
-            else:
-                if centre not in Services.keys():
-                    logger.error(f"Unknown system for C3S: {centre}")
-                    raise ValueError(f"Unknown system for C3S: {centre}")
-                config["system"] = Services[centre]
-                process_grib_to_pycpt(config, downloaddir, pycptdir, "hindcast", steps_to_sum=3,lead_months=1,)
+            config["system"] = Services["eccc_gem5"]
+            process_grib_to_pycpt(
+                config,
+                downloaddir,
+                pycptdir,
+                "hindcast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+        elif centre == "mme":
+            print("skipping, no grib for mme")
+        else:
+            if centre not in Services.keys():
+                logger.error(f"Unknown system for C3S: {centre}")
+                raise ValueError(f"Unknown system for C3S: {centre}")
+            config["system"] = Services[centre]
+            process_grib_to_pycpt(
+                config,
+                downloaddir,
+                pycptdir,
+                "hindcast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
     else:
         print("Pycpt calibration off")

@@ -60,7 +60,7 @@ pycpt="False" #True or False --> True you want pycpt
 
 
 # Services in use: 
-# edit as approprite to the most up to date systems. 
+# edit as appropriate to the most up to date systems. 
 cat <<EOF > "$parseyml"
 Services:
     ecmwf: [51,1]
@@ -94,7 +94,7 @@ for centre in ncep  ;do
         exitcode=$?
         set -e
         if [ $exitcode -eq 0 ]; then
-            echo $centre : download sucessful
+            echo $centre : download successful
         else
             echo $centre : download failed
         fi

@@ -72,7 +72,7 @@ for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc ;do
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
-        echo $centre : download sucessful
+        echo $centre : download successful
     else
         echo $centre : download failed
     fi

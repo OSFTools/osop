@@ -66,8 +66,12 @@ def parse_args():
     parser.add_argument("--years", required=False, help="location to save too")
 
     parser.add_argument("--logdir", required=True, help="location to save logs")
-    parser.add_argument("--pycpt", required=True, help="pycpt calibration: True or False ")
-    parser.add_argument("--pycptdir", required=True, help="location to save pycpt files too")
+    parser.add_argument(
+        "--pycpt", required=True, help="pycpt calibration: True or False "
+    )
+    parser.add_argument(
+        "--pycptdir", required=True, help="location to save pycpt files too"
+    )
 
     args = parser.parse_args()
     return args
@@ -260,11 +264,25 @@ if __name__ == "__main__":
         if centre == "eccc":
             config["systemfc"] = Services["eccc_can"]
             config["systemhc"] = Services_hc["eccc_can"]
-            process_grib_to_pycpt(config, downloaddir, pycptdir, "forecast", steps_to_sum=3,lead_months=1,)
+            process_grib_to_pycpt(
+                config,
+                downloaddir,
+                pycptdir,
+                "forecast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
 
             config["systemfc"] = Services["eccc_gem5"]
             config["systemhc"] = Services_hc["eccc_gem5"]
-            process_grib_to_pycpt(config, downloaddir, pycptdir, "forecast", steps_to_sum=3,lead_months=1,)
+            process_grib_to_pycpt(
+                config,
+                downloaddir,
+                pycptdir,
+                "forecast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
         elif centre == "mme":
             print("skipping, no grib for mme")
         else:
@@ -273,9 +291,13 @@ if __name__ == "__main__":
                 raise ValueError(f"Unknown system for C3S: {centre}")
             config["systemfc"] = Services[centre]
             config["systemhc"] = Services_hc[centre]
-            process_grib_to_pycpt(config, downloaddir, pycptdir, "forecast", steps_to_sum=3,lead_months=1,)
+            process_grib_to_pycpt(
+                config,
+                downloaddir,
+                pycptdir,
+                "forecast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
     else:
         print("Pycpt calibration off")
-
-
-

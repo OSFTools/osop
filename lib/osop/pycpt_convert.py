@@ -3,18 +3,19 @@
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 
-"""Functions used to convert the ECMWF grib files to a pycpt compatiable nc file.
+"""Functions used to convert the ECMWF grib files to a pycpt compatible nc file.
 
 Notes
 -----
 Grib formatt comes in with several restructural needs to be used for pycpt.
 This set - checks that the grib exists, calculates seconds in a season frame to then convert tprate to total precip,
-deals with meta handles i.e. lon/lat needs to be renamed to X/Y. Shifts lead times by 1 to allign with pycpt/iri conventions
+deals with meta handles i.e. lon/lat needs to be renamed to X/Y. Shifts lead times by 1 to align with pycpt/iri conventions
 (ECMWF uses 1 to represent a iri leadtime of 0) and finally needs to shift times to sit in the middle of a month frame rather than the start.
 
 The end result it spits out is a nc file that can be directly used by pycpt for calibrated forecasting.
 
 """
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ import xarray as xr
 
 from osop.util import get_tindex
 
-# cfgrib with eccodes also needs to be added to the environment/kernal situation pypt_lock
+# cfgrib with eccodes also needs to be added to the environment/kernel situation pypt_lock
 
 
 def _build_backend_kwargs(cfgrib_kwargs, is_lagged, st_dim_name):
@@ -39,16 +40,16 @@ def _build_backend_kwargs(cfgrib_kwargs, is_lagged, st_dim_name):
     Parameters
     ----------
     cfgrib_kwargs : dict, optional
-        User-provided keyword arguments
+        User-provided keyword arguments.
     is_lagged : bool
-        Whether this is a lagged ensemble
+        Whether this is a lagged ensemble.
     st_dim_name : str
-        Name of the start date dimension ('time' or 'indexing_time')
+        Name of the start date dimension ('time' or 'indexing_time').
 
     Returns
     -------
     dict
-        Backend kwargs for xr.open_dataset
+        Backend kwargs for xr.open_dataset.
     """
     bkw = {"indexpath": ""}  # Prevent creation of idx files
     if cfgrib_kwargs:
@@ -67,16 +68,16 @@ def _standardize_dims(ds, is_lagged, st_dim_name):
     Parameters
     ----------
     ds : xarray.Dataset
-        Dataset to rename
+        Dataset to rename.
     is_lagged : bool
-        Whether this is a lagged ensemble
+        Whether this is a lagged ensemble.
     st_dim_name : str
-        Name of the start date dimension
+        Name of the start date dimension.
 
     Returns
     -------
     xarray.Dataset
-        Dataset with standardized dimension names
+        Dataset with standardized dimension names.
     """
     rename_dict = {}
     if is_lagged:
@@ -108,12 +109,12 @@ def _reconstruct_valid_time(ds):
     Parameters
     ----------
     ds : xarray.Dataset
-        Dataset with time and step coordinates
+        Dataset with time and step coordinates.
 
     Returns
     -------
     xarray.Dataset
-        Dataset with valid_time coordinate added
+        Dataset with valid_time coordinate added.
     """
     # Check if we can reconstruct valid_time: need step and a time coordinate/dim
     has_step = "step" in ds.dims and "step" in ds.coords
@@ -185,14 +186,14 @@ def grib_exist(grib_file, cfgrib_kwargs=None):
     Parameters
     ----------
     grib_file : str
-        Path to grib file
+        Path to grib file.
     cfgrib_kwargs : dict, optional
-        Additional keyword arguments for cfgrib backend
+        Additional keyword arguments for cfgrib backend.
 
     Returns
     -------
     xarray.Dataset
-        Opened dataset, with consistent dimension naming (time/lat/lon)
+        Opened dataset, with consistent dimension naming (time/lat/lon).
     """
     file = Path(grib_file)
     if file.is_file():
@@ -223,7 +224,7 @@ def grib_exist(grib_file, cfgrib_kwargs=None):
 def choose_month_starts(i_slice, VT_start, VT_start_next, VT_start_prev, off):
     """Select correct month start and next month start based on encoding offset.
 
-    Use on hindcasts to entail wether time stamps are listed for start of veryfying month.
+    Use on hindcasts to entail whether time stamps are listed for start of verifying month.
 
     i_slice (slice): Slice object indexing into flattened VT arrays for a hindcast year
     VT_start (numpy.ndarray): First day of each verifying month
@@ -618,13 +619,13 @@ def meta_handle(
 
     Parameters
     ----------
-    - ds: xarray.Dataset with climate model data
-    - Ti, Tm, Te: Time coordinate arrays (initial, mid, end times)
-    - Sec: Seconds per month (1D for forecast, 2D for hindcast)
-    - cast: 'forecast', 'hindcast', or 'obs'
-    - steps_to_sum: Number of months to combine into season
-    - lead_months: Months after initialization to start season (hindcast only; forecast uses first steps)
-    - out_var: Output variable name (auto-detected from var_name otherwise)
+    - ds : xarray.Dataset with climate model data
+    - Ti, Tm, Te : Time coordinate arrays (initial, mid, end times)
+    - Sec : Seconds per month (1D for forecast, 2D for hindcast)
+    - cast : 'forecast', 'hindcast', or 'obs'
+    - steps_to_sum : Number of months to combine into season
+    - lead_months : Months after initialization to start season (hindcast only; forecast uses first steps)
+    - out_var : Output variable name (auto-detected from var_name otherwise)
     """
     F, var_name = _prepare_data(ds)
     S_vals = _extract_init_times(ds)
@@ -746,7 +747,6 @@ def meta_handle(
         out_var = "t2m" if var_name == "t2m" else "aprod"
 
     elif cast == "obs":
-
         if "time" in F.dims:
             F = F.rename({"time": "T"})
         elif "valid_time" in F.dims:
@@ -796,7 +796,7 @@ def meta_handle(
                 out_var = "t2m"
 
             else:
-                # precipitation = SUM not accumlate monthly
+                # precipitation = SUM not accumulate monthly
                 season_val = g.sum("T", keep_attrs=True)
                 out_var = "prcp"
 
@@ -827,7 +827,7 @@ def save_out(F_season, grib_path, nc_path=None, out_var=None):
     F_season (xarray): input ds
     grib_path (str): Name]
     nc_path (str): dir store
-    out_var(str): output varaible
+    out_var(str): output variable
 
     returns:None
         Saves output array to products
@@ -904,26 +904,26 @@ def process_grib_to_pycpt(
     Parameters
     ----------
     grib_file : str or Path
-        Input GRIB file path
+        Input GRIB file path.
     cast : str
-        One of "forecast", "hindcast", or "obs"
+        One of "forecast", "hindcast", or "obs".
     steps_to_sum : int
-        Number of months per season
+        Number of months per season.
     lead_months : int
-        Lead time in months (used for forecast/hindcast)
+        Lead time in months (used for forecast/hindcast).
     lon_wrap : str
-        "-180..180" or "0..360"
+        "-180..180" or "0..360".
     out_var : str, optional
-        Output variable name (defaults handled internally)
+        Output variable name (defaults handled internally).
     nc_path : str or Path, optional
-        Output NetCDF path
+        Output NetCDF path.
     cfgrib_kwargs : dict, optional
-        Extra backend kwargs for cfgrib
+        Extra backend kwargs for cfgrib.
 
     Returns
     -------
     xarray.DataArray
-        Final seasonal PyCPT-compatible data
+        Final seasonal PyCPT-compatible data.
     """
     if cast == "hindcast":
         cast_bname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
@@ -936,7 +936,6 @@ def process_grib_to_pycpt(
         )
         cast_fname = f"{downloaddir}/{cast_bname}.grib"
     elif cast == "obs":
-
         cast_bname = "predictand_era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}".format(
             **config
         )

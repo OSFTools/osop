@@ -14,7 +14,7 @@ from osop.pycpt_convert import calculate_month_metrics, choose_month_starts
 
 def test_calculate_month_metrics_basic_month():
     """Test caululate month metrics.
-    should assert mid point and duration of a calander time frame.
+    should assert mid point and duration of a calendar time frame.
     """
     month_start = pd.Timestamp("2001-01-01")
     next_start = pd.Timestamp("2001-02-01")
@@ -42,22 +42,21 @@ def test_choose_month_starts():
 
     i_slice = slice(1, 3)  # Feb, Mar
 
-
     month_start, next_start = choose_month_starts(
         i_slice, VT_start, VT_start_next, VT_start_prev, off=1
     )
 
-    i_slice_2 = slice(0, 2) # Jan, Feb
+    i_slice_2 = slice(0, 2)  # Jan, Feb
 
     month_start_2, next_start_2 = choose_month_starts(
         i_slice_2, VT_start, VT_start_next, VT_start_prev, off=2
     )
 
-
     assert np.all(month_start == VT_start[i_slice])
     assert np.all(next_start == VT_start_next[i_slice])
     assert np.all(month_start_2 == VT_start_prev[i_slice_2])
     assert np.all(next_start_2 == VT_start[i_slice_2])
+
 
 def test_choose_month_starts_invalid_offset():
     """Test choose_month_starts with error force."""

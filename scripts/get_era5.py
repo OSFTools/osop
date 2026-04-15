@@ -17,6 +17,8 @@ import argparse
 from datetime import datetime
 import logging
 
+from osop.pycpt_convert import process_grib_to_pycpt
+
 logger = logging.getLogger(__name__)
 
 
@@ -95,6 +97,18 @@ def parse_args():
     )
     parser.add_argument("--downloaddir", required=True, help="location to download to")
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
+    parser.add_argument(
+        "--pycptdir", required=True, help="location to store pycpt files"
+    )
+    parser.add_argument(
+        "--pycpt", required=True, help="pycpt calibration: True or False"
+    )
+    parser.add_argument(
+        "--predictand_area",
+        nargs="?",
+        default=None,
+        help="predictand extent for obs (comma separated N,W,S,E)",
+    )
     parser.add_argument("--variable", required=True, help="variable to download")
     parser.add_argument(
         "--years",
@@ -121,6 +135,8 @@ if __name__ == "__main__":
 
     # unpack args and reformat if needed
     downloaddir = args.downloaddir
+    pycptdir = args.pycptdir
+    pycpt = args.pycpt
 
     # start logging - need to know logdir location before we can set it up
     logfile = os.path.join(
@@ -145,6 +161,17 @@ if __name__ == "__main__":
     area_bounds = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")
     var = args.variable
+    if pycpt == "True":
+        if args.predictand_area is None:
+            raise ValueError(
+                "pycpt is True but --predictand_area was not provided. "
+                "Please specify --predictand_area as N,W,S,E."
+            )
+
+        predict_bounds = [float(pt) for pt in args.predictand_area.split(",")]
+        predict_str = args.predictand_area.replace(",", ":")
+    else:
+        predict_bounds = area_bounds
 
     # add arguments to config dictionary used to pass parameters
     config = dict(
@@ -161,6 +188,7 @@ if __name__ == "__main__":
     if args.years:
         config["hcstarty"] = int(args.years[0])
         config["hcendy"] = int(args.years[1])
+
     else:
         config["hcstarty"] = 1993
         config["hcendy"] = 2016
@@ -169,5 +197,39 @@ if __name__ == "__main__":
     obs_fname = "{fpath}/era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
         fpath=downloaddir, **config
     )
+
     logger.info(f"Downloading obs filename: {obs_fname}")
     get_obs(obs_fname, config)
+
+    if pycpt == "True":
+        predict_config = dict(
+            start_month=month,
+            leads_obs=leadtime_month,
+            area=predict_bounds,
+            area_str=predict_str,
+            leads_str=leads_str,
+            var=var,
+        )
+
+        logger.debug(predict_config)
+
+        if args.years:
+            predict_config["hcstarty"] = int(args.years[0])
+            predict_config["hcendy"] = int(args.years[1])
+        else:
+            predict_config["hcstarty"] = 1993
+            predict_config["hcendy"] = 2016
+
+        predict_obs_fname = "{fpath}/predictand_era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
+            fpath=downloaddir, **predict_config
+        )
+
+        get_obs(predict_obs_fname, predict_config)
+        process_grib_to_pycpt(
+            predict_config,
+            downloaddir,
+            pycptdir,
+            "obs",
+            steps_to_sum=3,
+            lead_months=1,
+        )

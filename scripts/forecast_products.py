@@ -22,6 +22,7 @@ from yaml.loader import SafeLoader
 
 # import local modules for function usage
 from osop.compare_terciles import compute_forecast, mme_products
+from osop.pycpt_convert import process_grib_to_pycpt
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,12 @@ def parse_args():
     parser.add_argument("--years", required=False, help="location to save too")
 
     parser.add_argument("--logdir", required=True, help="location to save logs")
+    parser.add_argument(
+        "--pycpt", required=True, help="pycpt calibration: True or False "
+    )
+    parser.add_argument(
+        "--pycptdir", required=True, help="location to save pycpt files too"
+    )
 
     args = parser.parse_args()
     return args
@@ -102,9 +109,11 @@ if __name__ == "__main__":
     downloadhcdir = args.downloadhcdir
     productshcdir = args.productshcdir
     productsfcdir = args.productsfcdir
+    pycptdir = args.pycptdir
     month = int(args.month)
     leads = args.leads
     logger.info(f"Doing FC products, Centre: {centre}, Month: {month}, Leads: {leads}")
+    pycpt = args.pycpt
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
@@ -250,3 +259,45 @@ if __name__ == "__main__":
         config["systemhc"] = Services_hc[centre]
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
     logger.info("Completed forecast products successfully")
+
+    if pycpt == "True":
+        if centre == "eccc":
+            config["systemfc"] = Services["eccc_can"]
+            config["systemhc"] = Services_hc["eccc_can"]
+            process_grib_to_pycpt(
+                config,
+                downloaddir,
+                pycptdir,
+                "forecast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+
+            config["systemfc"] = Services["eccc_gem5"]
+            config["systemhc"] = Services_hc["eccc_gem5"]
+            process_grib_to_pycpt(
+                config,
+                downloaddir,
+                pycptdir,
+                "forecast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+        elif centre == "mme":
+            print("skipping, no grib for mme")
+        else:
+            if centre not in Services.keys():
+                logger.error(f"Unknown system for C3S: {centre}")
+                raise ValueError(f"Unknown system for C3S: {centre}")
+            config["systemfc"] = Services[centre]
+            config["systemhc"] = Services_hc[centre]
+            process_grib_to_pycpt(
+                config,
+                downloaddir,
+                pycptdir,
+                "forecast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+    else:
+        print("Pycpt calibration off")

@@ -165,6 +165,7 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
         cmap=cmap_below,
         norm=norm,
         add_colorbar=False,
+        add_labels=False,
     )
 
     norm = BoundaryNorm(levels, ncolors=plt.cm.Greys.N)
@@ -174,6 +175,7 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
         cmap=cmap_normal,
         norm=norm,
         add_colorbar=False,
+        add_labels=False,
     )
 
     norm = BoundaryNorm(levels, ncolors=cmap_above.N, extend="max")
@@ -183,6 +185,7 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
         cmap=cmap_above,
         norm=norm,
         add_colorbar=False,
+        add_labels=False,
     )
 
     # Set title once
@@ -194,33 +197,39 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
 
     # Colour bars
-    cbar1 = plt.axes((0.15, 0.05, 0.2, 0.05))
+    cbar1 = plt.axes((0.15, 0.02, 0.2, 0.03))
     cbar = plt.colorbar(clev1, extend="max", location="bottom", cax=cbar1)
     cbar.set_label("Prob. below (%)")
     cbar.ax.invert_xaxis()
     for label in cbar.ax.xaxis.get_ticklabels()[1::2]:
         label.set_visible(False)
 
-    cbar2 = plt.axes((0.4, 0.05, 0.2, 0.05))
+    cbar2 = plt.axes((0.4, 0.02, 0.2, 0.03))
     cbar = plt.colorbar(clev2, location="bottom", cax=cbar2, extend="neither")
     cbar.set_label("Prob. near average (%)")
     for label in cbar.ax.xaxis.get_ticklabels()[1::2]:
         label.set_visible(False)
 
-    cbar3 = plt.axes((0.65, 0.05, 0.2, 0.05))
+    cbar3 = plt.axes((0.65, 0.02, 0.2, 0.03))
     cbar = plt.colorbar(clev3, extend="max", location="bottom", cax=cbar3)
     cbar.set_label("Prob. above (%)")
     for label in cbar.ax.xaxis.get_ticklabels()[1::2]:
         label.set_visible(False)
 
     # Gridlines
-    ax.gridlines(
+    gl = ax.gridlines(
         crs=ccrs.PlateCarree(),
         draw_labels=True,
         linewidth=1,
         color="black",
         linestyle="--",
+        x_inline=False,
+        y_inline=False,
     )
+    
+
+    gl.top_labels = False
+    gl.right_labels = False
 
     # Optional dry mask
     if mask is not None:
@@ -338,11 +347,11 @@ def plot_forecasts(productdir, plotsdir, config):
     )
     # Save figure
     figname = f"{plotsdir}/{forecast_name_1m}.png"
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
+    plt.savefig(figname, bbox_inches='tight', pad_inches=0.01)
 
     fig = plot_tercile_fc(
         plot_dataset_3m, atitle, var=variable, mask=None, map_setting=map_setting
     )
     # Save figure
     figname = f"{plotsdir}/{forecast_name_3m}.png"
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
+    plt.savefig(figname, bbox_inches='tight', pad_inches=0.01)

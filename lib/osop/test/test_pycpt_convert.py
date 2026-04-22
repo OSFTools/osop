@@ -76,6 +76,8 @@ def test_standardize_dims():
     """Test standardize dims with proxy array."""
     #Set up false array
     times = pd.date_range("2020-01-01", periods=2)
+    time = np.array(["2020-01-01"], dtype="datetime64[ns]")
+    step = pd.to_timedelta(["61 days", "92 days", "123 days"])
     forecast_month = [1, 2, 3]
     lat = [50.0, 51.0]
     lon = [-1.0, 0.0]
@@ -93,6 +95,18 @@ def test_standardize_dims():
         },
     )
 
+    
+    ds = xr.Dataset(
+        {"var": (("time", "step", "latitude", "longitude"), np.zeros((1, 3, 2, 2)))},
+        coords={
+            "time": [pd.Timestamp("2020-01-01")],
+            "step": pd.to_timedelta(["61 days", "92 days", "123 days"]),
+            "latitude": lat,
+            "longitude": lon,
+        },
+    )
+
+
 
     out_lagged = _standardize_dims(
             ds_lagged,
@@ -101,12 +115,12 @@ def test_standardize_dims():
         )
     
     out = _standardize_dims(
-            ds_lagged,
+            ds,
             is_lagged=False,
-            st_dim_name="start_date",
+            st_dim_name="time",
         )
 
-    assert set(out.dims) == {"time", "step", "Y", "X"}
+    assert set(out.dims) & set(out_lagged.dims) == {"time", "step", "Y", "X"}
 
 
 

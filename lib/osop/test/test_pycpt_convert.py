@@ -7,9 +7,10 @@
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 import pytest
 
-from osop.pycpt_convert import calculate_month_metrics, choose_month_starts
+from osop.pycpt_convert import calculate_month_metrics, choose_month_starts, _standardize_dims
 
 
 def test_calculate_month_metrics_basic_month():
@@ -68,3 +69,44 @@ def test_choose_month_starts_invalid_offset():
             np.array([], dtype="datetime64[ns]"),
             off=99,
         )
+
+
+
+def test_standardize_dims(): 
+    """Test standardize dims with proxy array."""
+    #Set up false array
+    times = pd.date_range("2020-01-01", periods=2)
+    forecast_month = [1, 2, 3]
+    lat = [50.0, 51.0]
+    lon = [-1.0, 0.0]
+
+    ds_lagged = xr.Dataset(
+        {
+            "var": (("start_date", "forecastMonth", "latitude", "longitude"),
+                    np.zeros((2, 3, 2, 2)))
+        },
+        coords={
+            "start_date": times,
+            "forecastMonth": forecast_month,
+            "latitude": lat,
+            "longitude": lon,
+        },
+    )
+
+
+    out_lagged = _standardize_dims(
+            ds_lagged,
+            is_lagged=True,
+            st_dim_name="start_date",
+        )
+    
+    out = _standardize_dims(
+            ds_lagged,
+            is_lagged=False,
+            st_dim_name="start_date",
+        )
+
+    assert set(out.dims) == {"time", "step", "Y", "X"}
+
+
+

@@ -132,7 +132,7 @@ def test_standardize_dims():
 
 
 def test_get_time_coordinate():
-    """Test get time coordiante - extract and convert time or valid time."""
+    """Test get time coordinate - extract and convert time or valid time."""
     #Set up false arrays
     time = pd.to_datetime(["2020-01-01"])
     valid_time = pd.to_datetime(["2020-01-01"])

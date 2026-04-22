@@ -12,12 +12,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from osop.pycpt_convert import (
-    _get_time_coordinate,
-    _standardize_dims,
-    calculate_month_metrics,
-    choose_month_starts,
-)
+import osop.pycpt_convert as convert
 
 
 def test_calculate_month_metrics_basic_month():
@@ -27,7 +22,7 @@ def test_calculate_month_metrics_basic_month():
     month_start = pd.Timestamp("2001-01-01")
     next_start = pd.Timestamp("2001-02-01")
 
-    mid, sec = calculate_month_metrics(month_start, next_start)
+    mid, sec = convert.calculate_month_metrics(month_start, next_start)
 
     assert mid == np.datetime64("2001-01-16T12:00:00")
     assert sec == 31 * 86400
@@ -50,13 +45,13 @@ def test_choose_month_starts():
 
     i_slice = slice(1, 3)  # Feb, Mar
 
-    month_start, next_start = choose_month_starts(
+    month_start, next_start = convert.choose_month_starts(
         i_slice, VT_start, VT_start_next, VT_start_prev, off=1
     )
 
     i_slice_2 = slice(0, 2)  # Jan, Feb
 
-    month_start_2, next_start_2 = choose_month_starts(
+    month_start_2, next_start_2 = convert.choose_month_starts(
         i_slice_2, VT_start, VT_start_next, VT_start_prev, off=2
     )
 
@@ -69,7 +64,7 @@ def test_choose_month_starts():
 def test_choose_month_starts_invalid_offset():
     """Test choose_month_starts with error force."""
     with pytest.raises(RuntimeError, match="offset must be 1 or 2"):
-        choose_month_starts(
+        convert.choose_month_starts(
             slice(0, 1),
             np.array([], dtype="datetime64[ns]"),
             np.array([], dtype="datetime64[ns]"),
@@ -115,13 +110,13 @@ def test_standardize_dims():
 
 
 
-    out_lagged = _standardize_dims(
+    out_lagged = convert._standardize_dims(
             ds_lagged,
             is_lagged=True,
             st_dim_name="start_date",
         )
 
-    out = _standardize_dims(
+    out = convert._standardize_dims(
             ds,
             is_lagged=False,
             st_dim_name="time",
@@ -165,8 +160,8 @@ def test_get_time_coordinate():
         },
     )
 
-    ds_out = _get_time_coordinate(ds)
-    ds_lagged_out = _get_time_coordinate(ds_lagged)
+    ds_out = convert._get_time_coordinate(ds)
+    ds_lagged_out = convert._get_time_coordinate(ds_lagged)
 
     #set up goal
     expected = pd.to_datetime(["2020-01-01"])

@@ -1,5 +1,11 @@
+<img src="https://www.metoffice.gov.uk/binaries/content/gallery/metofficegovuk/hero-images/advice/international/wiser/wiser-2024-brand-hero-images/wiser-namibia-header-2024.png" alt="Project logo" style="max-width: 100%; height: auto;">
+
 # Objective Seasonal Outlook Package (OSOP)
 ### OSOP is a python library to support objective seasonal forecasting.
+This software is supported by the Weather and Climate Information Services (WISER) Programme, which is funded with UK International Development from the UK government and led by the Met Office in the UK.
+#### Project Manager: [Dr. Stefan Lines](https://uk.linkedin.com/in/stefan-lines-0bb00126)
+#### Lead Developers: [Dr. Nick Savage](https://www.linkedin.com/in/nick-savage-623b59175/) & Eleanor Dean
+<br>
 
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/OSFTools/osop?style=flat-square)   ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/OSFTools/osop?style=flat-square)  ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/OSFTools/osop/main?style=flat-square) [![contributors](https://img.shields.io/github/contributors/OSFTools/osop?style=flat-square)](https://github.com/OSFTools/osop/graphs/contributors)
 

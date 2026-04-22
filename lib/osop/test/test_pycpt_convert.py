@@ -9,8 +9,9 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import pytest
+import datetime
 
-from osop.pycpt_convert import calculate_month_metrics, choose_month_starts, _standardize_dims
+from osop.pycpt_convert import calculate_month_metrics, choose_month_starts, _standardize_dims, _get_time_coordinate
 
 
 def test_calculate_month_metrics_basic_month():
@@ -121,6 +122,54 @@ def test_standardize_dims():
         )
 
     assert set(out.dims) & set(out_lagged.dims) == {"time", "step", "Y", "X"}
+
+
+
+def test_get_time_coordinate():
+    "test get time coordiante - extract and convert time or valid time"
+
+    #Set up false arrays
+    time = pd.to_datetime(["2020-01-01"])
+    valid_time = pd.to_datetime(["2020-01-01"])
+    step = pd.to_timedelta(["61 days", "92 days", "123 days"])
+    forecast_month = [1, 2, 3]
+    lat = [50.0, 51.0]
+    lon = [-1.0, 0.0]
+
+    ds_lagged = xr.Dataset(
+        {
+            "var": (("valid_time", "forecastMonth", "latitude", "longitude"),
+                    np.zeros((1, 3, 2, 2)))
+        },
+        coords={
+            "valid_time": valid_time,
+            "forecastMonth": forecast_month,
+            "latitude": lat,
+            "longitude": lon,
+        },
+    )
+
+    
+    ds = xr.Dataset(
+        {"var": (("time", "step", "latitude", "longitude"), np.zeros((1, 3, 2, 2)))},
+        coords={
+            "time": time,
+            "step": step,
+            "latitude": lat,
+            "longitude": lon,
+        },
+    )
+
+    ds_out = _get_time_coordinate(ds)
+    ds_lagged_out = _get_time_coordinate(ds_lagged)
+
+    #set up goal
+    expected = pd.to_datetime(["2020-01-01"])
+
+    
+    assert np.issubdtype(ds_out.dtype, np.datetime64)
+    assert np.issubdtype(ds_lagged_out.dtype, np.datetime64)
+    assert np.array_equal(ds_out , expected) & np.array_equal(ds_lagged_out , expected)
 
 
 

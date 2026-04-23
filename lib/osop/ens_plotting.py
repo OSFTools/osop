@@ -226,7 +226,7 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
         x_inline=False,
         y_inline=False,
     )
-    
+
 
     gl.top_labels = False
     gl.right_labels = False
@@ -347,11 +347,11 @@ def plot_forecasts(productdir, plotsdir, config):
     )
     # Save figure
     figname = f"{plotsdir}/{forecast_name_1m}.png"
-    plt.savefig(figname, bbox_inches='tight', pad_inches=0.01)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
 
     fig = plot_tercile_fc(
         plot_dataset_3m, atitle, var=variable, mask=None, map_setting=map_setting
     )
     # Save figure
     figname = f"{plotsdir}/{forecast_name_3m}.png"
-    plt.savefig(figname, bbox_inches='tight', pad_inches=0.01)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)

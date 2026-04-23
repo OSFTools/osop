@@ -408,7 +408,7 @@ def time_handle(ds, cast):
 
 
 def _prepare_data(ds):
-    """Extract varaiable names.
+    """Extract variable names.
 
     ds (xarray.Dataset): Dataset containing data variable to process
 

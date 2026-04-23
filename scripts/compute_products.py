@@ -59,6 +59,12 @@ def parse_args():
     parser.add_argument(
         "--pycptdir", required=True, help="location to save pycpt files too"
     )
+    parser.add_argument(
+        "--predictand_area",
+        nargs="?",
+        default=None,
+        help="predictand extent for obs (comma separated N,W,S,E)",
+    )
 
     args = parser.parse_args()
     return args
@@ -103,6 +109,16 @@ if __name__ == "__main__":
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")
     variable = args.variable
+
+    if pycpt == "True":
+        if args.predictand_area is None:
+            raise ValueError(
+                "pycpt is True but --predictand_area was not provided. "
+                "Please specify --predictand_area as N,W,S,E."
+            )
+
+        predict_bounds = [float(pt) for pt in args.predictand_area.split(",")]
+        predict_str = args.predictand_area.replace(",", ":")
 
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
@@ -166,10 +182,31 @@ if __name__ == "__main__":
         calc_products(config, downloaddir, productsdir)
 
     if pycpt == "True":
+        predict_config = dict(
+            start_month=month,
+            leads=leadtime_month,
+            origin=centre,
+            area=predict_bounds,
+            area_str=predict_str,
+            leads_str=leads_str,
+            var=variable,
+            pycptver = "pycpt"
+        )
+
+        logger.debug(predict_config)
+
+        if args.years:
+            predict_config["hcstarty"] = int(args.years[0])
+            predict_config["hcendy"] = int(args.years[1])
+        else:
+            predict_config["hcstarty"] = 1993
+            predict_config["hcendy"] = 2016
+
+
         if centre == "eccc":
-            config["system"] = Services["eccc_can"]
+            predict_config["system"] = Services["eccc_can"]
             process_grib_to_pycpt(
-                config,
+                predict_config,
                 downloaddir,
                 pycptdir,
                 "hindcast",
@@ -177,9 +214,9 @@ if __name__ == "__main__":
                 lead_months=1,
             )
 
-            config["system"] = Services["eccc_gem5"]
+            predict_config["system"] = Services["eccc_gem5"]
             process_grib_to_pycpt(
-                config,
+                predict_config,
                 downloaddir,
                 pycptdir,
                 "hindcast",
@@ -192,9 +229,9 @@ if __name__ == "__main__":
             if centre not in Services.keys():
                 logger.error(f"Unknown system for C3S: {centre}")
                 raise ValueError(f"Unknown system for C3S: {centre}")
-            config["system"] = Services[centre]
+            predict_config["system"] = Services[centre]
             process_grib_to_pycpt(
-                config,
+                predict_config,
                 downloaddir,
                 pycptdir,
                 "hindcast",

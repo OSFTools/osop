@@ -45,7 +45,9 @@ def do_cdsapi_call(
     area_str,
     variable,
     downloaddir,
+    pycpt,
     years="hc",
+
 ):
     """Call cdsapi for the requested period and area.
 
@@ -82,28 +84,54 @@ def do_cdsapi_call(
     if years == "hc":
         years = [str(y) for y in range(1993, 2017)]
 
-    fname = f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
-    if os.path.exists(fname):
-        logger.warning(f"File {fname} already exists")
+    if pycpt == "download_on":
+        fname = f"{downloaddir}/pycpt_{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
+        if os.path.exists(fname):
+            logger.warning(f"File {fname} already exists")
+
+        else:
+            c = cdsapi.Client()
+            c.retrieve(
+                "seasonal-monthly-single-levels",
+                {
+                    "format": "grib",
+                    "originating_centre": f"{centre}",
+                    "system": system,
+                    "variable": [variable],
+                    "product_type": "monthly_mean",
+                    "year": years,
+                    "month": "{:02d}".format(month),
+                    "leadtime_month": leadtime_month,
+                    "area": area,
+                },
+                f"{downloaddir}/pycpt_{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
+            )
+            logger.info(f"Downloaded {fname}")
 
     else:
-        c = cdsapi.Client()
-        c.retrieve(
-            "seasonal-monthly-single-levels",
-            {
-                "format": "grib",
-                "originating_centre": f"{centre}",
-                "system": system,
-                "variable": [variable],
-                "product_type": "monthly_mean",
-                "year": years,
-                "month": "{:02d}".format(month),
-                "leadtime_month": leadtime_month,
-                "area": area,
-            },
-            f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
-        )
-        logger.info(f"Downloaded {fname}")
+        fname = f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
+        if os.path.exists(fname):
+            logger.warning(f"File {fname} already exists")
+
+        else:
+            c = cdsapi.Client()
+            c.retrieve(
+                "seasonal-monthly-single-levels",
+                {
+                    "format": "grib",
+                    "originating_centre": f"{centre}",
+                    "system": system,
+                    "variable": [variable],
+                    "product_type": "monthly_mean",
+                    "year": years,
+                    "month": "{:02d}".format(month),
+                    "leadtime_month": leadtime_month,
+                    "area": area,
+                },
+                f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
+            )
+            logger.info(f"Downloaded {fname}")
+
 
 
 def parse_args():
@@ -142,6 +170,18 @@ def parse_args():
         "--years",
         required=False,
         help="Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
+    )
+    parser.add_argument(
+        "--pycptdir", required=True, help="location to store pycpt files"
+    )
+    parser.add_argument(
+        "--pycpt", required=True, help="pycpt calibration: True or False"
+    )
+    parser.add_argument(
+        "--predictand_area",
+        nargs="?",
+        default=None,
+        help="predictand extent for obs (comma separated N,W,S,E)",
     )
 
     args = parser.parse_args()
@@ -186,6 +226,19 @@ def main():
     area_str = args.area.replace(",", ":")
     month = int(args.month)
     variable = str(args.variable)
+    pycptdir = args.pycptdir
+    pycpt = args.pycpt
+
+    if pycpt == "True":
+        if args.predictand_area is None:
+            raise ValueError(
+                "pycpt is True but --predictand_area was not provided. "
+                "Please specify --predictand_area as N,W,S,E."
+            )
+
+        predict_bounds = [float(pt) for pt in args.predictand_area.split(",")]
+        predict_str = args.predictand_area.replace(",", ":")
+
 
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
@@ -223,6 +276,7 @@ def main():
             area_str,
             variable,
             downloaddir,
+            pycpt,
             years,
         )
         do_cdsapi_call(
@@ -234,6 +288,7 @@ def main():
             area_str,
             variable,
             downloaddir,
+            pycpt,
             years,
         )
     else:
@@ -249,8 +304,55 @@ def main():
             area_str,
             variable,
             downloaddir,
+            pycpt,
             years,
         )
+
+    if pycpt == "True":
+        pycpt = "download_on"
+        if centre == "eccc":
+            # two models aka systems are live - call twice with each system number
+            do_cdsapi_call(
+                "eccc",
+                Services["eccc_can"],
+                month,
+                leadtime_month,
+                predict_bounds,
+                predict_str,
+                variable,
+                downloaddir,
+                pycpt,
+                years,
+            )
+            do_cdsapi_call(
+                "eccc",
+                Services["eccc_gem5"],
+                month,
+                leadtime_month,
+                predict_bounds,
+                predict_str,
+                variable,
+                downloaddir,
+                pycpt,
+                years,
+            )
+        else:
+            if centre not in Services.keys():
+                logger.error(f"Unknown system for C3S: {centre}", stack_info=True)
+                raise ValueError(f"Unknown system for C3S: {centre}")
+            do_cdsapi_call(
+                centre,
+                Services[centre],
+                month,
+                leadtime_month,
+                predict_bounds,
+                predict_str,
+                variable,
+                downloaddir, #change to pycpt dir will need some movement
+                pycpt,
+                years,
+            )
+
 
 
 if __name__ == "__main__":

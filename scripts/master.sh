@@ -52,7 +52,7 @@ variable="total_precipitation" # variable of interest, typically "2m_temperature
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 method="pmesh" #Remove for smooth plotting on correlation plots
 pycpt="True" #True or False --> True you want pycpt, auto sets to off
-predictand_area="45,-30,-2.5,60" #Obs area for predictand - if pycpt set to off, ignores (N,W,S,E)
+predictand_area="45,-30,-2.5,60" #gcm area for predictand - if pycpt set to off, ignores (N,W,S,E)
 
 # Services in use:
 # First column service, second column weight
@@ -104,7 +104,10 @@ for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
             --area $area \
             --variable $variable\
             --downloaddir $downloaddir \
-            --logdir $logdir 
+            --logdir $logdir \
+            --predictand_area $predictand_area \
+            --pycpt $pycpt \
+            --pycptdir $pycptdir
         exitcode=$?
         set -e
         if [ $exitcode -eq 0 ]; then
@@ -125,7 +128,8 @@ for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         --productsdir $productsdir \
         --logdir $logdir \
         --pycpt $pycpt \
-        --pycptdir $pycptdir
+        --pycptdir $pycptdir \
+        --predictand_area $predictand_area 
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

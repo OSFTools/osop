@@ -52,11 +52,12 @@ parseyml="$downloaddir/parseyml.yml"
 # set parameters 
 month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
-area="45,-30,-2.5,60"  # sub-area in degrees for area of interest (comma separated N,W,S,E) #"45,-30,-2.5,60" 
+area="55,-90,30,-60" # sub-area in degrees for area of interest (comma separated N,W,S,E) #"45,-30,-2.5,60" 
 variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
 location="None" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
-years=2024
-pycpt="False" #True or False --> True you want pycpt 
+years=2025
+pycpt="True" #True or False --> True you want pycpt, auto sets to off
+predictand_area="45,-30,-2.5,60" #gcm area for predictand - if pycpt set to off, ignores (N,W,S,E)
 
 
 # Services in use: 
@@ -77,7 +78,7 @@ EOF
 echo "YML file created: $parseyml"
 
 # loop over all centres of interest and get data
-for centre in ncep  ;do  
+for centre in ukmo  ;do  
     if [ "$centre" != "mme" ]; then
         set +e
         python get_any_hindcast.py \
@@ -89,8 +90,10 @@ for centre in ncep  ;do
             --downloaddir $downloaddir \
             --logdir $logdir \
             --years $years \
-            --logdir $logdir 
-
+            --logdir $logdir \
+            --predictand_area $predictand_area \
+            --pycpt $pycpt \
+            --pycptdir $pycptdir
         exitcode=$?
         set -e
         if [ $exitcode -eq 0 ]; then
@@ -113,6 +116,7 @@ for centre in ncep  ;do
         --productsfcdir $productsdir \
         --yearsfc $years \
         --logdir $logdir \
+        --predictand_area $predictand_area \
         --pycpt $pycpt \
         --pycptdir $pycptdir
     exitcode=$?

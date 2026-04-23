@@ -202,31 +202,8 @@ if __name__ == "__main__":
     get_obs(obs_fname, config)
 
     if pycpt == "True":
-        predict_config = dict(
-            start_month=month,
-            leads_obs=leadtime_month,
-            area=predict_bounds,
-            area_str=predict_str,
-            leads_str=leads_str,
-            var=var,
-        )
-
-        logger.debug(predict_config)
-
-        if args.years:
-            predict_config["hcstarty"] = int(args.years[0])
-            predict_config["hcendy"] = int(args.years[1])
-        else:
-            predict_config["hcstarty"] = 1993
-            predict_config["hcendy"] = 2016
-
-        predict_obs_fname = "{fpath}/predictand_era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
-            fpath=downloaddir, **predict_config
-        )
-
-        get_obs(predict_obs_fname, predict_config)
         process_grib_to_pycpt(
-            predict_config,
+            config,
             downloaddir,
             pycptdir,
             "obs",

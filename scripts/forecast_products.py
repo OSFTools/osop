@@ -72,6 +72,12 @@ def parse_args():
     parser.add_argument(
         "--pycptdir", required=True, help="location to save pycpt files too"
     )
+    parser.add_argument(
+        "--predictand_area",
+        nargs="?",
+        default=None,
+        help="predictand extent for obs (comma separated N,W,S,E)",
+    )
 
     args = parser.parse_args()
     return args
@@ -114,6 +120,16 @@ if __name__ == "__main__":
     leads = args.leads
     logger.info(f"Doing FC products, Centre: {centre}, Month: {month}, Leads: {leads}")
     pycpt = args.pycpt
+
+    if pycpt == "True":
+        if args.predictand_area is None:
+            raise ValueError(
+                "pycpt is True but --predictand_area was not provided. "
+                "Please specify --predictand_area as N,W,S,E."
+            )
+
+        predict_bounds = [float(pt) for pt in args.predictand_area.split(",")]
+        predict_str = args.predictand_area.replace(",", ":")
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
@@ -261,11 +277,46 @@ if __name__ == "__main__":
     logger.info("Completed forecast products successfully")
 
     if pycpt == "True":
+
+    #     config = dict(
+    #     start_month=month,
+    #     origin=centre,
+    #     area_str=area_str,
+    #     leads_str=leads_str,
+    #     leads=leadtime_month,
+    #     obs_str=obs_str,
+    #     var=var,
+    #     hc_var=hc_var,
+    # )
+
+        predict_config = dict(
+            start_month=month,
+            origin=centre,
+            area_str=predict_str,
+            leads_str=leads_str,
+            leads=leadtime_month,
+            obs_str=obs_str,
+            area=predict_bounds,
+            var=var,
+            hc_var=hc_var,
+            pycptver = "pycpt"
+        )
+
+        logger.debug(predict_config)
+
+        if args.yearsfc:
+            years = [int(yr) for yr in args.yearsfc.split(",")]
+            predict_config["fcstarty"] = years[0]
+            predict_config["fcendy"] = years[0]
+        else:
+            predict_config["fcstarty"] = 1993
+            predict_config["fcendy"] = 2016
+
         if centre == "eccc":
-            config["systemfc"] = Services["eccc_can"]
-            config["systemhc"] = Services_hc["eccc_can"]
+            predict_config["systemfc"] = Services["eccc_can"]
+            predict_config["systemhc"] = Services_hc["eccc_can"]
             process_grib_to_pycpt(
-                config,
+                predict_config,
                 downloaddir,
                 pycptdir,
                 "forecast",
@@ -273,10 +324,10 @@ if __name__ == "__main__":
                 lead_months=1,
             )
 
-            config["systemfc"] = Services["eccc_gem5"]
-            config["systemhc"] = Services_hc["eccc_gem5"]
+            predict_config["systemfc"] = Services["eccc_gem5"]
+            predict_config["systemhc"] = Services_hc["eccc_gem5"]
             process_grib_to_pycpt(
-                config,
+                predict_config,
                 downloaddir,
                 pycptdir,
                 "forecast",
@@ -289,10 +340,10 @@ if __name__ == "__main__":
             if centre not in Services.keys():
                 logger.error(f"Unknown system for C3S: {centre}")
                 raise ValueError(f"Unknown system for C3S: {centre}")
-            config["systemfc"] = Services[centre]
-            config["systemhc"] = Services_hc[centre]
+            predict_config["systemfc"] = Services[centre]
+            predict_config["systemhc"] = Services_hc[centre]
             process_grib_to_pycpt(
-                config,
+                predict_config,
                 downloaddir,
                 pycptdir,
                 "forecast",

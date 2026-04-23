@@ -408,13 +408,13 @@ def time_handle(ds, cast):
 
 
 def _prepare_data(ds):
-    """Extract and preprocess variable: renaming coords and averaging ensemble members.
+    """Extract varaiable names.
 
     ds (xarray.Dataset): Dataset containing data variable to process
 
     Returns
     -------
-    F (xarray.DataArray): Processed data array with renamed coordinates
+    F (xarray.DataArray): Processed data array
     var_name (str): Name of the variable extracted
     """
     var_name = next(iter(ds.data_vars))

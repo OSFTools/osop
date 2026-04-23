@@ -227,7 +227,6 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
         y_inline=False,
     )
 
-
     gl.top_labels = False
     gl.right_labels = False
 

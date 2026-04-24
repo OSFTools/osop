@@ -43,10 +43,6 @@ def test_standardize_dims(dataset, ds_lagged):
 @pytest.fixture
 def dataset():
     """Create a dataset for testing."""
-    times = pd.date_range("2020-01-01", periods=2)
-    time = np.array(["2020-01-01"], dtype="datetime64[ns]")
-    step = pd.to_timedelta(["61 days", "92 days", "123 days"])
-    forecast_month = [1, 2, 3]
     lat = [50.0, 51.0]
     lon = [-1.0, 0.0]
 
@@ -67,8 +63,6 @@ def dataset():
 def ds_lagged():
     """Create a dataset for testing."""
     times = pd.date_range("2020-01-01", periods=2)
-    time = np.array(["2020-01-01"], dtype="datetime64[ns]")
-    step = pd.to_timedelta(["61 days", "92 days", "123 days"])
     forecast_month = [1, 2, 3]
     lat = [50.0, 51.0]
     lon = [-1.0, 0.0]

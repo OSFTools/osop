@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+#pytestmark = pytest.mark.integration
 import xarray as xr
 
 import osop.pycpt_convert as convert

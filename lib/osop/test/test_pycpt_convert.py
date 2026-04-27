@@ -30,6 +30,14 @@ def test_mean_ensemble(ds_ensemble):
     assert "number" not in da_out
 
 
+def test_prepare_data(ds_ensemble):
+    """Test prepare data - check the output dataset has the expected variable and data array."""
+    F, var_name = convert._prepare_data(ds_ensemble)
+
+    assert var_name == "var"
+    assert F.equals(ds_ensemble[var_name])
+
+
 @pytest.fixture
 def ds_ensemble():
     """Set up a dataset with an ensemble dimension."""

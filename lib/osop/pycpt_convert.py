@@ -206,7 +206,7 @@ def _mean_ensemble(F):
 
 
 def _prepare_data(ds):
-    """Extract variable names.
+    """Extract variable name and data array from dataset.
 
     ds (xarray.Dataset): Dataset containing data variable to process
 

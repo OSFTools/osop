@@ -90,8 +90,8 @@ def _aggregate_by_variable(F_sel, var_name, Sec_subset, dim="step"):
 def _assemble_season_coords(agg_data, T_mid, Ti_season, Tf_season, S_val):
     """Assemble aggregated data with season coordinates."""
     return agg_data.expand_dims(T=[T_mid]).assign_coords(
-        T_i=("T", [Ti_season]),
-        T_f=("T", [Tf_season]),
+        Ti=("T", [Ti_season]),
+        Tf=("T", [Tf_season]),
         S=("T", [S_val]),
     )
 
@@ -230,9 +230,9 @@ def _target_ym_from_init(init_date, lead_months):
 
 def meta_handle(
     ds,
-    T_i,
-    T_m,
-    T_e,
+    Ti,
+    Tm,
+    Te,
     Sec,
     cast,
     steps_to_sum=3,
@@ -245,7 +245,7 @@ def meta_handle(
     Parameters
     ----------
     - ds : xarray.Dataset with climate model data
-    - T_i, T_m, T_e : Time coordinate arrays (initial, mid, end times)
+    - Ti, Tm, Te : Time coordinate arrays (initial, mid, end times)
     - Sec : Seconds per month (1D for forecast, 2D for hindcast)
     - cast : 'forecast', 'hindcast', or 'obs'
     - steps_to_sum : Number of months to combine into season
@@ -254,21 +254,21 @@ def meta_handle(
     """
     F, var_name = _prepare_data(ds)
     S_vals = _extract_init_times(ds)
-    is_forecast = T_i.ndim == 1
-    is_hindcast = T_i.ndim == 2
+    is_forecast = Ti.ndim == 1
+    is_hindcast = Ti.ndim == 2
 
     if cast == "forecast":
         if not is_forecast:
-            raise ValueError("For forecast, T_i should be 1D")
+            raise ValueError("For forecast, Ti should be 1D")
 
         F = F.assign_coords(
-            T=("step", T_m),
-            T_i=("step", T_i),
-            T_e=("step", T_e),
+            T=("step", Tm),
+            Ti=("step", Ti),
+            Te=("step", Te),
         )
 
         S_init = S_vals[0] if len(S_vals) > 0 else np.datetime64("NaT")
-        Ti_index = pd.DatetimeIndex(pd.to_datetime(T_i))
+        Ti_index = pd.DatetimeIndex(pd.to_datetime(Ti))
         target_year, target_month = _target_ym_from_init(S_init, lead_months)
 
         mask = (Ti_index.year > target_year) | (
@@ -304,18 +304,18 @@ def meta_handle(
 
     elif cast == "hindcast":
         if not is_hindcast:
-            raise ValueError("For hindcast, T_i should be 2D (time, step)")
+            raise ValueError("For hindcast, Ti should be 2D (time, step)")
 
-        time_n, step_n = T_i.shape
+        time_n, step_n = Ti.shape
 
         if "time" not in F.dims:
             F = F.expand_dims(time=[np.datetime64("NaT")])
 
         order = [d for d in ("time", "step", "number", "Y", "X") if d in F.dims]
         F = F.transpose(*order).assign_coords(
-            T=(("time", "step"), T_m),
-            T_i=(("time", "step"), T_i),
-            T_e=(("time", "step"), T_e),
+            T=(("time", "step"), Tm),
+            Ti=(("time", "step"), Ti),
+            Te=(("time", "step"), Te),
         )
 
         season_list = []
@@ -354,8 +354,8 @@ def meta_handle(
             # Compute season bounds
             Tm_sel = F["T"].isel(time=i, step=slice(j0, j1)).values
             Ti_season, Te_season, Tf_season, Tmid = _compute_season_bounds(
-                F["T_i"].isel(time=i, step=j0).values,
-                F["T_e"].isel(time=i, step=j1 - 1).values,
+                F["Ti"].isel(time=i, step=j0).values,
+                F["Te"].isel(time=i, step=j1 - 1).values,
                 Tm_sel,
             )
 
@@ -380,9 +380,9 @@ def meta_handle(
         F = F.transpose("T", "Y", "X")
 
         F = F.assign_coords(
-            T=("T", T_m.astype("datetime64[ns]")),
-            T_i=("T", T_i.astype("datetime64[ns]")),
-            T_e=("T", T_e.astype("datetime64[ns]")),
+            T=("T", Tm.astype("datetime64[ns]")),
+            Ti=("T", Ti.astype("datetime64[ns]")),
+            Te=("T", Te.astype("datetime64[ns]")),
         )
 
         Sec_da = xr.DataArray(np.asarray(Sec, dtype="float64"), dims=("T",))
@@ -404,8 +404,8 @@ def meta_handle(
             if g.sizes["T"] != steps_to_sum:
                 continue
 
-            Ti_season = g["T_i"].values[0]
-            Te_season = g["T_e"].values[-1]
+            Ti_season = g["Ti"].values[0]
+            Te_season = g["Te"].values[-1]
             Tf_season = Te_season - np.timedelta64(1, "ns")
             Tmid = Ti_season + (Tf_season - Ti_season) / np.int64(2)
 
@@ -413,7 +413,7 @@ def meta_handle(
                 # temperature =  MEAN
 
                 w = xr.DataArray(
-                    (g["T_e"] - g["T_i"]).astype("timedelta64[s]").astype("float64"),
+                    (g["Te"] - g["Ti"]).astype("timedelta64[s]").astype("float64"),
                     dims=("T",),
                 )
 
@@ -436,7 +436,7 @@ def meta_handle(
         F_season = xr.concat(season_data, dim="T")
         F_season = F_season.assign_coords(
             T=("T", np.array(T_vals, dtype="datetime64[ns]")),
-            T_i=("T", np.array(Ti_vals, dtype="datetime64[ns]")),
+            Ti=("T", np.array(Ti_vals, dtype="datetime64[ns]")),
             T_f=("T", np.array(Tf_vals, dtype="datetime64[ns]")),
         )
 

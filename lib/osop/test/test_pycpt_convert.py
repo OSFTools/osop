@@ -60,21 +60,23 @@ def ds_lagged():
 
     return ds_lagged
 
+
 def test_standardize_dims(dataset, ds_lagged):
     """Test standardize dims for both lagged and burst."""
     out_burst = convert._standardize_dims(dataset, is_lagged=False, st_dim_name="time")
-    #Check co-ords that are meant to be there are:
+    # Check co-ords that are meant to be there are:
     assert set(out_burst.dims) == {"time", "step", "Y", "X"}
-    #Check removal of old co-ords
+    # Check removal of old co-ords
     assert "latitude" not in out_burst.dims
     assert "longitude" not in out_burst.dims
 
-    out_lagged = convert._standardize_dims(ds_lagged, is_lagged=True, st_dim_name="start_date")
+    out_lagged = convert._standardize_dims(
+        ds_lagged, is_lagged=True, st_dim_name="start_date"
+    )
     assert set(out_lagged.dims) == {"time", "step", "Y", "X"}
     assert "start_date" not in out_lagged.dims
     assert "forecastMonth" not in out_lagged.dims
     assert "latitude" not in out_lagged.dims
-
 
 
 def test_reconstruct_valid_time_step():
@@ -91,9 +93,7 @@ def test_reconstruct_valid_time_step():
 
     assert "valid_time" in out.coords
     assert out["valid_time"].dims == ("time", "step")
-    assert out["valid_time"].values[0, 0] == np.datetime64(
-        "2000-01-01T00:00:00", "ns"
-    )
+    assert out["valid_time"].values[0, 0] == np.datetime64("2000-01-01T00:00:00", "ns")
 
 
 def test_reconstruct_valid_time_scalar(dataset):
@@ -117,6 +117,7 @@ def test_reconstruct_valid_time_scalar(dataset):
         pd.Timestamp("2020-03-01"), "ns"
     )
 
+
 def test_reconstruct_valid_time_timedelta_step():
     """Test valid time part3."""
     step = pd.to_timedelta(["0 days", "30 days"]).to_numpy()
@@ -132,11 +133,10 @@ def test_reconstruct_valid_time_timedelta_step():
     assert out["valid_time"].values[0] == np.datetime64("2000-01-01T00:00:00", "ns")
     assert out["valid_time"].values[1] == np.datetime64("2000-01-31T00:00:00", "ns")
 
+
 def test_reconstruct_valid_time_numeric_step_time_dim_loop():
     """Test valod time branch 4."""
-    time = np.array(
-        ["2000-01-01", "2000-02-01"], dtype="datetime64[ns]"
-    )
+    time = np.array(["2000-01-01", "2000-02-01"], dtype="datetime64[ns]")
     step = np.array([2, 3, 4], dtype=np.int64)  # MUST be numeric dtype
 
     ds = xr.Dataset(
@@ -160,10 +160,11 @@ def test_reconstruct_valid_time_numeric_step_time_dim_loop():
     assert vt1[0] == np.datetime64(pd.Timestamp("2000-04-01"), "ns")
 
 
-
 def test_build_backend_kwargs_default_non_lagged():
     """Test backend kwargs busrt."""
-    out = convert._build_backend_kwargs(cfgrib_kwargs=None, is_lagged=False, st_dim_name="time")
+    out = convert._build_backend_kwargs(
+        cfgrib_kwargs=None, is_lagged=False, st_dim_name="time"
+    )
     assert out == {"indexpath": ""}
 
 
@@ -179,7 +180,9 @@ def test_build_backend_kwargs_merges_user_kwargs():
 
 
 def test_build_backend_kwargs_lagged_adds_time_dims():
-    out = convert._build_backend_kwargs(cfgrib_kwargs=None, is_lagged=True, st_dim_name="indexing_time")
+    out = convert._build_backend_kwargs(
+        cfgrib_kwargs=None, is_lagged=True, st_dim_name="indexing_time"
+    )
     assert out["time_dims"] == ("forecastMonth", "indexing_time")
 
 

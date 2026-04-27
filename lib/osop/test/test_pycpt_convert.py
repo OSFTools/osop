@@ -15,7 +15,7 @@ import xarray as xr
 import osop.pycpt_convert as convert
 
 
-def test_mean_ensemble():
+def test_mean_ensemble(ds_ensemble):
     """Test Mean ensemble - average the ensembel for each coord."""
     # Set up false arrays
     valid_time = pd.to_datetime(["2020-01-01"])
@@ -24,7 +24,22 @@ def test_mean_ensemble():
     lon = [-1.0, 0.0]
     number = [2, 3]
 
-    ds_lagged = xr.Dataset(
+    da_out = convert._mean_ensemble(ds_ensemble["var"])
+
+    np.testing.assert_allclose(da_out.values, 0.0)
+    assert "number" not in da_out
+
+
+@pytest.fixture
+def ds_ensemble():
+    """Set up a dataset with an ensemble dimension."""
+    valid_time = pd.to_datetime(["2020-01-01"])
+    forecast_month = [1, 2, 3]
+    lat = [50.0, 51.0]
+    lon = [-1.0, 0.0]
+    number = [2, 3]
+
+    ds_ensemble = xr.Dataset(
         {
             "var": (
                 ("valid_time", "forecastMonth", "latitude", "longitude", "number"),
@@ -40,7 +55,4 @@ def test_mean_ensemble():
         },
     )
 
-    da_out = convert._mean_ensemble(ds_lagged["var"])
-
-    np.testing.assert_allclose(da_out.values, 0.0)
-    assert "number" not in da_out
+    return ds_ensemble

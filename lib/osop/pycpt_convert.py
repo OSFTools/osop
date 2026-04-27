@@ -437,7 +437,7 @@ def meta_handle(
         F_season = F_season.assign_coords(
             T=("T", np.array(T_vals, dtype="datetime64[ns]")),
             Ti=("T", np.array(Ti_vals, dtype="datetime64[ns]")),
-            T_f=("T", np.array(Tf_vals, dtype="datetime64[ns]")),
+            Tf=("T", np.array(Tf_vals, dtype="datetime64[ns]")),
         )
 
     else:

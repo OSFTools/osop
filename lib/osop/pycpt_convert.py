@@ -213,7 +213,7 @@ def _finalize_season(F_season, lon_wrap="-180..180", out_var="aprod"):
 
     # Rename and set attributes
     F_season = F_season.rename(out_var)
-    F_season.attrs.update(units="mm", missing=float(-999.0))
+    F_season.attrs.update(missing=float(-999.0))
 
     return F_season
 

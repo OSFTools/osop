@@ -7,12 +7,35 @@
 
 Notes
 -----
-Grib formatt comes in with several restructural needs to be used for pycpt.
-This set - checks that the grib exists, calculates seconds in a season frame to then convert tprate to total precip,
-deals with meta handles i.e. lon/lat needs to be renamed to X/Y. Shifts lead times by 1 to align with pycpt/iri conventions
-(ECMWF uses 1 to represent a iri leadtime of 0) and finally needs to shift times to sit in the middle of a month frame rather than the start.
+Currently, to use a pycpt workflow the inputting files must be standardised to a specific
+and rigid format.  Note that more details on how metadata is handled by pycpt can be found here:
+https://cpthelp.iri.columbia.edu/CPT_use_input_tags.html.
 
-The end result it spits out is a nc file that can be directly used by pycpt for calibrated forecasting.
+The overall code body of OSOP is mostly designed to work with C3S data, due to its open source
+and reliable nature. However, the C3S grib files are laid out very differently from the file needed
+for pycpt despite containing the same data. C3S uses these dimensions/coordinates;
+number (the ensemble members),
+time (initialisation date),
+step (gap from int. date to forecasts in days),
+surface (a height measurement),
+latitude,
+longitude and
+valid-time (the start months of forecasts - mainly for
+lagged ensembles).
+
+Pycpt needs S (initialisation date), Ti (initial date of forecast), Tf (final date of forecast),
+T (midpoint of forecast), X (latitude), Y (longitude) as well as in the case for precipitation,
+accumulated rainfall instead of the tprate C3S uses. Some of these conversions are quite straight
+forward - i.e. renaming latitude and longitude to X and Y. Some of the conversion is more
+complicated - i.e. giving the time axis 3 coordinates and then assigning the start date,
+midpoint and end date from the step coordinate in C3S. The C3S data must also have the number
+coordinate averaged out of it as pycpt is not designed to work with ensemble data.
+Surface must be dropped. And tprate must be converted into total accumulate precip -
+ which can be done between the steps and forecast times. Is hifts lead times by 1 to align
+ with pycpt/iri conventions (ECMWF uses 1 to represent a iri leadtime of 0) and finally needs
+to shift times to sit in the middle of a month frame rather than the start.
+
+The final output is a netcdf file that can be directly used by pycpt for calibrated forecasting.
 
 """
 
@@ -444,6 +467,8 @@ def meta_handle(
         raise ValueError("cast must be 'forecast', 'hindcast', or 'obs'")
 
     return _finalize_season(F_season, lon_wrap, out_var)
+
+
 def grib_open_fix(grib_file, cfgrib_kwargs=None):
     """Check grib file exists and open, with automatic lagged ensemble detection.
 

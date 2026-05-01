@@ -67,6 +67,8 @@ def ds_ensemble():
     )
 
     return ds_ensemble
+
+
 @pytest.fixture
 def dataset():
     """Create a dataset for testing."""

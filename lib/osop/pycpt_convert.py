@@ -100,7 +100,19 @@ def _accumulate_monthly(F, var_name, Sec, cast, scale=1000.0):
 
 
 def _aggregate_by_variable(F_sel, var_name, Sec_subset, dim="step"):
-    """Aggregate forecast/hindcast data by variable: sum for precip, weighted mean for temp."""
+    """Aggregate forecast/hindcast data by variable: sum for precip, weighted mean for temp.
+
+    Parameters
+    ----------
+    F_sel (xarray) : Selected data array for the season
+    var_name (str) : Variable name
+    Sec_subset (array-like) : Seconds for each month in the season (for weighting)
+    dim (str) : Dimension to aggregate over (default 'step')
+
+    Returns
+    -------
+    F_sel aggregated over the specified dimension according to the variable type.
+    """
     if var_name in ("tprate", "tp"):
         return F_sel.sum(dim, keep_attrs=True)
     elif var_name == "t2m":
@@ -111,7 +123,20 @@ def _aggregate_by_variable(F_sel, var_name, Sec_subset, dim="step"):
 
 
 def _assemble_season_coords(agg_data, T_mid, Ti_season, Tf_season, S_val):
-    """Assemble aggregated data with season coordinates."""
+    """Assemble aggregated data with season coordinates.
+
+    Parameters
+    ----------
+    agg_data (xarray.DataArray) : Aggregated data for the season
+    T_mid (numpy.datetime64) : Midpoint time of the season
+    Ti_season (numpy.datetime64) : Season start time
+    Tf_season (numpy.datetime64) : Season end time
+    S_val (numpy.datetime64) : Initialization time for the season
+
+    Returns
+    -------
+    xarray.DataArray with new coordinates T, Ti, Tf, S for the season
+    """
     return agg_data.expand_dims(T=[T_mid]).assign_coords(
         Ti=("T", [Ti_season]),
         Tf=("T", [Tf_season]),
@@ -120,7 +145,21 @@ def _assemble_season_coords(agg_data, T_mid, Ti_season, Tf_season, S_val):
 
 
 def _compute_forecast_season_bounds(Ti_val, steps_to_sum):
-    """Compute season bounds from initial time for forecast."""
+    """Compute season bounds from initial time for forecast.
+
+    Parameters
+    ----------
+    Ti_val (numpy.datetime64) : Initial time of the forecast
+    steps_to_sum (int) : Number of months to include in the season
+
+    Returns
+    -------
+    Ti_season (numpy.datetime64) : Season start date
+    Tf_season (numpy.datetime64) : Season end date (inclusive)
+    T_mid (numpy.datetime64) : Season midpoint
+    """
+    # season start is 1 month before the initial time due to the ECMWF convention of
+    # using 1 to represent a lead time for the first month's forecast.
     season_start = pd.Timestamp(Ti_val.year, Ti_val.month, 1) - pd.DateOffset(months=1)
     Ti_season = pd.Timestamp(season_start.year, season_start.month, 1).to_datetime64()
     Tf_season = (
@@ -133,16 +172,18 @@ def _compute_forecast_season_bounds(Ti_val, steps_to_sum):
 def _compute_season_bounds(Ti_vals, Te_vals, Tm_vals=None):
     """Extract season boundaries and compute midpoint.
 
-    Ti_vals (numpy.ndarray): Initial times (month starts)
-    Te_vals (numpy.ndarray): End times (next month starts)
-    Tm_vals (numpy.ndarray, optional): Monthly midpoint times for averaging
+    Parameters
+    ----------
+    Ti_vals (numpy.ndarray) : Initial times (month starts)
+    Te_vals (numpy.ndarray) : End times (next month starts)
+    Tm_vals (numpy.ndarray, optional) : Monthly midpoint times for averaging
 
     Returns
     -------
-    Ti_season (numpy.datetime64): Season start date
-    Te_season (numpy.datetime64): Season end date (exclusive)
-    Tf_season (numpy.datetime64): Season end date (inclusive)
-    T_season (numpy.datetime64): Season midpoint
+    Ti_season (numpy.datetime64) : Season start date
+    Te_season (numpy.datetime64) : Season end date (exclusive)
+    Tf_season (numpy.datetime64) : Season end date (inclusive)
+    T_season (numpy.datetime64) : Season midpoint
 
     """
     Ti_season = Ti_vals[0] if isinstance(Ti_vals, np.ndarray) else Ti_vals
@@ -165,7 +206,16 @@ def _compute_season_bounds(Ti_vals, Te_vals, Tm_vals=None):
 
 
 def _extract_init_times(ds):
-    """Extract and convert initialization times from dataset."""
+    """Extract and convert initialization times from dataset.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset) : Dataset containing initialization time coordinate
+
+    Returns
+    -------
+    numpy.ndarray: Array of initialization times as datetime64[ns], or NaT if not found
+    """
     if "time" in ds.coords:
         time_vals = ds["time"].values
         if isinstance(time_vals, np.ndarray):
@@ -178,13 +228,15 @@ def _extract_init_times(ds):
 def _finalize_season(F_season, lon_wrap="-180..180", out_var="aprod"):
     """Clean coordinates, transpose to TYX, wrap longitude, and set attributes.
 
-    F_season (xarray.DataArray): Seasonal data array to finalize
-    lon_wrap (str): Longitude wrapping style ("-180..180" or "0..360")
-    out_var (str): Output variable name for renaming
+    Parameters
+    ----------
+    F_season (xarray.DataArray) : Seasonal data array to finalize
+    lon_wrap (str) : Longitude wrapping style ("-180..180" or "0..360")
+    out_var (str) : Output variable name for renaming
 
     Returns
     -------
-    F_season (xarray.DataArray): Finalized seasonal data array in TYX format
+    xarray.DataArray: Finalized seasonal data array in TYX format
     """
     # Keep only PyCPT-required coords
     keep = {"T", "Ti", "Tf", "S", "Y", "X"}
@@ -219,6 +271,16 @@ def _finalize_season(F_season, lon_wrap="-180..180", out_var="aprod"):
 
 
 def _mean_ensemble(F):
+    """Compute the mean across ensemble members if present.
+
+    Parameters
+    ----------
+    F (xarray.DataArray) : Data array potentially containing ensemble members
+
+    Returns
+    -------
+    xarray.DataArray: Mean across ensemble members if present, otherwise original array
+    """
     member_dim = next(
         (d for d in ("number", "realization", "ens_member") if d in F.dims),
         None,

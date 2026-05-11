@@ -277,17 +277,6 @@ if __name__ == "__main__":
     logger.info("Completed forecast products successfully")
 
     if pycpt == "True":
-        #     config = dict(
-        #     start_month=month,
-        #     origin=centre,
-        #     area_str=area_str,
-        #     leads_str=leads_str,
-        #     leads=leadtime_month,
-        #     obs_str=obs_str,
-        #     var=var,
-        #     hc_var=hc_var,
-        # )
-
         predict_config = dict(
             start_month=month,
             origin=centre,

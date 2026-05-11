@@ -22,6 +22,7 @@ from yaml.loader import SafeLoader
 
 # import local modules for function usage
 from osop.compare_terciles import compute_forecast, mme_products
+from osop.pycpt_convert import process_grib_to_pycpt
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,18 @@ def parse_args():
     parser.add_argument("--years", required=False, help="location to save too")
 
     parser.add_argument("--logdir", required=True, help="location to save logs")
+    parser.add_argument(
+        "--pycpt", required=True, help="pycpt calibration: True or False "
+    )
+    parser.add_argument(
+        "--pycptdir", required=True, help="location to save pycpt files too"
+    )
+    parser.add_argument(
+        "--predictand_area",
+        nargs="?",
+        default=None,
+        help="predictand extent for obs (comma separated N,W,S,E)",
+    )
 
     args = parser.parse_args()
     return args
@@ -102,9 +115,21 @@ if __name__ == "__main__":
     downloadhcdir = args.downloadhcdir
     productshcdir = args.productshcdir
     productsfcdir = args.productsfcdir
+    pycptdir = args.pycptdir
     month = int(args.month)
     leads = args.leads
     logger.info(f"Doing FC products, Centre: {centre}, Month: {month}, Leads: {leads}")
+    pycpt = args.pycpt
+
+    if pycpt == "True":
+        if args.predictand_area is None:
+            raise ValueError(
+                "pycpt is True but --predictand_area was not provided. "
+                "Please specify --predictand_area as N,W,S,E."
+            )
+
+        predict_bounds = [float(pt) for pt in args.predictand_area.split(",")]
+        predict_str = args.predictand_area.replace(",", ":")
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
@@ -250,3 +275,79 @@ if __name__ == "__main__":
         config["systemhc"] = Services_hc[centre]
         compute_forecast(config, downloaddir, productshcdir, productsfcdir)
     logger.info("Completed forecast products successfully")
+
+    if pycpt == "True":
+        #     config = dict(
+        #     start_month=month,
+        #     origin=centre,
+        #     area_str=area_str,
+        #     leads_str=leads_str,
+        #     leads=leadtime_month,
+        #     obs_str=obs_str,
+        #     var=var,
+        #     hc_var=hc_var,
+        # )
+
+        predict_config = dict(
+            start_month=month,
+            origin=centre,
+            area_str=predict_str,
+            leads_str=leads_str,
+            leads=leadtime_month,
+            obs_str=obs_str,
+            area=predict_bounds,
+            var=var,
+            hc_var=hc_var,
+            pycptver="pycpt",
+        )
+
+        logger.debug(predict_config)
+
+        if args.yearsfc:
+            years = [int(yr) for yr in args.yearsfc.split(",")]
+            predict_config["fcstarty"] = years[0]
+            predict_config["fcendy"] = years[0]
+        else:
+            predict_config["fcstarty"] = 1993
+            predict_config["fcendy"] = 2016
+
+        if centre == "eccc":
+            predict_config["systemfc"] = Services["eccc_can"]
+            predict_config["systemhc"] = Services_hc["eccc_can"]
+            process_grib_to_pycpt(
+                predict_config,
+                downloaddir,
+                pycptdir,
+                "forecast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+
+            predict_config["systemfc"] = Services["eccc_gem5"]
+            predict_config["systemhc"] = Services_hc["eccc_gem5"]
+            process_grib_to_pycpt(
+                predict_config,
+                downloaddir,
+                pycptdir,
+                "forecast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+        elif centre == "mme":
+            print("skipping, no grib for mme")
+        else:
+            if centre not in Services.keys():
+                logger.error(f"Unknown system for C3S: {centre}")
+                raise ValueError(f"Unknown system for C3S: {centre}")
+            predict_config["systemfc"] = Services[centre]
+            predict_config["systemhc"] = Services_hc[centre]
+            process_grib_to_pycpt(
+                predict_config,
+                downloaddir,
+                pycptdir,
+                "forecast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+    else:
+        print("Pycpt calibration off")

@@ -82,7 +82,6 @@ python get_era5.py \
     --downloaddir $downloaddir \
     --logdir $logdir \
     --variable $variable \
-    --predictor_area $predictor_area \
     --pycpt $pycpt \
     --pycptdir $pycptdir
 exitcode=$?

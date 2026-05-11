@@ -103,12 +103,6 @@ def parse_args():
     parser.add_argument(
         "--pycpt", required=True, help="pycpt calibration: True or False"
     )
-    parser.add_argument(
-        "--predictor_area",
-        nargs="?",
-        default=None,
-        help="predictor extent for obs (comma separated N,W,S,E)",
-    )
     parser.add_argument("--variable", required=True, help="variable to download")
     parser.add_argument(
         "--years",
@@ -161,17 +155,6 @@ if __name__ == "__main__":
     area_bounds = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")
     var = args.variable
-    if pycpt == "True":
-        if args.predictor_area is None:
-            raise ValueError(
-                "pycpt is True but --predictor_area was not provided. "
-                "Please specify --predictor_area as N,W,S,E."
-            )
-
-        predict_bounds = [float(pt) for pt in args.predictor_area.split(",")]
-        predict_str = args.predictor_area.replace(",", ":")
-    else:
-        predict_bounds = area_bounds
 
     # add arguments to config dictionary used to pass parameters
     config = dict(

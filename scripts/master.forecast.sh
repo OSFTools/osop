@@ -57,7 +57,7 @@ variable="total_precipitation" # variable of interest, typically "2m_temperature
 location="None" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 years=2025
 pycpt="True" #True or False --> True you want pycpt, auto sets to off
-predictand_area="45,-30,-2.5,60" #gcm area for predictand - if pycpt set to off, ignores (N,W,S,E)
+predictor_area="45,-30,-2.5,60" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
 
 
 # Services in use: 
@@ -91,7 +91,7 @@ for centre in ukmo  ;do
             --logdir $logdir \
             --years $years \
             --logdir $logdir \
-            --predictand_area $predictand_area \
+            --predictor_area $predictor_area \
             --pycpt $pycpt \
             --pycptdir $pycptdir
         exitcode=$?
@@ -116,7 +116,7 @@ for centre in ukmo  ;do
         --productsfcdir $productsdir \
         --yearsfc $years \
         --logdir $logdir \
-        --predictand_area $predictand_area \
+        --predictor_area $predictor_area \
         --pycpt $pycpt \
         --pycptdir $pycptdir
     exitcode=$?

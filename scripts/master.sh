@@ -52,7 +52,7 @@ variable="total_precipitation" # variable of interest, typically "2m_temperature
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 method="pmesh" #Remove for smooth plotting on correlation plots
 pycpt="True" #True or False --> True you want pycpt, auto sets to off
-predictand_area="45,-30,-2.5,60" #gcm area for predictand - if pycpt set to off, ignores (N,W,S,E)
+predictor_area="45,-30,-2.5,60" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
 
 # Services in use:
 # First column service, second column weight
@@ -82,7 +82,7 @@ python get_era5.py \
     --downloaddir $downloaddir \
     --logdir $logdir \
     --variable $variable \
-    --predictand_area $predictand_area \
+    --predictor_area $predictor_area \
     --pycpt $pycpt \
     --pycptdir $pycptdir
 exitcode=$?
@@ -105,7 +105,7 @@ for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
             --variable $variable\
             --downloaddir $downloaddir \
             --logdir $logdir \
-            --predictand_area $predictand_area \
+            --predictor_area $predictor_area \
             --pycpt $pycpt \
             --pycptdir $pycptdir
         exitcode=$?
@@ -129,7 +129,7 @@ for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         --logdir $logdir \
         --pycpt $pycpt \
         --pycptdir $pycptdir \
-        --predictand_area $predictand_area 
+        --predictor_area $predictor_area 
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

@@ -176,10 +176,10 @@ def parse_args():
         "--pycpt", required=True, help="pycpt calibration: True or False"
     )
     parser.add_argument(
-        "--predictand_area",
+        "--predictor_area",
         nargs="?",
         default=None,
-        help="predictand extent for obs (comma separated N,W,S,E)",
+        help="predictor extent for obs (comma separated N,W,S,E)",
     )
 
     args = parser.parse_args()
@@ -228,14 +228,14 @@ def main():
     pycpt = args.pycpt
 
     if pycpt == "True":
-        if args.predictand_area is None:
+        if args.predictor_area is None:
             raise ValueError(
-                "pycpt is True but --predictand_area was not provided. "
-                "Please specify --predictand_area as N,W,S,E."
+                "pycpt is True but --predictor_area was not provided. "
+                "Please specify --predictor_area as N,W,S,E."
             )
 
-        predict_bounds = [float(pt) for pt in args.predictand_area.split(",")]
-        predict_str = args.predictand_area.replace(",", ":")
+        predict_bounds = [float(pt) for pt in args.predictor_area.split(",")]
+        predict_str = args.predictor_area.replace(",", ":")
 
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")

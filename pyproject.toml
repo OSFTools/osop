@@ -1,3 +1,5 @@
+[tool.coverage.run]
+source = ["./lib"]
 
 [tool.ruff]
 # Exclude the following, in addition to the standard set of exclusions.

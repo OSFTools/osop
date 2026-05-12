@@ -55,13 +55,14 @@ jobs:
           env_name: ${{ env.ENV_NAME }}
           
       - name: "conda install"
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           miniforge-version: latest
           channels: conda-forge
           activate-environment: ${{ env.ENV_NAME }}
           environment-file: environment.yml
           auto-update-conda: false
+          conda-remove-defaults: true
 
       - name: "conda environment cache"
         uses: ./.github/workflows/composite/conda-env-cache

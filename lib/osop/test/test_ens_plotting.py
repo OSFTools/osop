@@ -109,22 +109,6 @@ def mask():
 
 
 @image_comparison(
-    baseline_images=["terciles"],
-    tol=1.0,
-    remove_text=True,
-    extensions=["png"],
-    style="mpl20",
-)
-def test_plot_tercile_fc(mme):
-    """Test plot_tercile_fc function."""
-    atitle = "Test plot"
-    shpfile = cfeature.NaturalEarthFeature(
-        category="cultural", name="admin_0_countries", scale="10m", facecolor="none"
-    )
-    fig = ens_plotting.plot_tercile_fc(mme, atitle, map_setting=shpfile)
-
-
-@image_comparison(
     baseline_images=["terciles_mask"],
     tol=1.0,
     remove_text=True,

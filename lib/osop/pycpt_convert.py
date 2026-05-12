@@ -7,12 +7,35 @@
 
 Notes
 -----
-Grib formatt comes in with several restructural needs to be used for pycpt.
-This set - checks that the grib exists, calculates seconds in a season frame to then convert tprate to total precip,
-deals with meta handles i.e. lon/lat needs to be renamed to X/Y. Shifts lead times by 1 to align with pycpt/iri conventions
-(ECMWF uses 1 to represent a iri leadtime of 0) and finally needs to shift times to sit in the middle of a month frame rather than the start.
+Currently, to use a pycpt workflow the inputting files must be standardised to a specific
+and rigid format.  Note that more details on how metadata is handled by pycpt can be found here:
+https://cpthelp.iri.columbia.edu/CPT_use_input_tags.html.
 
-The end result it spits out is a nc file that can be directly used by pycpt for calibrated forecasting.
+The overall code body of OSOP is mostly designed to work with C3S data, due to its open source
+and reliable nature. However, the C3S grib files are laid out very differently from the file needed
+for pycpt despite containing the same data. C3S uses these dimensions/coordinates;
+number (the ensemble members),
+time (initialisation date),
+step (gap from int. date to forecasts in days),
+surface (a height measurement),
+latitude,
+longitude and
+valid-time (the start months of forecasts - mainly for
+lagged ensembles).
+
+Pycpt needs S (initialisation date), Ti (initial date of forecast), Tf (final date of forecast),
+T (midpoint of forecast), X (latitude), Y (longitude) as well as in the case for precipitation,
+accumulated rainfall instead of the tprate C3S uses. Some of these conversions are quite straight
+forward - i.e. renaming latitude and longitude to X and Y. Some of the conversion is more
+complicated - i.e. giving the time axis 3 coordinates and then assigning the start date,
+midpoint and end date from the step coordinate in C3S. The C3S data must also have the number
+coordinate averaged out of it as pycpt is not designed to work with ensemble data.
+Surface must be dropped. And tprate must be converted into total accumulate precip -
+ which can be done between the steps and forecast times. Is hifts lead times by 1 to align
+ with pycpt/iri conventions (ECMWF uses 1 to represent a iri leadtime of 0) and finally needs
+to shift times to sit in the middle of a month frame rather than the start.
+
+The final output is a netcdf file that can be directly used by pycpt for calibrated forecasting.
 
 """
 
@@ -30,6 +53,482 @@ import pandas as pd
 import xarray as xr
 
 from osop.util import get_tindex
+
+
+def _accumulate_monthly(F, var_name, Sec, cast, scale=1000.0):
+    """Convert precipitation to monthly totals in mm.
+
+    F (xarray): The input dataset
+    Var_name (str): The variable (precip,t2m)
+    Sec (int): seconds from dataset
+    cast(str): Hindcast/forecast/obs
+    scale(int): meters to mm conversion
+
+    Forecast / Hindcast:
+      tprate (m s-1):  multiply by calendar-month seconds (Sec)
+
+    ERA5 obs:
+      tp (m/day): multiply by days
+
+    Temperature:
+      unchanged
+    """
+    if cast == "obs" and var_name == "tp":
+        days = Sec / 86400.0
+        monthly_mm = F * days * scale
+        monthly_mm.attrs["units"] = "mm"
+        return monthly_mm
+
+    if var_name == "tprate":
+        if Sec.ndim == 1:
+            # Forecast: calendar-month seconds (1D)
+            Sec_da = xr.DataArray(Sec, dims=("step",))
+        else:
+            # Hindcast: calendar-month seconds (2D)
+            Sec_da = xr.DataArray(Sec, dims=("time", "step"))
+
+        monthly_mm = F * Sec_da * scale
+        monthly_mm.attrs["units"] = "mm"
+
+        return monthly_mm
+
+    # Temperature
+    out = F
+    if "units" not in out.attrs:
+        out.attrs["units"] = "K"
+    return out
+
+
+def _aggregate_by_variable(F_sel, var_name, Sec_subset, dim="step"):
+    """Aggregate forecast/hindcast data by variable: sum for precip, weighted mean for temp.
+
+    Parameters
+    ----------
+    F_sel (xarray) : Selected data array for the season
+    var_name (str) : Variable name
+    Sec_subset (array-like) : Seconds for each month in the season (for weighting)
+    dim (str) : Dimension to aggregate over (default 'step')
+
+    Returns
+    -------
+    F_sel aggregated over the specified dimension according to the variable type.
+    """
+    if var_name in ("tprate", "tp"):
+        return F_sel.sum(dim, keep_attrs=True)
+    elif var_name == "t2m":
+        w = xr.DataArray(np.asarray(Sec_subset, dtype="float64"), dims=(dim,))
+        return (F_sel * w).sum(dim, keep_attrs=True) / w.sum(dim)
+    else:
+        raise ValueError(f"Unknown variable: {var_name}")
+
+
+def _assemble_season_coords(agg_data, T_mid, Ti_season, Tf_season, S_val):
+    """Assemble aggregated data with season coordinates.
+
+    Parameters
+    ----------
+    agg_data (xarray.DataArray) : Aggregated data for the season
+    T_mid (numpy.datetime64) : Midpoint time of the season
+    Ti_season (numpy.datetime64) : Season start time
+    Tf_season (numpy.datetime64) : Season end time
+    S_val (numpy.datetime64) : Initialization time for the season
+
+    Returns
+    -------
+    xarray.DataArray with new coordinates T, Ti, Tf, S for the season
+    """
+    return agg_data.expand_dims(T=[T_mid]).assign_coords(
+        Ti=("T", [Ti_season]),
+        Tf=("T", [Tf_season]),
+        S=("T", [S_val]),
+    )
+
+
+def _compute_forecast_season_bounds(Ti_val, steps_to_sum):
+    """Compute season bounds from initial time for forecast.
+
+    Parameters
+    ----------
+    Ti_val (numpy.datetime64) : Initial time of the forecast
+    steps_to_sum (int) : Number of months to include in the season
+
+    Returns
+    -------
+    Ti_season (numpy.datetime64) : Season start date
+    Tf_season (numpy.datetime64) : Season end date (inclusive)
+    T_mid (numpy.datetime64) : Season midpoint
+    """
+    # season start is 1 month before the initial time due to the ECMWF convention of
+    # using 1 to represent a lead time for the first month's forecast.
+    season_start = pd.Timestamp(Ti_val.year, Ti_val.month, 1) - pd.DateOffset(months=1)
+    Ti_season = pd.Timestamp(season_start.year, season_start.month, 1).to_datetime64()
+    Tf_season = (
+        season_start + pd.DateOffset(months=steps_to_sum) - pd.Timedelta(days=1)
+    ).to_datetime64()
+    T_mid = (Ti_season + (Tf_season - Ti_season) / np.int64(2)).astype("datetime64[ns]")
+    return Ti_season, Tf_season, T_mid
+
+
+def _compute_season_bounds(Ti_vals, Te_vals, Tm_vals=None):
+    """Extract season boundaries and compute midpoint.
+
+    Parameters
+    ----------
+    Ti_vals (numpy.ndarray) : Initial times (month starts)
+    Te_vals (numpy.ndarray) : End times (next month starts)
+    Tm_vals (numpy.ndarray, optional) : Monthly midpoint times for averaging
+
+    Returns
+    -------
+    Ti_season (numpy.datetime64) : Season start date
+    Te_season (numpy.datetime64) : Season end date (exclusive)
+    Tf_season (numpy.datetime64) : Season end date (inclusive)
+    T_season (numpy.datetime64) : Season midpoint
+
+    """
+    Ti_season = Ti_vals[0] if isinstance(Ti_vals, np.ndarray) else Ti_vals
+    Te_season = Te_vals[-1] if isinstance(Te_vals, np.ndarray) else Te_vals
+    Tf_season = Te_season - np.timedelta64(1, "ns")
+
+    if Tm_vals is None:
+        # Simple midpoint (forecast)
+        T_season = Ti_season + (Tf_season - Ti_season) / np.int64(2)
+    else:
+        # Mean of monthly midpoints (hindcast)
+        ints = Tm_vals.astype("datetime64[ns]").astype("int64")
+        nat_min = np.iinfo(np.int64).min
+        valid = ints != nat_min
+        if not np.any(valid):
+            raise ValueError("All monthly midpoints are NaT")
+        T_season = np.datetime64(int(ints[valid].sum() // valid.sum()), "ns")
+
+    return Ti_season, Te_season, Tf_season, T_season
+
+
+def _extract_init_times(ds):
+    """Extract and convert initialization times from dataset.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset) : Dataset containing initialization time coordinate
+
+    Returns
+    -------
+    numpy.ndarray: Array of initialization times as datetime64[ns], or NaT if not found
+    """
+    if "time" in ds.coords:
+        time_vals = ds["time"].values
+        if isinstance(time_vals, np.ndarray):
+            return pd.to_datetime(time_vals).astype("datetime64[ns]")
+        else:
+            return np.array([pd.to_datetime(time_vals).asm8], dtype="datetime64[ns]")
+    return np.array([np.datetime64("NaT")], dtype="datetime64[ns]")
+
+
+def _finalize_season(F_season, lon_wrap="-180..180", out_var="aprod"):
+    """Clean coordinates, transpose to TYX, wrap longitude, and set attributes.
+
+    Parameters
+    ----------
+    F_season (xarray.DataArray) : Seasonal data array to finalize
+    lon_wrap (str) : Longitude wrapping style ("-180..180" or "0..360")
+    out_var (str) : Output variable name for renaming
+
+    Returns
+    -------
+    xarray.DataArray: Finalized seasonal data array in TYX format
+    """
+    # Keep only PyCPT-required coords
+    keep = {"T", "Ti", "Tf", "S", "Y", "X"}
+    drop_these = [c for c in F_season.coords if c not in keep]
+    if drop_these:
+        F_season = F_season.reset_coords(names=drop_these, drop=True)
+
+    # Check required dimensions
+    for d in ("T", "Y", "X"):
+        if d not in F_season.dims:
+            raise ValueError(f"Missing required dimension '{d}'")
+
+    # Reorder to TYX
+    F_season = F_season.transpose("T", "Y", "X")
+
+    # Wrap longitude if needed
+    if "X" in F_season.coords:
+        X = F_season["X"].values.astype(float)
+        if lon_wrap == "-180..180":
+            X_new = ((X + 180) % 360) - 180
+        elif lon_wrap == "0..360":
+            X_new = X % 360
+        else:
+            raise ValueError("lon_wrap must be '-180..180' or '0..360'")
+        F_season = F_season.assign_coords(X=X_new).sortby("X")
+
+    # Rename and set attributes
+    F_season = F_season.rename(out_var)
+    F_season.attrs.update(missing=float(-999.0))
+
+    return F_season
+
+
+def _mean_ensemble(F):
+    """Compute the mean across ensemble members if present.
+
+    Parameters
+    ----------
+    F (xarray.DataArray) : Data array potentially containing ensemble members
+
+    Returns
+    -------
+    xarray.DataArray: Mean across ensemble members if present, otherwise original array
+    """
+    member_dim = next(
+        (d for d in ("number", "realization", "ens_member") if d in F.dims),
+        None,
+    )
+    if member_dim:
+        return F.mean(member_dim, keep_attrs=True)
+    return F
+
+
+def _prepare_data(ds):
+    """Extract variable name and data array from dataset.
+
+    ds (xarray.Dataset): Dataset containing data variable to process
+
+    Returns
+    -------
+    F (xarray.DataArray): Processed data array
+    var_name (str): Name of the variable extracted
+    """
+    var_name = next(iter(ds.data_vars))
+    F = ds[var_name]
+
+    return F, var_name
+
+
+def _target_ym_from_init(init_date, lead_months):
+    """Return target (year, month) of the first verifying month = init + lead_months."""
+    init = pd.to_datetime(init_date)
+    tgt = init + pd.DateOffset(months=int(lead_months))
+    return int(tgt.year), int(tgt.month)
+
+
+def meta_handle(
+    ds,
+    Ti,
+    Tm,
+    Te,
+    Sec,
+    cast,
+    steps_to_sum=3,
+    lead_months=1,
+    lon_wrap="-180..180",
+    out_var="aprod",
+):
+    """Process forecast, hindcast, or obs data into PyCPT-compatible seasonal format.
+
+    Parameters
+    ----------
+    - ds : xarray.Dataset with climate model data
+    - Ti, Tm, Te : Time coordinate arrays (initial, mid, end times)
+    - Sec : Seconds per month (1D for forecast, 2D for hindcast)
+    - cast : 'forecast', 'hindcast', or 'obs'
+    - steps_to_sum : Number of months to combine into season
+    - lead_months : Months after initialization to start season (hindcast only; forecast uses first steps)
+    - out_var : Output variable name (auto-detected from var_name otherwise)
+    """
+    F, var_name = _prepare_data(ds)
+    S_vals = _extract_init_times(ds)
+    is_forecast = Ti.ndim == 1
+    is_hindcast = Ti.ndim == 2
+
+    if cast == "forecast":
+        if not is_forecast:
+            raise ValueError("For forecast, Ti should be 1D")
+
+        F = F.assign_coords(
+            T=("step", Tm),
+            Ti=("step", Ti),
+            Te=("step", Te),
+        )
+
+        S_init = S_vals[0] if len(S_vals) > 0 else np.datetime64("NaT")
+        Ti_index = pd.DatetimeIndex(pd.to_datetime(Ti))
+        target_year, target_month = _target_ym_from_init(S_init, lead_months)
+
+        mask = (Ti_index.year > target_year) | (
+            (Ti_index.year == target_year) & (Ti_index.month >= target_month)
+        )
+        j0 = int(np.where(mask)[0][0])
+        j1 = j0 + steps_to_sum
+
+        if j1 > F.sizes["step"]:
+            raise ValueError(
+                f"Not enough forecast steps. Need {j1}, have {F.sizes['step']}"
+            )
+
+        # Select and prepare data based on variable type
+        if var_name in ("tprate", "tp"):
+            monthly_mm = _accumulate_monthly(F, var_name, Sec, "forecast")
+            mm_sel = monthly_mm.isel(step=slice(j0, j1))
+        elif var_name == "t2m":
+            mm_sel = F.isel(step=slice(j0, j1))
+        else:
+            raise ValueError(f"Unknown variable: {var_name}")
+
+        # Compute season bounds and aggregate
+        Ti_season, Tf_season, T_mid = _compute_forecast_season_bounds(
+            Ti_index[j0], steps_to_sum
+        )
+        agg_data = _aggregate_by_variable(mm_sel, var_name, Sec[j0:j1])
+        F_season = _assemble_season_coords(
+            agg_data, T_mid, Ti_season, Tf_season, S_init
+        )
+        F_season = _mean_ensemble(F_season)
+        out_var = "aprod" if var_name in ("tprate", "tp") else "t2m"
+
+    elif cast == "hindcast":
+        if not is_hindcast:
+            raise ValueError("For hindcast, Ti should be 2D (time, step)")
+
+        time_n, step_n = Ti.shape
+
+        if "time" not in F.dims:
+            F = F.expand_dims(time=[np.datetime64("NaT")])
+
+        order = [d for d in ("time", "step", "number", "Y", "X") if d in F.dims]
+        F = F.transpose(*order).assign_coords(
+            T=(("time", "step"), Tm),
+            Ti=(("time", "step"), Ti),
+            Te=(("time", "step"), Te),
+        )
+
+        season_list = []
+
+        for i in range(time_n):
+            S_i = S_vals[i] if i < len(S_vals) else np.datetime64("NaT")
+            init_month = int(pd.Timestamp(S_i).month)
+            target_month = ((init_month - 1 + lead_months) % 12) + 1
+
+            Ti_row = pd.DatetimeIndex(F["Ti"].isel(time=i).values).month
+            try:
+                j0 = np.where(Ti_row == target_month)[0][0]
+            except IndexError:
+                raise ValueError(
+                    f"Could not find target month {target_month} for hindcast year {i} "
+                    f"(init month {init_month}, lead {lead_months} months). "
+                    f"Available months: {Ti_row}"
+                )
+            j1 = j0 + steps_to_sum
+
+            if j1 > step_n:
+                raise ValueError(
+                    f"Not enough hindcast steps at year {i}. "
+                    f"Need {j1} (from step {j0} + {steps_to_sum}), have {step_n}"
+                )
+
+            # Select and prepare data based on variable type
+            if var_name in ("tprate", "tp"):
+                monthly_mm = _accumulate_monthly(F, var_name, Sec, "hindcast")
+                mm_sel_i = monthly_mm.isel(time=i, step=slice(j0, j1))
+            elif var_name == "t2m":
+                mm_sel_i = F.isel(time=i, step=slice(j0, j1))
+            else:
+                raise ValueError(f"Unknown variable: {var_name}")
+
+            # Compute season bounds
+            Tm_sel = F["T"].isel(time=i, step=slice(j0, j1)).values
+            Ti_season, Te_season, Tf_season, Tmid = _compute_season_bounds(
+                F["Ti"].isel(time=i, step=j0).values,
+                F["Te"].isel(time=i, step=j1 - 1).values,
+                Tm_sel,
+            )
+
+            # Aggregate and assemble
+            Sec_subset = Sec[i, j0:j1]
+            agg_data = _aggregate_by_variable(mm_sel_i, var_name, Sec_subset)
+            F_season_i = _assemble_season_coords(
+                agg_data, Tmid, Ti_season, Tf_season, S_i
+            )
+            season_list.append(F_season_i)
+
+        F_season = xr.concat(season_list, dim="T")
+        F_season = _mean_ensemble(F_season)
+        out_var = "t2m" if var_name == "t2m" else "aprod"
+
+    elif cast == "obs":
+        if "time" in F.dims:
+            F = F.rename({"time": "T"})
+        elif "valid_time" in F.dims:
+            F = F.rename({"valid_time": "T"})
+
+        F = F.transpose("T", "Y", "X")
+
+        F = F.assign_coords(
+            T=("T", Tm.astype("datetime64[ns]")),
+            Ti=("T", Ti.astype("datetime64[ns]")),
+            Te=("T", Te.astype("datetime64[ns]")),
+        )
+
+        Sec_da = xr.DataArray(np.asarray(Sec, dtype="float64"), dims=("T",))
+        monthly = _accumulate_monthly(F, var_name, Sec_da, "obs")
+
+        months = pd.DatetimeIndex(monthly["Ti"].values).month
+        years = pd.DatetimeIndex(monthly["Ti"].values).year
+
+        monthly = monthly.assign_coords(
+            month=("T", months),
+            year=("T", years),
+        )
+
+        season_data, T_vals, Ti_vals, Tf_vals = [], [], [], []
+
+        for y in np.unique(years):
+            g = monthly.where(monthly["year"] == y, drop=True)
+
+            if g.sizes["T"] != steps_to_sum:
+                continue
+
+            Ti_season = g["Ti"].values[0]
+            Te_season = g["Te"].values[-1]
+            Tf_season = Te_season - np.timedelta64(1, "ns")
+            Tmid = Ti_season + (Tf_season - Ti_season) / np.int64(2)
+
+            if var_name == "t2m":
+                # temperature =  MEAN
+
+                w = xr.DataArray(
+                    (g["Te"] - g["Ti"]).astype("timedelta64[s]").astype("float64"),
+                    dims=("T",),
+                )
+
+                season_val = (g * w).sum("T", keep_attrs=True) / w.sum("T")
+                out_var = "t2m"
+
+            else:
+                # precipitation = SUM not accumulate monthly
+                season_val = g.sum("T", keep_attrs=True)
+                out_var = "prcp"
+
+            season_data.append(season_val)
+            T_vals.append(Tmid)
+            Ti_vals.append(Ti_season)
+            Tf_vals.append(Tf_season)
+
+        if not season_data:
+            raise ValueError("No complete seasons found in obs data")
+
+        F_season = xr.concat(season_data, dim="T")
+        F_season = F_season.assign_coords(
+            T=("T", np.array(T_vals, dtype="datetime64[ns]")),
+            Ti=("T", np.array(Ti_vals, dtype="datetime64[ns]")),
+            Tf=("T", np.array(Tf_vals, dtype="datetime64[ns]")),
+        )
+
+    else:
+        raise ValueError("cast must be 'forecast', 'hindcast', or 'obs'")
+
+    return _finalize_season(F_season, lon_wrap, out_var)
 
 
 def grib_open_fix(grib_file, cfgrib_kwargs=None):

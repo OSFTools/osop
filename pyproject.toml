@@ -1,3 +1,5 @@
+[tool.coverage.run]
+source = ["./lib"]
 
 [tool.ruff]
 # Exclude the following, in addition to the standard set of exclusions.
@@ -53,7 +55,7 @@ known-first-party = ["osop"]
 convention = "numpy"
 
 [tool.codespell]
-ignore-words-list = "NMME, MME"
+ignore-words-list = "NMME, MME, Te"
 skip = "_build,*.css,*.ipynb,*.js,*.html,*.svg,*.xml,.git,generated"
 
 [tool.numpydoc_validation]

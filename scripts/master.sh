@@ -113,6 +113,7 @@ for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
             echo $centre : download successful
         else
             echo $centre : download failed
+            continue
         fi
     fi
     # compute terciles and anomalies
@@ -135,6 +136,7 @@ for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         echo $centre : products generated
     else
         echo $centre : product generation failed
+        continue
     fi
     # calculate verification scores
     set +e
@@ -175,5 +177,6 @@ for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         echo $centre : plots generated
     else
         echo $centre : plot generation failed
+        continue
     fi
 done

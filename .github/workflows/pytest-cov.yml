@@ -60,7 +60,7 @@ jobs:
           miniforge-version: latest
           channels: conda-forge
           activate-environment: ${{ env.ENV_NAME }}
-          environment-file: environment.yml
+          environment-file: osop-spec-file.txt
           auto-update-conda: false
           conda-remove-defaults: true
 

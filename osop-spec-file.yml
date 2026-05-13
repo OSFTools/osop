@@ -2,6 +2,8 @@ name: osop-simple
 channels:
   - iri-nextgen
   - conda-forge
+dependencies:
+  - _libgcc_mutex=0.1
   - _openmp_mutex=4.5
   - _python_abi3_support=1.0
   - alabaster=1.0.0

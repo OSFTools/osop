@@ -714,3 +714,331 @@ def _reconstruct_valid_time(ds):
     ds = ds.assign_coords(valid_time=(valid_time_dims, valid_time_2d))
 
     return ds
+
+
+def choose_month_starts(i_slice, VT_start, VT_start_next, VT_start_prev, off):
+    """Select correct month start and next month start based on encoding offset.
+
+    Use on hindcasts to entail whether time stamps are listed for start of verifying month.
+
+    i_slice (slice): Slice object indexing into flattened VT arrays for a hindcast year
+    VT_start (numpy.ndarray): First day of each verifying month
+    VT_start_next (numpy.ndarray): First day of month following each verifying month
+    VT_start_prev (numpy.ndarray): First day of month preceding each verifying month
+    off (int): Offset indicator (1 or 2) determining which month boundaries to use
+
+    Returns
+    -------
+    month_start (numpy.ndarray): Start date of verifying month
+    next_start (numpy.ndarray): Start date of next month (exclusive season end)
+
+    """
+    if off == 1:  # Choose month offset based on binary choice for hindcasts
+        month_start = VT_start[i_slice]  # Slice as appropriate
+        next_start = VT_start_next[i_slice]  # This month next month
+    elif off == 2:
+        month_start = VT_start_prev[i_slice]  # last month, this month
+        next_start = VT_start[i_slice]
+    else:
+        raise RuntimeError("Internal: offset must be 1 or 2.")
+    return month_start, next_start
+
+
+def calculate_month_metrics(month_start, next_start):
+    """Calculate midpoint and duration in seconds for a month.
+
+    month_start (datetime-like): Start of month
+    next_start (datetime-like): Start of next month
+
+    Returns
+    -------
+    mid (datetime64): Midpoint between month_start and next_start
+    sec (float or numpy.ndarray): Total seconds in the month
+    """
+    # Ensure inputs are datetime-like for consistentacy
+    ms = pd.to_datetime(month_start)
+    ns = pd.to_datetime(next_start)
+    mid = ms + (ns - ms) / 2
+    sec = (ns - ms).total_seconds()
+
+    # Return mid as datetime64 (scalar or array), sec as float/array
+    return mid, sec
+
+
+def _detect_hindcast_offsets(vt_vals, S_vals, time_n):
+    """Detect valid_time encoding offset for each hindcast year.
+
+    Returns
+    -------
+    offset_arr (numpy.ndarray): Offset value (1 or 2) for each year
+    uniform_offset (bool): True if all years use the same offset
+    """
+    mode_offsets = []
+    for i in range(time_n):
+        s_m = int(pd.Timestamp(S_vals[i]).month) if not pd.isna(S_vals[i]) else None
+        v0_m = int(pd.Timestamp(vt_vals[i, 0]).month)
+        if s_m is None:
+            mode_offsets.append(1)
+            continue
+        off = (v0_m - s_m) % 12
+        if off in (1, 2):
+            mode_offsets.append(off)
+        else:
+            raise ValueError(
+                f"Unexpected valid_time encoding at time index {i}: "
+                f"init month={s_m}, first VT month={v0_m}; expected offset 1 or 2, got {off}."
+            )
+    return np.array(mode_offsets, dtype=int), len(set(mode_offsets)) == 1
+
+
+def _get_time_coordinate(ds):
+    """Extract and convert time or valid_time coordinate from dataset."""
+    if "valid_time" in ds.coords:
+        return pd.to_datetime(ds["valid_time"].values)
+    else:
+        return pd.to_datetime(ds["time"].values)
+
+
+def _build_vt_month_arrays(vt_vals):
+    """Build reference month start/prev/next arrays from flattened valid_time."""
+    VT_flat = vt_vals.reshape(-1)
+    VT_start = pd.DatetimeIndex(VT_flat).to_period("M").to_timestamp(how="start").values
+    VT_start_prev = (pd.DatetimeIndex(VT_start) - pd.offsets.MonthBegin(1)).values
+    VT_start_next = (pd.DatetimeIndex(VT_start) + pd.offsets.MonthBegin(1)).values
+    return VT_start, VT_start_prev, VT_start_next
+
+
+def _accumulate_simple_months(vt_vals, return_xr=False):
+    """Accumulate month metrics for obs/forecast (1D valid_time).
+
+    Returns lists of Ti, Tm, Te, Sec for conversion to arrays.
+    """
+    Ti_list, Tm_list, Te_list, Sec_list = [], [], [], []
+    for v in vt_vals:
+        month_start = pd.Timestamp(v.year, v.month, 1)
+        next_start = month_start + pd.offsets.MonthBegin(1)
+        mid, sec = calculate_month_metrics(month_start, next_start)
+
+        Ti_list.append(np.datetime64(month_start, "ns"))
+        Tm_list.append(np.datetime64(mid, "ns"))
+        Te_list.append(np.datetime64(next_start, "ns"))
+        Sec_list.append(sec)
+
+    return Ti_list, Tm_list, Te_list, Sec_list
+
+
+def time_handle(ds, cast):
+    """Handle time coordinates for forecast and hindcast data.
+
+    ds (xarray.Dataset): Dataset containing valid_time coordinate
+    cast (str): Either "forecast", "hindcast", or "obs" to determine processing mode
+
+    Returns
+    -------
+    Ti (numpy.ndarray): Initial time (month start) as datetime64[ns]
+    Tm (numpy.ndarray): Mid time (month midpoint) as datetime64[ns]
+    Te (numpy.ndarray): End time (next month start) as datetime64[ns]
+    Sec (xarray.DataArray or numpy.ndarray): Seconds per month
+    """
+    if "valid_time" not in ds.coords and "time" not in ds.coords:
+        raise ValueError("Missing 'valid_time'; cannot derive month boundaries.")
+
+    if cast == "obs":
+        vt = _get_time_coordinate(ds)
+        Ti_list, Tm_list, Te_list, Sec_list = _accumulate_simple_months(vt)
+
+        return (
+            np.array(Ti_list, dtype="datetime64[ns]"),
+            np.array(Tm_list, dtype="datetime64[ns]"),
+            np.array(Te_list, dtype="datetime64[ns]"),
+            np.array(Sec_list, dtype="float64"),
+        )
+
+    elif cast == "forecast":
+        vt = pd.to_datetime(ds["valid_time"].values)
+        Ti_list, Tm_list, Te_list, Sec_list = _accumulate_simple_months(vt)
+
+        return (
+            np.array(Ti_list, dtype="datetime64[ns]"),
+            np.array(Tm_list, dtype="datetime64[ns]"),
+            np.array(Te_list, dtype="datetime64[ns]"),
+            xr.DataArray(np.array(Sec_list, dtype="float64"), dims=("step",)),
+        )
+
+    elif cast == "hindcast":
+        vt = ds["valid_time"].transpose("time", "step")
+        time_n, step_n = vt.shape
+        vt_vals = vt.values.astype("datetime64[ns]")
+
+        if "time" in ds.coords:
+            S_vals = pd.to_datetime(ds["time"].values).astype("datetime64[ns]")
+        else:
+            S_vals = np.array([np.datetime64("NaT")], dtype="datetime64[ns]")
+
+        offset_arr, uniform_offset = _detect_hindcast_offsets(vt_vals, S_vals, time_n)
+        VT_start, VT_start_prev, VT_start_next = _build_vt_month_arrays(vt_vals)
+
+        Ti_list, Tm_list, Te_list, Sec_list = [], [], [], []
+
+        for i in range(time_n):
+            sl = slice(i * step_n, (i + 1) * step_n)
+            off = offset_arr[i] if not uniform_offset else offset_arr[0]
+            month_start, next_start = choose_month_starts(
+                sl, VT_start, VT_start_next, VT_start_prev, off
+            )
+            mid, sec = calculate_month_metrics(month_start, next_start)
+
+            Ti_list.append(month_start)
+            Tm_list.append(mid)
+            Te_list.append(next_start)
+            Sec_list.append(sec)
+
+        logger.info(" Time meta data success")
+        return (
+            np.stack(Ti_list, axis=0).astype("datetime64[ns]"),
+            np.stack(Tm_list, axis=0).astype("datetime64[ns]"),
+            np.stack(Te_list, axis=0).astype("datetime64[ns]"),
+            np.stack(Sec_list, axis=0),
+        )
+
+
+def save_out(F_season, grib_path, nc_path=None, out_var=None):
+    """Save processed seasonal data to NetCDF file with PyCPT-compatible structure.
+
+    F_season (xarray): input ds
+    grib_path (str): Name]
+    nc_path (str): dir store
+    out_var(str): output variable
+
+    returns:None
+        Saves output array to products
+
+    """
+    grib_path = Path(grib_path)
+    save_name = grib_path.with_name(f"{grib_path}.pycpt.nc")
+
+    # double check vairbale
+    if out_var is None:
+        if F_season.name is None:
+            raise ValueError("F_season has no name; please supply out_var.")
+        out_var = F_season.name
+
+    # enforce coords
+    expected_dims = {"T", "Y", "X"}
+    if not expected_dims.issubset(F_season.dims):
+        raise ValueError(f"Expected dims {expected_dims}, got {F_season.dims}")
+
+    F_season = F_season.transpose("T", "Y", "X")
+
+    coord_updates = {}
+    for c in ("Ti", "Tf", "S"):
+        if c in F_season.coords:
+            coord_updates[c] = ("T", F_season[c].values)
+
+    if coord_updates:
+        F_season = F_season.assign_coords(**coord_updates)
+
+    ds_out = F_season.to_dataset(name=out_var)
+
+    # pycpt coord order
+    ds_out = ds_out.assign_coords(
+        {
+            "T": ds_out["T"],
+            "Ti": ds_out["Ti"],
+            "Tf": ds_out["Tf"],
+            "Y": ds_out["Y"],
+            "X": ds_out["X"],
+        }
+    )
+
+    enc = {
+        out_var: {
+            "_FillValue": np.array(-999.0, dtype="float64"),
+            "dtype": "float64",
+            "zlib": True,
+            "complevel": 4,
+        }
+    }
+
+    ds_out.attrs.update(
+        {
+            "Conventions": "CF-1.7",
+            "history": f"Built from {grib_path.name}",
+        }
+    )
+    logger.info(f"Conversion of {save_name} to pycpt success")
+    ds_out.to_netcdf(f"{nc_path}/{save_name}", encoding=enc)
+    return
+
+
+def process_grib_to_pycpt(
+    config,
+    downloaddir,
+    pycptdir,
+    cast,
+    steps_to_sum=3,
+    lead_months=1,
+    cfgrib_kwargs=None,
+):
+    """Host function to process a GRIB file into a PyCPT-compatible NetCDF.
+
+    Parameters
+    ----------
+    grib_file : str or Path
+        Input GRIB file path.
+    cast : str
+        One of "forecast", "hindcast", or "obs".
+    steps_to_sum : int
+        Number of months per season.
+    lead_months : int
+        Lead time in months (used for forecast/hindcast).
+    lon_wrap : str
+        "-180..180" or "0..360".
+    out_var : str, optional
+        Output variable name (defaults handled internally).
+    nc_path : str or Path, optional
+        Output NetCDF path.
+    cfgrib_kwargs : dict, optional
+        Extra backend kwargs for cfgrib.
+
+    Returns
+    -------
+    xarray.DataArray
+        Final seasonal PyCPT-compatible data.
+    """
+    if cast == "hindcast":
+        cast_bname = "{pycptver}_{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
+            **config
+        )
+        cast_fname = f"{downloaddir}/{cast_bname}.grib"
+    elif cast == "forecast":
+        cast_bname = "{pycptver}_{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
+            **config
+        )
+        cast_fname = f"{downloaddir}/{cast_bname}.grib"
+    elif cast == "obs":
+        cast_bname = "era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}".format(
+            **config
+        )
+        cast_fname = f"{downloaddir}/{cast_bname}.grib"
+    else:
+        raise AttributeError("Cast type must be obs, forecast or hindcast")
+
+    nc_path = f"{pycptdir}"
+
+    ds = grib_open_fix(cast_fname, cfgrib_kwargs=cfgrib_kwargs)
+    logger.info(f"Rearragning time meta data for {cast_bname}")
+    Ti, Tm, Te, Sec = time_handle(ds, cast)
+    F_season = meta_handle(
+        ds=ds,
+        Ti=Ti,
+        Tm=Tm,
+        Te=Te,
+        Sec=Sec,
+        cast=cast,
+        steps_to_sum=steps_to_sum,
+        lead_months=lead_months,
+    )
+    save_out(F_season=F_season, grib_path=cast_bname, nc_path=nc_path)
+
+    return

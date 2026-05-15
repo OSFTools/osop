@@ -17,6 +17,7 @@ from yaml.loader import SafeLoader
 
 # import needed local functions
 from osop.compute_products_func import calc_products, calc_products_mme
+from osop.pycpt_convert import process_grib_to_pycpt
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,18 @@ def parse_args():
         help="Years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
+    parser.add_argument(
+        "--pycpt", required=True, help="pycpt calibration: True or False "
+    )
+    parser.add_argument(
+        "--pycptdir", required=True, help="location to save pycpt files too"
+    )
+    parser.add_argument(
+        "--predictor_area",
+        nargs="?",
+        default=None,
+        help="predictor extent for obs (comma separated N,W,S,E)",
+    )
 
     args = parser.parse_args()
     return args
@@ -87,6 +100,8 @@ if __name__ == "__main__":
     centre = args.centre
     downloaddir = args.downloaddir
     productsdir = args.productsdir
+    pycptdir = args.pycptdir
+    pycpt = args.pycpt
     month = int(args.month)
     leads = args.leads
     leadtime_month = [int(l) for l in args.leads.split(",")]
@@ -94,6 +109,16 @@ if __name__ == "__main__":
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")
     variable = args.variable
+
+    if pycpt == "True":
+        if args.predictor_area is None:
+            raise ValueError(
+                "pycpt is True but --predictor_area was not provided. "
+                "Please specify --predictor_area as N,W,S,E."
+            )
+
+        predict_bounds = [float(pt) for pt in args.predictor_area.split(",")]
+        predict_str = args.predictor_area.replace(",", ":")
 
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
@@ -155,3 +180,62 @@ if __name__ == "__main__":
             raise ValueError(f"Unknown system for C3S: {centre}")
         config["system"] = Services[centre]
         calc_products(config, downloaddir, productsdir)
+
+    if pycpt == "True":
+        predict_config = dict(
+            start_month=month,
+            leads=leadtime_month,
+            origin=centre,
+            area=predict_bounds,
+            area_str=predict_str,
+            leads_str=leads_str,
+            var=variable,
+            pycptver="pycpt",
+        )
+
+        logger.debug(predict_config)
+
+        if args.years:
+            predict_config["hcstarty"] = int(args.years[0])
+            predict_config["hcendy"] = int(args.years[1])
+        else:
+            predict_config["hcstarty"] = 1993
+            predict_config["hcendy"] = 2016
+
+        if centre == "eccc":
+            predict_config["system"] = Services["eccc_can"]
+            process_grib_to_pycpt(
+                predict_config,
+                downloaddir,
+                pycptdir,
+                "hindcast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+
+            predict_config["system"] = Services["eccc_gem5"]
+            process_grib_to_pycpt(
+                predict_config,
+                downloaddir,
+                pycptdir,
+                "hindcast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+        elif centre == "mme":
+            print("skipping, no grib for mme")
+        else:
+            if centre not in Services.keys():
+                logger.error(f"Unknown system for C3S: {centre}")
+                raise ValueError(f"Unknown system for C3S: {centre}")
+            predict_config["system"] = Services[centre]
+            process_grib_to_pycpt(
+                predict_config,
+                downloaddir,
+                pycptdir,
+                "hindcast",
+                steps_to_sum=3,
+                lead_months=1,
+            )
+    else:
+        print("Pycpt calibration off")

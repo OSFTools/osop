@@ -17,6 +17,8 @@ import argparse
 from datetime import datetime
 import logging
 
+from osop.pycpt_convert import process_grib_to_pycpt
+
 logger = logging.getLogger(__name__)
 
 
@@ -95,6 +97,12 @@ def parse_args():
     )
     parser.add_argument("--downloaddir", required=True, help="location to download to")
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
+    parser.add_argument(
+        "--pycptdir", required=True, help="location to store pycpt files"
+    )
+    parser.add_argument(
+        "--pycpt", required=True, help="pycpt calibration: True or False"
+    )
     parser.add_argument("--variable", required=True, help="variable to download")
     parser.add_argument(
         "--years",
@@ -121,6 +129,8 @@ if __name__ == "__main__":
 
     # unpack args and reformat if needed
     downloaddir = args.downloaddir
+    pycptdir = args.pycptdir
+    pycpt = args.pycpt
 
     # start logging - need to know logdir location before we can set it up
     logfile = os.path.join(
@@ -161,6 +171,7 @@ if __name__ == "__main__":
     if args.years:
         config["hcstarty"] = int(args.years[0])
         config["hcendy"] = int(args.years[1])
+
     else:
         config["hcstarty"] = 1993
         config["hcendy"] = 2016
@@ -169,5 +180,16 @@ if __name__ == "__main__":
     obs_fname = "{fpath}/era5_{var}_{hcstarty}-{hcendy}_monthly_{start_month}_{leads_str}_{area_str}.grib".format(
         fpath=downloaddir, **config
     )
+
     logger.info(f"Downloading obs filename: {obs_fname}")
     get_obs(obs_fname, config)
+
+    if pycpt == "True":
+        process_grib_to_pycpt(
+            config,
+            downloaddir,
+            pycptdir,
+            "obs",
+            steps_to_sum=3,
+            lead_months=1,
+        )

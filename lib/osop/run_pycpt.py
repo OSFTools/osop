@@ -83,6 +83,7 @@ F_ukmo  = list(ds_ukmo_fc.data_vars.values())[0]
 
 # predictor_names provides the order, and hindcast_data / forecast_data must match it by index
 predictor_names = ["ECMWF", "UKMO"]
+predictand_name = "ERA5.PRCP"
 
 hindcast_data = [X_ecmwf, X_ukmo]
 forecast_data  = [F_ecmwf, F_ukmo]   # IMPORTANT: list, not dict, not None
@@ -113,5 +114,37 @@ skill_metrics = [
 
 pycpt.plot_skill(predictor_names, skill, MOS, domain_dir, skill_metrics)
 pycpt.plot_eof_modes(MOS, predictor_names, pxs, pys, domain_dir)
+pycpt.plot_cca_modes(MOS, predictor_names, pxs, pys, domain_dir)
+pycpt.plot_forecasts(cpt_args, predictand_name, fcsts, domain_dir, predictor_names, MOS)
+ensemble = predictor_names
+
+det_fcst, pr_fcst, pev_fcst, nextgen_skill = pycpt.construct_mme(fcsts, hcsts, Y, ensemble, predictor_names, cpt_args, domain_dir)
+
+mme_skill_metrics = [
+    "spearman",
+    "two_alternative_forced_choice",
+    "root_mean_squared_error",
+    "generalized_roc",
+    "rank_probability_skill_score",
+]
+
+
+pycpt.plot_mme_skill(predictor_names, nextgen_skill, MOS, domain_dir, mme_skill_metrics)
+pycpt.plot_mme_forecasts(cpt_args, predictand_name, pr_fcst, MOS, domain_dir, det_fcst)
+
+threshold = 0.5
+isPercentile = True
+
+exceedance_prob, fcst_scale, climo_scale, fcst_mu, climo_mu, Y2, ntrain, transformed_threshold = pycpt.construct_flex_fcst(MOS, cpt_args, det_fcst, threshold, isPercentile, Y, pev_fcst)
+
+if 'station' in Y.coords:
+    print(Y['Name'].to_pandas().to_string())
+
+# location_selector = {'X': 42.75, 'Y': -75.88}  # example for gridded data
+# location_selector = {'station': '11602'}  # example for station data
+location_selector = None
+forecast_colors = None
+
+pycpt.plot_mme_flex_forecast_v2(predictand_name, exceedance_prob, transformed_threshold, fcst_scale, climo_scale, fcst_mu, climo_mu, Y, Y2, ntrain, MOS, domain_dir, location_selector=location_selector, color_bar=forecast_colors)
 
 print("Run complete. Outputs saved to:", case_dir)

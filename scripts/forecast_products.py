@@ -74,7 +74,9 @@ def parse_args():
         "--pycptdir", required=True, help="location to save pycpt files too"
     )
     parser.add_argument(
-        "--hindcast_pycptdir", required=False, help="location to get hindcast pycpt files from"
+        "--hindcast_pycptdir",
+        required=False,
+        help="location to get hindcast pycpt files from",
     )
     parser.add_argument(
         "--predictor_area",

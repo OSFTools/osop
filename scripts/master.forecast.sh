@@ -79,7 +79,7 @@ EOF
 echo "YML file created: $parseyml"
 
 # loop over all centres of interest and get data
-for centre in ecmwf ;do  
+for centre in meteo_france ecmwf mme ;do  
     if [ "$centre" != "mme" ]; then
         set +e
         python get_any_hindcast.py \

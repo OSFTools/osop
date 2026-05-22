@@ -331,7 +331,7 @@ if __name__ == "__main__":
                 lead_months=1,
             )
         elif centre == "mme":
-            print("skipping, no grib for mme")
+            process_pycpt(predict_config, pycptdir, hindcast_pycptdir, ServicesRaw)
         else:
             if centre not in Services.keys():
                 logger.error(f"Unknown system for C3S: {centre}")
@@ -345,11 +345,6 @@ if __name__ == "__main__":
                 "forecast",
                 steps_to_sum=3,
                 lead_months=1,
-            )
-            process_pycpt(
-                predict_config,
-                pycptdir,
-                hindcast_pycptdir,
             )
     else:
         print("Pycpt calibration off")

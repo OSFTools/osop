@@ -55,19 +55,10 @@ def location(config):
     """
     if config["border"] in BORDER_OPT:
         border_set = BORDER_OPT[config["border"]]
-        try:
-            shpfilename = shpreader.natural_earth(
-                resolution="10m", category="cultural", name=border_set
-            )
-        except KeyError:
-            shpfilename = shpreader.natural_earth(
-                resolution="10m", category="cultural", name=border_set
-            )
-        finally:
-            local = cfeature.NaturalEarthFeature(
-                category="cultural", name=border_set, scale="10m", facecolor="none"
-            )
-            return local
+        local = cfeature.NaturalEarthFeature(
+            category="cultural", name=border_set, scale="10m", facecolor="none"
+        )
+        return local
     elif config["border"] == "None":
         local = "False"
         return local

@@ -23,6 +23,7 @@ from yaml.loader import SafeLoader
 # import local modules for function usage
 from osop.compare_terciles import compute_forecast, mme_products
 from osop.pycpt_convert import process_grib_to_pycpt
+from osop.run_pycpt import process_pycpt
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,11 @@ def parse_args():
         "--pycptdir", required=True, help="location to save pycpt files too"
     )
     parser.add_argument(
+        "--hindcast_pycptdir",
+        required=False,
+        help="location to get hindcast pycpt files from",
+    )
+    parser.add_argument(
         "--predictor_area",
         nargs="?",
         default=None,
@@ -116,6 +122,7 @@ if __name__ == "__main__":
     productshcdir = args.productshcdir
     productsfcdir = args.productsfcdir
     pycptdir = args.pycptdir
+    hindcast_pycptdir = args.hindcast_pycptdir
     month = int(args.month)
     leads = args.leads
     logger.info(f"Doing FC products, Centre: {centre}, Month: {month}, Leads: {leads}")
@@ -285,6 +292,7 @@ if __name__ == "__main__":
             leads=leadtime_month,
             obs_str=obs_str,
             area=predict_bounds,
+            obs_area=area_str,
             var=var,
             hc_var=hc_var,
             pycptver="pycpt",
@@ -323,7 +331,7 @@ if __name__ == "__main__":
                 lead_months=1,
             )
         elif centre == "mme":
-            print("skipping, no grib for mme")
+            process_pycpt(predict_config, pycptdir, hindcast_pycptdir, ServicesRaw)
         else:
             if centre not in Services.keys():
                 logger.error(f"Unknown system for C3S: {centre}")

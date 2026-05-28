@@ -13,6 +13,24 @@
 # See LICENSE in the root of the repository for full licensing details.
 
 # Script to calculate download hindcasts, calculate terciles and plot verification measures.
+test=0
+while getopts ":t" option; do
+   case $option in
+      t) # display Help
+         test=1;;
+     \?) # Invalid option
+         echo "Error: Invalid option"
+         exit;;
+   esac
+done
+
+# for the test version only run two models and get mme - ukmo
+if [ $test -eq 1 ]; then
+    centres="meteo_france ukmo mme"
+else
+    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc_can eccc_gem5 mme"
+fi
+
 set -eu
 
 # this conda env gives an error on load, so
@@ -60,25 +78,41 @@ pycpt="True" #True or False --> True you want pycpt, auto sets to off
 predictor_area="45,-30,-2.5,60" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
 
 
-# Services in use: 
-# edit as appropriate to the most up to date systems. 
-cat <<EOF > "$parseyml"
-Services:
-    ecmwf: [51,1]
-    meteo_france: [9,1]
-    dwd: [22,1]
-    cmcc: [35,1]
-    ncep: [2,1]
-    jma: [3,0]  
-    eccc_can: [4,1]
-    eccc_gem5: [5,1]
-    ukmo: [604,1]
-    mme: [1,0]
+# for the test version only run two models and get mme - ukmo
+if [ $test -eq 1 ]; then
+    centres="meteo_france ukmo mme"
+    cat <<EOF > "$parseyml"
+    Services:
+        meteo_france: [9,1]
+        jma: [3,0]  #need to leave this in as deleted currently and causes error if not included in yml
+        ukmo: [604,1]
+        mme: [1,0]
 EOF
+else
+    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc_can eccc_gem5 mme"
+    # Services in use:
+    # First column service, second column weight
+    # mme weight should be set to 0, 1 on all other for equal weights
+    # JMA set to 0 until regridding issue resolved
+
+    cat <<EOF > "$parseyml"
+    Services:
+        ecmwf: [51,1]
+        meteo_france: [9,1]
+        dwd: [22,1]
+        cmcc: [35,1]
+        ncep: [2,1]
+        jma: [3,0]  
+        eccc_can: [4,1]
+        eccc_gem5: [5,1]
+        ukmo: [604,1]
+        mme: [1,0]
+EOF
+fi
 echo "YML file created: $parseyml"
 
 # loop over all centres of interest and get data
-for centre in ukmo  ;do  
+for centre in $centres  ;do  
     if [ "$centre" != "mme" ]; then
         set +e
         python get_any_hindcast.py \

@@ -71,7 +71,7 @@ if [ $test -eq 1 ]; then
     cat <<EOF > "$parseyml"
     Services:
         meteo_france: [9,1]
-        jma: [3,0]  
+        jma: [3,0]  #need to leave this in as deleted currently and causes error if not included in ymls
         ukmo: [604,1]
         mme: [1,0]
 EOF

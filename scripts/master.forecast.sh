@@ -26,13 +26,6 @@ while getopts ":t" option; do
    esac
 done
 
-# for the test version only run two models and get mme - ukmo
-if [ $test -eq 1 ]; then
-    centres="meteo_france ukmo mme"
-else
-    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme"
-fi
-
 set -eu
 
 # this conda env gives an error on load, so

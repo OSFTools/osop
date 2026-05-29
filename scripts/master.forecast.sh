@@ -13,6 +13,8 @@
 # See LICENSE in the root of the repository for full licensing details.
 
 # Script to calculate download hindcasts, calculate terciles and plot verification measures.
+## NOTE: TO SUCCESSFULLY RUN THIS SCRIPT; MASTER.SH MUST BE RUN IN FULL FIRST WITH THE SAME "SET PARAMETERS".
+
 test=0
 while getopts ":t" option; do
    case $option in
@@ -28,7 +30,7 @@ done
 if [ $test -eq 1 ]; then
     centres="meteo_france ukmo mme"
 else
-    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc_can eccc_gem5 mme"
+    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme"
 fi
 
 set -eu
@@ -89,7 +91,7 @@ if [ $test -eq 1 ]; then
         mme: [1,0]
 EOF
 else
-    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc_can eccc_gem5 mme"
+    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme"
     # Services in use:
     # First column service, second column weight
     # mme weight should be set to 0, 1 on all other for equal weights
@@ -180,4 +182,5 @@ for centre in $centres  ;do
     else
         echo $centre : forecast plots failed 
     fi
-done   
+done
+echo DONE

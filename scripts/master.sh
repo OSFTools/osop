@@ -76,7 +76,7 @@ if [ $test -eq 1 ]; then
         mme: [1,0]
 EOF
 else
-    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc_can eccc_gem5 mme"
+    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme"
     # Services in use:
     # First column service, second column weight
     # mme weight should be set to 0, 1 on all other for equal weights
@@ -208,3 +208,4 @@ for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         continue
     fi
 done
+echo DONE

@@ -12,12 +12,22 @@
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 
+test=0
+while getopts ":t" option; do
+   case $option in
+      t) # display Help
+         test=1;;
+     \?) # Invalid option
+         echo "Error: Invalid keyword option, must be -t for test version or no option for full version"
+         exit;;
+   esac
+done
+
 # Script to calculate download hindcasts, calculate terciles and plot verification measures.
-set -eu
+set -e
 
 # this conda env gives an error on load, so
 # can't use -u option
-set +u
 conda activate osop-simple 
 set -u
 
@@ -54,23 +64,38 @@ method="pmesh" #Remove for smooth plotting on correlation plots
 pycpt="True" #True or False --> True you want pycpt, auto sets to off
 predictor_area="45,-30,-2.5,60" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
 
-# Services in use:
-# First column service, second column weight
-# mme weight should be set to 0, 1 on all other for equal weights
-# JMA set to 0 until regridding issue resolved
-cat <<EOF > "$parseyml"
-Services:
-    ecmwf: [51,1]
-    meteo_france: [9,1]
-    dwd: [22,1]
-    cmcc: [35,1]
-    ncep: [2,1]
-    jma: [3,0]  
-    eccc_can: [4,1]
-    eccc_gem5: [5,1]
-    ukmo: [604,1]
-    mme: [1,0]
+
+# for the test version only run two models and get mme - ukmo
+if [ $test -eq 1 ]; then
+    centres="meteo_france ukmo mme"
+    cat <<EOF > "$parseyml"
+    Services:
+        meteo_france: [9,1]
+        jma: [3,0]  #need to leave this in as deleted currently and causes error if not included in ymls
+        ukmo: [604,1]
+        mme: [1,0]
 EOF
+else
+    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme"
+    # Services in use:
+    # First column service, second column weight
+    # mme weight should be set to 0, 1 on all other for equal weights
+    # JMA set to 0 until regridding issue resolved
+
+    cat <<EOF > "$parseyml"
+    Services:
+        ecmwf: [51,1]
+        meteo_france: [9,1]
+        dwd: [22,1]
+        cmcc: [35,1]
+        ncep: [2,1]
+        jma: [3,0]  
+        eccc_can: [4,1]
+        eccc_gem5: [5,1]
+        ukmo: [604,1]
+        mme: [1,0]
+EOF
+fi
 echo "YML file created: $parseyml"
 
 # get ERA5 data
@@ -92,8 +117,10 @@ else
     echo era5 download failed
 fi
 
+
+#
 # loop over all centres of interest and get data #for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do 
-for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
+for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
     if [ "$centre" != "mme" ]; then
         set +e
         python get_any_hindcast.py \
@@ -156,6 +183,7 @@ for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         echo $centre : scores generated
     else
         echo $centre : score generation failed
+        continue
     fi
     # plot scores
         set +e
@@ -180,3 +208,4 @@ for centre in ukmo ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         continue
     fi
 done
+echo DONE

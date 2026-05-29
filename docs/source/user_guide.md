@@ -231,8 +231,9 @@ download script.
 
 Once completing this stage the shell scripts should now work - even if
 the steps come out as fails. Go to your Gitbash terminal and navigate
-back to the scripts directory. Type `./master.test.sh` and press
-enter. From here on out the script should run. If you receive an error
+back to the scripts directory. Type `./master.sh -t` and press
+enter. This runs the main script in a test mode with a limited set of 
+models.  From here on out the script should run. If you receive an error
 at this point please proceed below to the common errors section. Some
 errors may be expected due to operating system dependencies, and these
 can be smoothed out below.

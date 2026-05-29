@@ -18,7 +18,7 @@ while getopts ":t" option; do
       t) # display Help
          test=1;;
      \?) # Invalid option
-         echo "Error: Invalid option"
+         echo "Error: Invalid keyword option, must be -t for test version or no option for full version"
          exit;;
    esac
 done

@@ -62,7 +62,6 @@ def test_interp_target_raises_y():
 # suppress warning from Cython usually ignored by numpy
 @pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
 def test_regrid_cons_masked():
-    source = xr.open_dataset(f"{TEST_DATA}/chirps_test.nc", chunks={})
     target = xr.Dataset(
         {
             "lat": (["lat"], np.arange(39, 35.5, -0.5), {"units": "degrees_north"}),
@@ -70,17 +69,19 @@ def test_regrid_cons_masked():
         }
     )
     var = "precip"
-    result = regrid_cons_masked(source, var, target)  # note tests default
 
-    kgo_05 = xr.open_dataset(f"{TEST_DATA}/chirps_out_05.nc", chunks={})
+    with (
+        xr.open_dataset(f"{TEST_DATA}/chirps_test.nc") as source,
+        xr.open_dataset(f"{TEST_DATA}/chirps_out_05.nc") as kgo_05,
+        xr.open_dataset(f"{TEST_DATA}/chirps_out_01.nc") as kgo_01,
+    ):
+        result = regrid_cons_masked(source, var, target)  # note tests default
 
-    # need to compare values approximately ignoring nan (nan!=nan)
-    assert np.allclose(kgo_05.precip.values, result.precip.values, equal_nan=True)
+        # need to compare values approximately ignoring nan (nan!=nan)
+        assert np.allclose(kgo_05.precip.values, result.precip.values, equal_nan=True)
 
-    result = regrid_cons_masked(source, var, target, thresh=0.1)
-    kgo_01 = xr.open_dataset(f"{TEST_DATA}/chirps_out_01.nc", chunks={})
-
-    assert np.allclose(kgo_01.precip.values, result.precip.values, equal_nan=True)
+        result = regrid_cons_masked(source, var, target, thresh=0.1)
+        assert np.allclose(kgo_01.precip.values, result.precip.values, equal_nan=True)
 
 
 def test_regrid_std(xr_3x3_ds):

@@ -6,6 +6,10 @@
 
 """Functions to help with regridding for xarray."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import xarray as xr
 import xesmf as xe
@@ -43,8 +47,11 @@ def regrid_cons_masked(source_in, var, target_in, thresh=0.5):
     # now regrid LSM to get a fractionsl LSM on the target grid
     lsm_out = regridder(source["lsm"], keep_attrs=True)
 
-    # mask the source using same approach as above but integer
-    source["mask"] = xr.where(~np.isnan(source[var].isel(time=0)), 1, 0)
+    # mask the source but ensure float dtype
+    # (avoid integer dtype which causes xESMF to cast NaNs to ints)
+    source["mask"] = xr.where(~np.isnan(source[var].isel(time=0)), 1.0, 0.0).astype(
+        source[var].dtype
+    )
 
     # for the target grid, based on where the regridded mask is at thresh or more
     target["mask"] = xr.where(lsm_out > thresh, 1.0, 0.0)
@@ -104,3 +111,38 @@ def interp_target(domain, res):
         }
     )
     return target
+
+
+def regrid_data_std(input_ds, target_ds):
+    """Regrid dataset to match target grid resolution.
+
+    Regrids the dataset appropriately for its type (planned expansion
+    for precipitation).
+
+    Parameters
+    ----------
+    input_ds : xarray.Dataset
+        Data to be re-gridded.
+    target_ds : xarray.Dataset
+        Data set with the target grid.
+
+    Returns
+    -------
+    output_ds : xarray.Dataset
+        Regridded dataset to be used for analysis.
+    target_ds : xarray.Dataset
+        Matching target dataset (no changes).
+
+    Raises
+    ------
+    KeyError
+        If alignment fails due to incompatible datasets.
+    """
+    try:
+        regridder = xe.Regridder(input_ds, target_ds, "bilinear")
+        output_ds = regridder(input_ds, keep_attrs=True)
+    except Exception as e:
+        logger.error(f"Alignment failed {e}: {e}")
+        raise KeyError("Alignment failed: please check dataset entry")
+
+    return output_ds, target_ds

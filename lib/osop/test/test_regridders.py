@@ -100,6 +100,14 @@ def test_regrid_std(xr_3x3_ds):
     )
 
 
+def test_regrid_std_fail(xr_3x3_ds):
+    """Test regrid_data_std function."""
+    # use an invalid target (not an xarray Dataset) to check it raises an error
+    target = np.array([[1.0, 2.0], [3.0, 4.0]])
+    with pytest.raises(KeyError, match="Alignment failed: please check dataset entry"):
+        result = regrid_data_std(xr_3x3_ds, target)
+
+
 @pytest.fixture
 def xr_3x3_ds():
     """Xarray Dataset fixture with a 3x3 array.

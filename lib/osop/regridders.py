@@ -6,6 +6,10 @@
 
 """Functions to help with regridding for xarray."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import xarray as xr
 import xesmf as xe
@@ -104,3 +108,38 @@ def interp_target(domain, res):
         }
     )
     return target
+
+
+def regrid_data_std(input_ds, target_ds):
+    """Regrid dataset to match target grid resolution.
+
+    Regrids the dataset appropriately for its type (planned expansion
+    for precipitation).
+
+    Parameters
+    ----------
+    input_ds : xarray.Dataset
+        Data to be re-gridded.
+    target_ds : xarray.Dataset
+        Data set with the target grid.
+
+    Returns
+    -------
+    output_ds : xarray.Dataset
+        Regridded dataset to be used for analysis.
+    target_ds : xarray.Dataset
+        Matching target dataset (no changes).
+
+    Raises
+    ------
+    KeyError
+        If alignment fails due to incompatible datasets.
+    """
+    try:
+        regridder = xe.Regridder(input_ds, target_ds, "bilinear")
+        output_ds = regridder(input_ds, keep_attrs=True)
+    except Exception as e:
+        logger.error(f"Alignment failed {e}: {e}")
+        raise KeyError("Alignment failed: please check dataset entry")
+
+    return output_ds, target_ds

@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from osop.regridders import interp_target, regrid_cons_masked
+from osop.regridders import interp_target, regrid_cons_masked, regrid_data_std
 
 TEST_DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data")
 
@@ -81,3 +81,48 @@ def test_regrid_cons_masked():
     kgo_01 = xr.open_dataset(f"{TEST_DATA}/chirps_out_01.nc", chunks={})
 
     assert np.allclose(kgo_01.precip.values, result.precip.values, equal_nan=True)
+
+
+def test_regrid_std(xr_3x3_ds):
+    """Test regrid_data_std function."""
+    domain = {"x0": 1.0, "x1": 2.0, "y0": 1.0, "y1": 2.0}
+    res = 1.0
+    target = interp_target(domain, res)
+    result = regrid_data_std(xr_3x3_ds, target)
+    assert isinstance(result[0], xr.Dataset)
+    assert result[1].equals(target)
+    assert "lat" in result[0].sizes
+    assert "lon" in result[0].sizes
+    assert np.allclose(result[0].lat.values, target.lat.values)
+    assert np.allclose(result[0].lon.values, target.lon.values)
+    assert np.allclose(
+        result[0].data.values, np.array([[3.0, 4.0], [6.0, 7.0]]), rtol=1e-04
+    )
+
+
+@pytest.fixture
+def xr_3x3_ds():
+    """Xarray Dataset fixture with a 3x3 array.
+
+    The data increases from top to bottom and left to right:
+    [[1, 2, 3],
+     [4, 5, 6],
+     [7, 8, 9]]
+
+    Coordinates:
+    - lat: top-to-bottom [0.0, 1.0, 2.0] (degrees_north)
+    - lon: left-to-right [0.0, 1.0, 2.0] (degrees_east)
+    """
+    data = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]).astype(float)
+    lat = np.array([0.0, 1.0, 2.0])
+    lon = np.array([0.0, 1.0, 2.0])
+
+    xr_3x3_ds = xr.Dataset(
+        {"data": (("lat", "lon"), data)},
+        coords={
+            "lat": ("lat", lat, {"units": "degrees_north"}),
+            "lon": ("lon", lon, {"units": "degrees_east"}),
+        },
+    )
+
+    return xr_3x3_ds

@@ -12,55 +12,7 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 import xarray as xr
-import xesmf as xe
-
-
-def regrid_cons_masked(source_in, var, target_in, thresh=0.5):
-    """Conservatively regrid a source data with a mask, with a tolerance for missing data of thresh.
-
-    Parameters
-    ----------
-    source_in : xarray.Dataset
-        Dataset to be regridded.
-    var : str
-        Variable name to use to find the mask.
-    target_in : xarray.Dataset
-        Dataset to use as the interpolation target.
-    thresh : float, optional
-        Threshold to use for masking, by default 0.5.
-
-    Returns
-    -------
-    xarray.Dataset
-        Interpolated dataset.
-    """
-    # make a source land-sea mask NAN = sea = 0
-    # want to be able to regrid multiple times so have isel time=0
-    # don't want to modify source or target so take copies
-    source = source_in.copy()
-    target = target_in.copy()
-
-    source["lsm"] = xr.where(~np.isnan(source[var].isel(time=0)), 1.0, 0.0)
-
-    regridder = xe.Regridder(source, target, "conservative_normed")
-
-    # now regrid LSM to get a fractionsl LSM on the target grid
-    lsm_out = regridder(source["lsm"], keep_attrs=True)
-
-    # mask the source but ensure float dtype
-    # (avoid integer dtype which causes xESMF to cast NaNs to ints)
-    source["mask"] = xr.where(~np.isnan(source[var].isel(time=0)), 1.0, 0.0).astype(
-        source[var].dtype
-    )
-
-    # for the target grid, based on where the regridded mask is at thresh or more
-    target["mask"] = xr.where(lsm_out > thresh, 1.0, 0.0)
-
-    # now regrid source respecting the new masks
-    regridder = xe.Regridder(source, target, "conservative_normed")
-    output = regridder(source, keep_attrs=True)
-
-    return output
+import xarray_regrid
 
 
 def interp_target(domain, res):
@@ -98,13 +50,13 @@ def interp_target(domain, res):
     # by half a grid box
     target = xr.Dataset(
         {
-            "lat": (
-                ["lat"],
+            "latitude": (
+                ["latitude"],
                 np.arange(y0 - res / 2.0, y1 + res / 2.0, res),
                 {"units": "degrees_north"},
             ),
-            "lon": (
-                ["lon"],
+            "longitude": (
+                ["longitude"],
                 np.arange(x0 - res / 2.0, x1 + res / 2.0, res),
                 {"units": "degrees_east"},
             ),
@@ -138,9 +90,9 @@ def regrid_data_std(input_ds, target_ds):
     KeyError
         If alignment fails due to incompatible datasets.
     """
+    xr.set_options(keep_attrs=True)
     try:
-        regridder = xe.Regridder(input_ds, target_ds, "bilinear")
-        output_ds = regridder(input_ds, keep_attrs=True)
+        output_ds = input_ds.regrid.linear(target_ds)
     except Exception as e:
         logger.error(f"Alignment failed {e}: {e}")
         raise KeyError("Alignment failed: please check dataset entry")

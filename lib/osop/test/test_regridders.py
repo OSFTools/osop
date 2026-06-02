@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from osop.regridders import interp_target, regrid_cons_masked, regrid_data_std
+from osop.regridders import interp_target, regrid_data_std
 
 TEST_DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data")
 
@@ -25,18 +25,18 @@ def test_interp_target():
     assert isinstance(result, xr.Dataset)
 
     # Check if the result has the expected dimensions
-    assert "lat" in result.sizes
-    assert "lon" in result.sizes
+    assert "latitude" in result.sizes
+    assert "longitude" in result.sizes
 
     # Check if the result has the expected coordinates
-    assert np.allclose(result.lat.values, np.arange(34.5, 39.5, res))
-    assert np.allclose(result.lon.values, np.arange(-1.5, 2.5, res))
+    assert np.allclose(result.latitude.values, np.arange(34.5, 39.5, res))
+    assert np.allclose(result.longitude.values, np.arange(-1.5, 2.5, res))
 
     # Check if the result has the expected attributes
-    assert "units" in result.lat.attrs
-    assert "units" in result.lon.attrs
-    assert result.lat.attrs["units"] == "degrees_north"
-    assert result.lon.attrs["units"] == "degrees_east"
+    assert "units" in result.latitude.attrs
+    assert "units" in result.longitude.attrs
+    assert result.latitude.attrs["units"] == "degrees_north"
+    assert result.longitude.attrs["units"] == "degrees_east"
 
 
 def test_interp_target_raises_x():
@@ -59,31 +59,6 @@ def test_interp_target_raises_y():
         interp_target(domain, res)
 
 
-# suppress warning from Cython usually ignored by numpy
-@pytest.mark.filterwarnings("ignore:numpy.ndarray size changed")
-def test_regrid_cons_masked():
-    target = xr.Dataset(
-        {
-            "lat": (["lat"], np.arange(39, 35.5, -0.5), {"units": "degrees_north"}),
-            "lon": (["lon"], np.arange(-1.0, 2.5, 0.5), {"units": "degrees_east"}),
-        }
-    )
-    var = "precip"
-
-    with (
-        xr.open_dataset(f"{TEST_DATA}/chirps_test.nc") as source,
-        xr.open_dataset(f"{TEST_DATA}/chirps_out_05.nc") as kgo_05,
-        xr.open_dataset(f"{TEST_DATA}/chirps_out_01.nc") as kgo_01,
-    ):
-        result = regrid_cons_masked(source, var, target)  # note tests default
-
-        # need to compare values approximately ignoring nan (nan!=nan)
-        assert np.allclose(kgo_05.precip.values, result.precip.values, equal_nan=True)
-
-        result = regrid_cons_masked(source, var, target, thresh=0.1)
-        assert np.allclose(kgo_01.precip.values, result.precip.values, equal_nan=True)
-
-
 def test_regrid_std(xr_3x3_ds):
     """Test regrid_data_std function."""
     domain = {"x0": 1.0, "x1": 2.0, "y0": 1.0, "y1": 2.0}
@@ -92,10 +67,10 @@ def test_regrid_std(xr_3x3_ds):
     result = regrid_data_std(xr_3x3_ds, target)
     assert isinstance(result[0], xr.Dataset)
     assert result[1].equals(target)
-    assert "lat" in result[0].sizes
-    assert "lon" in result[0].sizes
-    assert np.allclose(result[0].lat.values, target.lat.values)
-    assert np.allclose(result[0].lon.values, target.lon.values)
+    assert "latitude" in result[0].sizes
+    assert "longitude" in result[0].sizes
+    assert np.allclose(result[0].latitude.values, target.latitude.values)
+    assert np.allclose(result[0].longitude.values, target.longitude.values)
     assert np.allclose(
         result[0].data.values, np.array([[3.0, 4.0], [6.0, 7.0]]), rtol=1e-04
     )
@@ -119,18 +94,18 @@ def xr_3x3_ds():
      [7, 8, 9]]
 
     Coordinates:
-    - lat: top-to-bottom [0.0, 1.0, 2.0] (degrees_north)
-    - lon: left-to-right [0.0, 1.0, 2.0] (degrees_east)
+    - latitude: top-to-bottom [0.0, 1.0, 2.0] (degrees_north)
+    - longitude: left-to-right [0.0, 1.0, 2.0] (degrees_east)
     """
     data = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]).astype(float)
     lat = np.array([0.0, 1.0, 2.0])
     lon = np.array([0.0, 1.0, 2.0])
 
     xr_3x3_ds = xr.Dataset(
-        {"data": (("lat", "lon"), data)},
+        {"data": (("latitude", "longitude"), data)},
         coords={
-            "lat": ("lat", lat, {"units": "degrees_north"}),
-            "lon": ("lon", lon, {"units": "degrees_east"}),
+            "latitude": ("latitude", lat, {"units": "degrees_north"}),
+            "longitude": ("longitude", lon, {"units": "degrees_east"}),
         },
     )
 

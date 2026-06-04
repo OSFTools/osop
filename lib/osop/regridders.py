@@ -91,8 +91,13 @@ def regrid_data_std(input_ds, target_ds):
         If alignment fails due to incompatible datasets.
     """
     xr.set_options(keep_attrs=True)
+
     try:
-        output_ds = input_ds.regrid.linear(target_ds)
+        if "valid_time" in input_ds.coords:
+            t_coord = "valid_time"
+        else:
+            t_coord = "time"
+        output_ds = input_ds.regrid.linear(target_ds, time_dim=t_coord)
     except Exception as e:
         logger.error(f"Alignment failed {e}: {e}")
         raise KeyError("Alignment failed: please check dataset entry")

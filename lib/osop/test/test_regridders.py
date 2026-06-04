@@ -76,6 +76,25 @@ def test_regrid_std(xr_3x3_ds):
     )
 
 
+def test_regrid_std_2t(xr_3x3_2t_ds):
+    """Test regrid_data_std function with a time dimension."""
+    domain = {"x0": 1.0, "x1": 2.0, "y0": 1.0, "y1": 2.0}
+    res = 1.0
+    target = interp_target(domain, res)
+    result = regrid_data_std(xr_3x3_2t_ds, target)
+    assert isinstance(result[0], xr.Dataset)
+    assert result[1].equals(target)
+    assert "latitude" in result[0].sizes
+    assert "longitude" in result[0].sizes
+    assert np.allclose(result[0].latitude.values, target.latitude.values)
+    assert np.allclose(result[0].longitude.values, target.longitude.values)
+    assert np.allclose(
+        result[0].isel(time=0).data.values,
+        np.array([[3.0, 4.0], [6.0, 7.0]]),
+        rtol=1e-04,
+    )
+
+
 def test_regrid_std_fail(xr_3x3_ds):
     """Test regrid_data_std function."""
     # use an invalid target (not an xarray Dataset) to check it raises an error
@@ -110,3 +129,40 @@ def xr_3x3_ds():
     )
 
     return xr_3x3_ds
+
+
+@pytest.fixture
+def xr_3x3_2t_ds(xr_3x3_ds):
+    """Xarray Dataset fixture with a 3x3 array and a time dimension.
+
+    The data increases from top to bottom and left to right:
+    [[1, 2, 3],
+     [4, 5, 6],
+     [7, 8, 9]]
+
+    Coordinates:
+    - time: [0.0, 1.0] (hours since 2000-01-01)
+    - latitude: top-to-bottom [0.0, 1.0, 2.0] (degrees_north)
+    - longitude: left-to-right [0.0, 1.0, 2.0] (degrees_east)
+    """
+    time = ["2026-01-01 00:00", "2026-02-01 00:00"]
+    data = np.stack([xr_3x3_ds.data.values] * len(time), axis=0)
+
+    xr_3x3_2t_ds = xr.Dataset(
+        {"data": (("time", "latitude", "longitude"), data)},
+        coords={
+            "valid_time": ("valid_time", time, {"units": "hours since 2000-01-01"}),
+            "latitude": (
+                "latitude",
+                xr_3x3_ds.latitude.values,
+                {"units": "degrees_north"},
+            ),
+            "longitude": (
+                "longitude",
+                xr_3x3_ds.longitude.values,
+                {"units": "degrees_east"},
+            ),
+        },
+    )
+
+    return xr_3x3_2t_ds

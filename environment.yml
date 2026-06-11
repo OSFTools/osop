@@ -1,4 +1,4 @@
-name: osop-simple
+name: osop
 channels:
   - iri-nextgen
   - conda-forge

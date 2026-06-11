@@ -1,4 +1,4 @@
-name: osop-xr-regrid
+name: osop
 channels:
   - iri-nextgen
   - conda-forge

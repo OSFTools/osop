@@ -299,7 +299,7 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
             if not thishcst["lat"].equals(thisobs["lat"]) or not thishcst["lon"].equals(
                 thisobs["lon"]
             ):
-                thishcst, thisobs = regrid_data(thishcst, thisobs)
+                thishcst, thisobs = regrid_data_std(thishcst, thisobs)
 
             # Calculate the probabilistic scores
             thisroc = xr.Dataset()

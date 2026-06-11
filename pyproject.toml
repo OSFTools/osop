@@ -1,5 +1,6 @@
 [tool.coverage.run]
 source = ["./lib"]
+omit = ["./lib/osop/constants.py"]
 
 [tool.ruff]
 # Exclude the following, in addition to the standard set of exclusions.

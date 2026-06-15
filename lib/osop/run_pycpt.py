@@ -12,7 +12,7 @@ It takes the pycpt files formatted from pycpt_convert as inputs and outputs the 
 from pathlib import Path
 
 import eccodes
-import mpl
+import matplotlib as mpl
 import numpy as np
 import packaging
 

@@ -35,7 +35,7 @@ Then, set-up a conda environment. The conda environment contains all the package
  You will need to activate your conda environment every time you want to use this library
  
  ```bash
-    conda activate osop-simple
+    conda activate osop
  ```
 
 </details>

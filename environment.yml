@@ -1,10 +1,10 @@
-name: osop-simple
+name: osop
 channels:
   - iri-nextgen
   - conda-forge
 dependencies:
   - pycpt
-  - xesmf
+  - xarray-regrid
   - cfgrib
   - cdsapi
   - xskillscore

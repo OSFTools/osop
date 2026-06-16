@@ -80,9 +80,28 @@ def season_stats(dataset, start_year, end_year, stats=["mean"]):
         elif stat == "seas_ts":
             ds_stats["seas_ts"] = seasonal_ds
         elif stat == "terciles":
-            ds_stats["terciles"] = seasonal_ds.groupby("time.season").quantile(
-                [1.0 / 3.0, 2.0 / 3.0]
-            )
+            terc = seasonal_ds.groupby("time.season").quantile([1.0 / 3.0, 2.0 / 3.0])
+
+            # Ensure 'quantile' is the second dimension for all data variables.
+            def _reorder_da(da: xr.DataArray) -> xr.DataArray:
+                if "quantile" not in da.dims:
+                    return da
+                desired_start = [d for d in ("season", "quantile") if d in da.dims]
+                rest = [d for d in da.dims if d not in desired_start]
+                new_order = desired_start + rest
+                return da.transpose(*new_order)
+
+            # use the _reorder_da function to ensure the quantile
+            # dimension is in the same place for all data variables
+            # if terc is a dataset, apply to all data variables,
+            # otherwise just apply to the data array
+            if isinstance(terc, xr.Dataset):
+                for v in list(terc.data_vars):
+                    terc[v] = _reorder_da(terc[v])
+            else:
+                terc = _reorder_da(terc)
+
+            ds_stats["terciles"] = terc
         else:
             raise ValueError(f"Unknown stat {stat}")
 

@@ -22,14 +22,12 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-# Regridding packages needed for JMA
-import xesmf as xe
-
 # Forecast verification metrics with xarray
 import xskillscore as xs
 
 # import needed local functions
 from osop.compute_products_func import get_thresh
+from osop.regridders import regrid_data_std
 
 
 def read_obs(obs_fname, config):
@@ -123,41 +121,6 @@ def swap_dims(hcst, obs):
         return thishcst, thisobs
 
 
-def regrid_data(input_ds, target_ds):
-    """Regrid dataset to match target grid resolution.
-
-    Regrids the dataset appropriately for its type (planned expansion
-    for precipitation).
-
-    Parameters
-    ----------
-    input_ds : xarray.Dataset
-        Data to be re-gridded.
-    target_ds : xarray.Dataset
-        Data set with the target grid.
-
-    Returns
-    -------
-    output_ds : xarray.Dataset
-        Regridded dataset to be used for analysis.
-    target_ds : xarray.Dataset
-        Matching target dataset (no changes).
-
-    Raises
-    ------
-    KeyError
-        If alignment fails due to incompatible datasets.
-    """
-    try:
-        regridder = xe.Regridder(input_ds, target_ds, "bilinear")
-        output_ds = regridder(input_ds, keep_attrs=True)
-    except Exception as e:
-        logger.error(f"Alignment failed {e}: {e}")
-        raise KeyError("Alignment failed: please check dataset entry")
-
-    return output_ds, target_ds
-
-
 def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
     """Compute deterministic scores.
 
@@ -217,13 +180,13 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         if not thishcst_em_mean["lat"].equals(
             this_obs_m_match["lat"]
         ) or not thishcst_em_mean["lon"].equals(this_obs_m_match["lon"]):
-            thishcst_em_mean, this_obs_m_match = regrid_data(
+            thishcst_em_mean, this_obs_m_match = regrid_data_std(
                 thishcst_em_mean, this_obs_m_match
             )
         if not thishcst_em_anom["lat"].equals(
             this_obs_anom["lat"]
         ) or not thishcst_em_anom["lon"].equals(this_obs_anom["lon"]):
-            thishcst_em_anom, this_obs_anom = regrid_data(
+            thishcst_em_anom, this_obs_anom = regrid_data_std(
                 thishcst_em_anom, this_obs_anom
             )
 
@@ -336,7 +299,7 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
             if not thishcst["lat"].equals(thisobs["lat"]) or not thishcst["lon"].equals(
                 thisobs["lon"]
             ):
-                thishcst, thisobs = regrid_data(thishcst, thisobs)
+                thishcst, thisobs = regrid_data_std(thishcst, thisobs)
 
             # Calculate the probabilistic scores
             thisroc = xr.Dataset()

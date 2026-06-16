@@ -26,7 +26,7 @@ jobs:
         shell: bash -el {0}
 
     env:
-      ENV_NAME: "osop-simple"
+      ENV_NAME: "osop"
     
     permissions:
       contents: write        # For checkout and comparing commits
@@ -78,7 +78,7 @@ jobs:
           conda list
 
       - name: Run tests
-        run: pytest -m "not integration" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov | tee pytest-coverage.txt
+        run: pytest -vv -s --maxfail=1 -m "not integration" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main

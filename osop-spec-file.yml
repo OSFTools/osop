@@ -1,4 +1,4 @@
-name: pycpt_lock
+name: osop
 channels:
   - iri-nextgen
   - conda-forge

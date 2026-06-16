@@ -35,13 +35,16 @@ conda activate osop
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master/forecast/downloads
-productsdir=$SCRATCH/seafoam/data/master/forecast/products
-scoresdir=$SCRATCH/seafoam/data/master/forecast/scores
-plotdir=$SCRATCH/seafoam/data/master/forecast/plots
-logdir=$SCRATCH/seafoam/data/master/forecast/logfiles
-pycptdir=$SCRATCH/seafoam/data/master/forecast/pycpt
-hindcast_pycptdir=$SCRATCH/seafoam/data/master/hindcast/pycpt
+exp_name=test_pycpt
+base_path=$SCRATCH/osop/${exp_name}
+downloaddir=${base_path}/forecast/downloads
+productsdir=${base_path}/forecast/products
+scoresdir=${base_path}/forecast/scores
+plotdir=${base_path}/forecast/plots
+logdir=${base_path}/forecast/logfiles
+pycptdir=${base_path}/forecast/pycpt
+hindcast_pycptdir=${base_path}/hindcast/pycpt
+
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir
@@ -50,8 +53,8 @@ mkdir -p $scoresdir
 mkdir -p $pycptdir
 
 #locations for hindcast relatives
-productshcdir=$SCRATCH/seafoam/data/master/hindcast/products
-downloadhcdir=$SCRATCH/seafoam/data/master/hindcast/downloads
+productshcdir=${base_path}/hindcast/products
+downloadhcdir=${base_path}/hindcast/downloads
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)

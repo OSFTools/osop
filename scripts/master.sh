@@ -31,13 +31,15 @@ set -e
 conda activate osop
 set -u
 
+exp_name=test_pycpt
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master/hindcast/downloads
-productsdir=$SCRATCH/seafoam/data/master/hindcast/products
-scoresdir=$SCRATCH/seafoam/data/master/hindcast/scores
-plotdir=$SCRATCH/seafoam/data/master/hindcast/plots
-logdir=$SCRATCH/seafoam/data/master/hindcast/logfiles
-pycptdir=$SCRATCH/seafoam/data/master/hindcast/pycpt
+base_path=$SCRATCH/osop/${exp_name}
+downloaddir=${base_path}/hindcast/downloads
+productsdir=${base_path}/hindcast/products
+scoresdir=${base_path}/hindcast/scores
+plotdir=${base_path}/hindcast/plots
+logdir=${base_path}/hindcast/logfiles
+pycptdir=${base_path}/hindcast/pycpt
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir

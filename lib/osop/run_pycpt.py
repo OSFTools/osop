@@ -13,7 +13,7 @@ from pathlib import Path
 import warnings
 
 import eccodes
-import mlp as mlp
+import matplotlib as mpl
 import numpy as np
 import packaging
 
@@ -22,7 +22,7 @@ import pandas as pd
 import pycpt
 import xarray as xr
 
-mlp.use("Agg")
+mpl.use("Agg")
 
 
 def process_pycpt(

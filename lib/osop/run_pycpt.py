@@ -4,13 +4,15 @@
 
 """Runs the pycpt workflow when PYCPT=TRUE in the .sh scripts.
 
-The workflow is currently static until review.
 It takes the pycpt files formatted from pycpt_convert as inputs and outputs the files from the designated workflow.
 
 """
 
+import logging
 from pathlib import Path
 import warnings
+
+logger = logging.getLogger(__name__)
 
 import eccodes
 import matplotlib as mpl
@@ -39,10 +41,8 @@ def process_pycpt(
 
     Returns: None.
     """
-    print(predict_config)
-
-    print("This is services_raw")
-    print(ServicesRaw)
+    logger.info(f"predict config: {predict_config}")
+    logger.info(f"services_raw: {ServicesRaw}")
 
     # Set up output dir
     output_case_dir = Path(hindcast_pycptdir)
@@ -207,7 +207,7 @@ def calibrate(
     if len(hindcast_data) == 0:
         raise ValueError("No predictors could be loaded successfully.")
 
-    MOS = "PCR"  # must be one of 'CCA', 'PCR'
+    MOS = "CCA"  # must be one of 'CCA', 'PCR'
 
     cpt_args = {
         "transform_predictand": None,
@@ -224,7 +224,6 @@ def calibrate(
 
     interactive = False
     domain_dir = pycpt.setup(case_dir, predictor_extent)
-    # pycpt.plot_domains(predictor_extent, predictor_extent)
 
     hcsts, fcsts, skill, pxs, pys = pycpt.evaluate_models(
         hindcast_data,
@@ -248,7 +247,8 @@ def calibrate(
 
     pycpt.plot_skill(kept_names, skill, MOS, domain_dir, skill_metrics)
     pycpt.plot_eof_modes(MOS, kept_names, pxs, pys, domain_dir)
-    pycpt.plot_cca_modes(MOS, kept_names, pxs, pys, domain_dir)
+    if MOS == "CCA":
+        pycpt.plot_cca_modes(MOS, kept_names, pxs, pys, domain_dir)
     pycpt.plot_forecasts(cpt_args, predictand_name, fcsts, domain_dir, kept_names, MOS)
 
     # only attempt an mme if there is greater than 2 services picked up

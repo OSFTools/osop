@@ -135,15 +135,17 @@ if __name__ == "__main__":
                 "Please specify --predictor_area as N,W,S,E."
             )
 
-        predict_bounds = [float(pt) for pt in args.predictor_area.split(",")]
-        predict_str = args.predictor_area.replace(",", ":")
+        predict_bounds = [
+            float(pt) for pt in args.predictor_area.split(",")
+        ]  # GCM - If pycpt = True
+        predict_str = args.predictor_area.replace(",", ":")  # GCM
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
     obs_month = [int(l) - 1 for l in args.leads.split(",")]
     obs_str = "".join([str(mon) for mon in obs_month])
-    area = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area = [float(pt) for pt in args.area.split(",")]  # OBS - If pycpt = True
+    area_str = args.area.replace(",", ":")  # OBS
     hc_var = args.variable
 
     if hc_var == "2m_temperature":
@@ -287,12 +289,12 @@ if __name__ == "__main__":
         predict_config = dict(
             start_month=month,
             origin=centre,
-            area_str=predict_str,
+            gcm_area_str=predict_str,  # gcm
             leads_str=leads_str,
             leads=leadtime_month,
             obs_str=obs_str,
-            area=predict_bounds,
-            obs_area=area_str,
+            gcm_area=predict_bounds,  # gcm
+            obs_area_str=area_str,  # obs
             var=var,
             hc_var=hc_var,
             pycptver="pycpt",

@@ -64,7 +64,7 @@ variable="total_precipitation" # variable of interest, typically "2m_temperature
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 method="pmesh" #Remove for smooth plotting on correlation plots
 pycpt="True" #True or False --> True you want pycpt, auto sets to off
-predictor_area="40,10,10,40" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
+predictor_area="30,10,10,30" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
 
 
 # for the test version only run two models and get mme - ukmo

@@ -48,7 +48,8 @@ def process_pycpt(
     output_case_dir = Path(hindcast_pycptdir)
 
     # Set up bounds (obs_area stored "N:W:S:E")
-    north, west, south, east = map(float, predict_config["obs_area"].split(":"))
+    logger.info("using this variable for obs area:", predict_config["obs_area_str"])
+    north, west, south, east = map(float, predict_config["obs_area_str"].split(":"))
     predictor_extent = {
         "west": west,
         "east": east,
@@ -67,7 +68,7 @@ def process_pycpt(
     predictand_name = f"ERA5.{obs_var}"
 
     # Call the predictor (Obs)
-    Ocast_bname = "era5_{hc_var}_1993-2016_monthly_{start_month}_{obs_str}_{obs_area}.pycpt".format(
+    Ocast_bname = "era5_{hc_var}_1993-2016_monthly_{start_month}_{obs_str}_{obs_area_str}.pycpt".format(
         **predict_config
     )
     Ocast_fname = f"{hindcast_pycptdir}/{Ocast_bname}.nc"
@@ -111,13 +112,13 @@ def process_pycpt(
         cfg["systemfc"] = sid
 
         # Hindcast filename
-        Hcast_bname = "{pycptver}_{origin}_{systemhc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.pycpt".format(
+        Hcast_bname = "{pycptver}_{origin}_{systemhc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{gcm_area_str}_{hc_var}.pycpt".format(
             **cfg
         )
         Hcast_fname = f"{hindcast_pycptdir}/{Hcast_bname}.nc"
 
         # Forecast filename
-        Fcast_bname = "{pycptver}_{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.pycpt".format(
+        Fcast_bname = "{pycptver}_{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{gcm_area_str}_{hc_var}.pycpt".format(
             **cfg
         )
         Fcast_fname = f"{pycptdir}/{Fcast_bname}.nc"

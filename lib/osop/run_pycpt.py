@@ -41,20 +41,27 @@ def process_pycpt(
 
     Returns: None.
     """
-    logger.info(f"predict config: {predict_config}")
-    logger.info(f"services_raw: {ServicesRaw}")
-
     # Set up output dir
     output_case_dir = Path(hindcast_pycptdir)
 
     # Set up bounds (obs_area stored "N:W:S:E")
-    logger.info("using this variable for obs area:", predict_config["obs_area_str"])
     north, west, south, east = map(float, predict_config["obs_area_str"].split(":"))
-    predictor_extent = {
+    predictand_extent = {
         "west": west,
         "east": east,
         "south": south,
         "north": north,
+    }
+
+    # Set up bounds for predictor
+    north_M, west_M, south_M, east_M = map(
+        float, predict_config["gcm_area_str"].split(":")
+    )
+    predictor_extent = {
+        "west": west_M,
+        "east": east_M,
+        "south": south_M,
+        "north": north_M,
     }
 
     var = predict_config["var"]
@@ -151,6 +158,7 @@ def process_pycpt(
         Ocast_fname,
         output_case_dir,
         predictor_extent,
+        predictand_extent,
         predictor_names,
         predictand_name,
     )
@@ -163,6 +171,7 @@ def calibrate(
     Ofname,
     case_dir,
     predictor_extent,
+    predictand_extent,
     predictor_names,
     predictand_name,
 ):
@@ -173,6 +182,7 @@ def calibrate(
     Ofname(str): Obs location and filename.
     ouput_case_dir(str): Output dir.
     predictor_extent(dict): Predictor area bounds.
+    predictand_extent(dict): Predictand area bounds.
     predictor_names(list[str]): Names of predictors (must align with Hfnames/Ffnames order).
     predictand_name(str): Name of predictand.
 
@@ -205,6 +215,8 @@ def calibrate(
             )
             continue
 
+    predictor_names = kept_names
+
     if len(hindcast_data) == 0:
         raise ValueError("No predictors could be loaded successfully.")
 
@@ -213,9 +225,9 @@ def calibrate(
     cpt_args = {
         "transform_predictand": None,
         "tailoring": None,
-        "cca_modes": (1, 3),
-        "x_eof_modes": (1, 8),
-        "y_eof_modes": (1, 6),
+        "cca_modes": (1, 10),
+        "x_eof_modes": (1, 10),
+        "y_eof_modes": (1, 10),
         "validation": "crossvalidation",
         "drymask_threshold": None,
         "skillmask_threshold": None,
@@ -233,7 +245,7 @@ def calibrate(
         forecast_data,
         cpt_args,
         domain_dir,
-        kept_names,  # IMPORTANT: use kept names
+        predictor_names,  # IMPORTANT: use kept names
         interactive,
     )
 
@@ -246,29 +258,31 @@ def calibrate(
         "root_mean_squared_error",
     ]
 
-    pycpt.plot_skill(kept_names, skill, MOS, domain_dir, skill_metrics)
-    pycpt.plot_eof_modes(MOS, kept_names, pxs, pys, domain_dir)
+    pycpt.plot_skill(predictor_names, skill, MOS, domain_dir, skill_metrics)
+    pycpt.plot_eof_modes(MOS, predictor_names, pxs, pys, domain_dir)
     if MOS == "CCA":
-        pycpt.plot_cca_modes(MOS, kept_names, pxs, pys, domain_dir)
-    pycpt.plot_forecasts(cpt_args, predictand_name, fcsts, domain_dir, kept_names, MOS)
+        pycpt.plot_cca_modes(MOS, predictor_names, pxs, pys, domain_dir)
+    pycpt.plot_forecasts(
+        cpt_args, predictand_name, fcsts, domain_dir, predictor_names, MOS
+    )
 
     # only attempt an mme if there is greater than 2 services picked up
-    if len(kept_names) < 2:
+    if len(predictor_names) < 2:
         warnings.warn(
-            f"Skipping MME: only {len(kept_names)} predictor available ({kept_names}). "
+            f"Skipping MME: only {len(predictor_names)} predictor available ({predictor_names}). "
             "MME requires at least 2 predictors."
         )
         print("Run complete. Outputs saved to:", case_dir)
         return
 
-    ensemble = kept_names
+    ensemble = predictor_names
 
     det_fcst, pr_fcst, pev_fcst, nextgen_skill = pycpt.construct_mme(
         fcsts,
         hcsts,
         Y,
         ensemble,
-        kept_names,
+        predictor_names,
         cpt_args,
         domain_dir,
     )
@@ -281,7 +295,9 @@ def calibrate(
         "rank_probability_skill_score",
     ]
 
-    pycpt.plot_mme_skill(kept_names, nextgen_skill, MOS, domain_dir, mme_skill_metrics)
+    pycpt.plot_mme_skill(
+        predictor_names, nextgen_skill, MOS, domain_dir, mme_skill_metrics
+    )
     pycpt.plot_mme_forecasts(
         cpt_args, predictand_name, pr_fcst, MOS, domain_dir, det_fcst
     )

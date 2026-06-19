@@ -15,8 +15,16 @@ The documentation includes a user guide and API reference.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User Guide
 
    user_guide.md
+   set_up.md
+   run.md
+   devel.md
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference
+
    api_reference.rst
 

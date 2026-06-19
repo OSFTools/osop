@@ -29,18 +29,22 @@ done
 set -eu
 
 # this conda env gives an error on load, so
-# can't use -u option
+# can't use -u optioni33_remove_workround
 set +u
 conda activate osop
 set -u
 
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master/forecast/downloads
-productsdir=$SCRATCH/seafoam/data/master/forecast/products
-scoresdir=$SCRATCH/seafoam/data/master/forecast/scores
-plotdir=$SCRATCH/seafoam/data/master/forecast/plots
-logdir=$SCRATCH/seafoam/data/master/forecast/logfiles
-pycptdir=$SCRATCH/seafoam/data/master/forecast/pycpt
+exp_name=test_pycpt
+base_path=$SCRATCH/osop/${exp_name}
+downloaddir=${base_path}/forecast/downloads
+productsdir=${base_path}/forecast/products
+scoresdir=${base_path}/forecast/scores
+plotdir=${base_path}/forecast/plots
+logdir=${base_path}/forecast/logfiles
+pycptdir=${base_path}/forecast/pycpt
+hindcast_pycptdir=${base_path}/hindcast/pycpt
+
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir
@@ -49,8 +53,8 @@ mkdir -p $scoresdir
 mkdir -p $pycptdir
 
 #locations for hindcast relatives
-productshcdir=$SCRATCH/seafoam/data/master/hindcast/products
-downloadhcdir=$SCRATCH/seafoam/data/master/hindcast/downloads
+productshcdir=${base_path}/hindcast/products
+downloadhcdir=${base_path}/hindcast/downloads
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
@@ -65,12 +69,12 @@ parseyml="$downloaddir/parseyml.yml"
 # set parameters 
 month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
-area="55,-90,30,-60" # sub-area in degrees for area of interest (comma separated N,W,S,E) #"45,-30,-2.5,60" 
+area="39,60,-11,141" # sub-area in degrees for area of interest (comma separated N,W,S,E) #"45,-30,-2.5,60"  If running pycpt this is the predictand.
 variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
 location="None" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 years=2025
 pycpt="True" #True or False --> True you want pycpt, auto sets to off
-predictor_area="45,-30,-2.5,60" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
+predictor_area="40,0,-40,359" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
 
 
 # for the test version only run two models and get mme - ukmo
@@ -147,7 +151,8 @@ for centre in $centres  ;do
         --logdir $logdir \
         --predictor_area $predictor_area \
         --pycpt $pycpt \
-        --pycptdir $pycptdir
+        --pycptdir $pycptdir \
+        --hindcast_pycptdir $hindcast_pycptdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

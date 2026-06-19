@@ -23,6 +23,7 @@ from yaml.loader import SafeLoader
 # import local modules for function usage
 from osop.compare_terciles import compute_forecast, mme_products
 from osop.pycpt_convert import process_grib_to_pycpt
+from osop.run_pycpt import process_pycpt
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,11 @@ def parse_args():
         "--pycptdir", required=True, help="location to save pycpt files too"
     )
     parser.add_argument(
+        "--hindcast_pycptdir",
+        required=False,
+        help="location to get hindcast pycpt files from",
+    )
+    parser.add_argument(
         "--predictor_area",
         nargs="?",
         default=None,
@@ -116,6 +122,7 @@ if __name__ == "__main__":
     productshcdir = args.productshcdir
     productsfcdir = args.productsfcdir
     pycptdir = args.pycptdir
+    hindcast_pycptdir = args.hindcast_pycptdir
     month = int(args.month)
     leads = args.leads
     logger.info(f"Doing FC products, Centre: {centre}, Month: {month}, Leads: {leads}")
@@ -128,15 +135,17 @@ if __name__ == "__main__":
                 "Please specify --predictor_area as N,W,S,E."
             )
 
-        predict_bounds = [float(pt) for pt in args.predictor_area.split(",")]
-        predict_str = args.predictor_area.replace(",", ":")
+        predict_bounds = [
+            float(pt) for pt in args.predictor_area.split(",")
+        ]  # GCM - If pycpt = True
+        predict_str = args.predictor_area.replace(",", ":")  # GCM
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
     obs_month = [int(l) - 1 for l in args.leads.split(",")]
     obs_str = "".join([str(mon) for mon in obs_month])
-    area = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area = [float(pt) for pt in args.area.split(",")]  # OBS - If pycpt = True
+    area_str = args.area.replace(",", ":")  # OBS
     hc_var = args.variable
 
     if hc_var == "2m_temperature":
@@ -280,11 +289,12 @@ if __name__ == "__main__":
         predict_config = dict(
             start_month=month,
             origin=centre,
-            area_str=predict_str,
+            gcm_area_str=predict_str,  # gcm
             leads_str=leads_str,
             leads=leadtime_month,
             obs_str=obs_str,
-            area=predict_bounds,
+            gcm_area=predict_bounds,  # gcm
+            obs_area_str=area_str,  # obs
             var=var,
             hc_var=hc_var,
             pycptver="pycpt",
@@ -323,7 +333,7 @@ if __name__ == "__main__":
                 lead_months=1,
             )
         elif centre == "mme":
-            print("skipping, no grib for mme")
+            process_pycpt(predict_config, pycptdir, hindcast_pycptdir, ServicesRaw)
         else:
             if centre not in Services.keys():
                 logger.error(f"Unknown system for C3S: {centre}")

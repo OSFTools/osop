@@ -1,6 +1,6 @@
 # Initial set up
 
-### 2.  **Basic set up:**
+## Basic set up
 
 For common users of code or developers within code frameworks, this
 guide may cover redundant ideals. As such a brief overview of what is
@@ -13,7 +13,7 @@ this section and as such it would be advised to move ahead. If issues
 later present in installation and running of the OSOP toolkit it may
 be pertinent to recheck this section for guidance.
 
-### **2a. Installation of Miniforge:**
+### Installation of Miniforge
 
 Conda is an open-source packet management system that is used to
 install, maintain and handle software tools generally falling within
@@ -37,7 +37,7 @@ is the underpinning software that allows functionality of everything
 else to come, so taking time here to get things smoothly working is
 advised.
 
-### **2b. Installation of Git:**
+### Installation of Git
 
 Git is a version control system that allows for multiple developers to
 work on one project simultaneously without interference. Meanwhile,
@@ -46,7 +46,7 @@ services whilst enabling functionality of Unix based features. This
 set up is based in two parts. One is the installation, and the other
 is integration with Miniforge.
 
-### **2b.i. Installation:**
+### Installation
 
 It is important that during the installation of Git, Gitbash is
 selected within this process. Otherwise set up systems are up to the
@@ -64,7 +64,7 @@ piece" in allowing for full functionality of the product, issues with
 running the baseline product -- especially on windows system, may be
 traced back here.
 
-### **2b.ii. Cross functionality with Miniforge:**
+### Cross functionality with Miniforge
 
 Git does not necessarily function with Conda out the gate. Before
 setting up the toolkit Git needs to be configured with Conda so that
@@ -102,7 +102,7 @@ python-based repositories from GitHub. Here onwards is about settling
 in the OSOP product before finally being able to customise it to your
 specific usage case.
 
-### **2c. Mirroring the repository or Downloading:**
+## Mirroring the repository or Downloading
 
 The baseline guidance here is to download the repository as a zip file
 and extract. To do this go to this link [OSFTools/osop: Objective
@@ -136,7 +136,7 @@ of what has been done so far. Check that Conda is accessible within
 Gitbash, and that tour around the repository to get a gist of layout
 and location.
 
-### **2d. Installing the environment:**
+## Installing the environment
 
 The final step in running the OSOP toolkit is to set up the
 dependencies of the python code within the package. The dependencies

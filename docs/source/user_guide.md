@@ -1,12 +1,10 @@
-# OSOP User Guide
+# Introduction
 
 ```{eval-rst}
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 ```
-
-## Introduction
 
 This document provides guidance on using the Objective Seasonal
 Outlook Package (OSOP) toolkit for producing seasonal based

@@ -27,9 +27,9 @@ enter. This runs the main script in a test mode with a limited set of
 models. From here on out the script should run. If you receive an error
 at this point please proceed below to the common errors section. Some
 errors may be expected due to operating system dependencies, and these
-can be smoothed out below.
+can be smoothed out below.  
 
-### 4.  **Making Changes:**
+## Making Changes
 
 The script as downloaded should be informally set up for basic use.
 This is to say that it will probably run to create hindcast and
@@ -107,7 +107,7 @@ the forecast, the same changes should be made to master.forecast.sh
 and then the forecast shell should be run in the terminal with
 `./master.forecast.sh`.
 
-### 5.  **Viewing Outputs:**
+## Viewing Outputs
 
 At this stage you will probably want to review the output of your
 work. To do this you will need to go to the designated place that you

@@ -1007,12 +1007,12 @@ def process_grib_to_pycpt(
         Final seasonal PyCPT-compatible data.
     """
     if cast == "hindcast":
-        cast_bname = "{pycptver}_{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}".format(
+        cast_bname = "{pycptver}_{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{gcm_area_str}_{var}".format(
             **config
         )
         cast_fname = f"{downloaddir}/{cast_bname}.grib"
     elif cast == "forecast":
-        cast_bname = "{pycptver}_{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
+        cast_bname = "{pycptver}_{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{gcm_area_str}_{hc_var}".format(
             **config
         )
         cast_fname = f"{downloaddir}/{cast_bname}.grib"

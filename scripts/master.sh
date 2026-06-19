@@ -31,13 +31,15 @@ set -e
 conda activate osop
 set -u
 
+exp_name=test_pycpt
 # pick download location
-downloaddir=$SCRATCH/seafoam/data/master/hindcast/downloads
-productsdir=$SCRATCH/seafoam/data/master/hindcast/products
-scoresdir=$SCRATCH/seafoam/data/master/hindcast/scores
-plotdir=$SCRATCH/seafoam/data/master/hindcast/plots
-logdir=$SCRATCH/seafoam/data/master/hindcast/logfiles
-pycptdir=$SCRATCH/seafoam/data/master/hindcast/pycpt
+base_path=$SCRATCH/osop/${exp_name}
+downloaddir=${base_path}/hindcast/downloads
+productsdir=${base_path}/hindcast/products
+scoresdir=${base_path}/hindcast/scores
+plotdir=${base_path}/hindcast/plots
+logdir=${base_path}/hindcast/logfiles
+pycptdir=${base_path}/hindcast/pycpt
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir
@@ -57,12 +59,12 @@ parseyml="$downloaddir/parseyml.yml"
 # set parameters
 month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
-area="55,-90,30,-60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
+area="39,60,-11,141" # sub-area in degrees for area of interest (comma separated N,W,S,E) 
 variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 method="pmesh" #Remove for smooth plotting on correlation plots
 pycpt="True" #True or False --> True you want pycpt, auto sets to off
-predictor_area="45,-30,-2.5,60" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
+predictor_area="40,0,-40,359" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
 
 
 # for the test version only run two models and get mme - ukmo

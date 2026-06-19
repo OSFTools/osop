@@ -113,6 +113,12 @@ def process_pycpt(
         cfg = dict(predict_config)  # shallow copy is fine for string/int fields
         cfg["origin"] = svc
 
+        if svc == "eccc_can":
+            cfg["origin"] = "eccc"
+
+        if svc == "eccc_gem5":
+            cfg["origin"] = "eccc"
+
         # Use service id for file naming for both hc and fc unless already set and matching svc
         sid = services_values[svc]
         cfg["systemhc"] = sid
@@ -224,7 +230,7 @@ def calibrate(
 
     cpt_args = {
         "transform_predictand": None,
-        "tailoring": None,
+        "tailoring": "Anomaly",
         "cca_modes": (1, 10),
         "x_eof_modes": (1, 10),
         "y_eof_modes": (1, 10),
@@ -276,6 +282,7 @@ def calibrate(
         return
 
     ensemble = predictor_names
+    print("this is the models in the mme:", ensemble)
 
     det_fcst, pr_fcst, pev_fcst, nextgen_skill = pycpt.construct_mme(
         fcsts,

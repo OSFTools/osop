@@ -1,38 +1,25 @@
 # Running the toolkit
 
-Comprehensively at this stage the toolkit should be downloaded and
-with basic access. Inside the Gitbash terminal, navigating to the
-osop-main file and typing `ls` should bring up a list of directories
-contained within the toolkit. Go into *scripts* with `cd scripts` and
-type `ls` again. Here there should be a few shell scripts -- named
-along the lines of `master.sh` or similar. These are the entry level
-scripts discussed in the opening section.
+At this stage the toolkit should be downloaded and with basic access.
+Inside the Gitbash or Linux terminal, navigating to the osop-main file
+and typing `ls` should bring up a list of directories contained within
+the toolkit. 
 
-To get these to run effectively we need to start with approval of
-licensing for downloads from the Copernicus Climate Data Store.
-[Climate Data Store](https://cds.climate.copernicus.eu/#!/home). To do
-so follow the link below, create an account and re-inact the
-instructions on the page.\
-[CDSAPI setup - Climate Data
-Store](https://cds.climate.copernicus.eu/how-to-api). This generally
-amounts to creating an account, creating a text file with your unique
-Key and the URL. Creating another textfile with the basic download
-script and pip installing the cdsapi package before running the python
-download script.
+Go into *scripts* with `cd scripts` and type `ls` again. Here there
+should be a few shell scripts -- named along the lines of `master.sh`
+or similar. These are the top level scripts discussed in the opening
+section.
 
-Once completing this stage the shell scripts should now work - even if
-the steps come out as fails. Go to your Gitbash terminal and navigate
-back to the scripts directory. Type `./master.sh -t` and press
-enter. This runs the main script in a test mode with a limited set of
-models. From here on out the script should run. If you receive an error
-at this point please proceed below to the common errors section. Some
-errors may be expected due to operating system dependencies, and these
-can be smoothed out below.  
+Type `./master.sh -t` and press enter. This runs the main script in a
+test mode with a limited set of models. From here on out the script
+should run. If you receive an error at this point please proceed below
+to the common errors section. Some errors may be expected due to
+operating system dependencies. Support for fixing these is below.
 
-## Making Changes
+## Making Configuration Changes
 
-The script as downloaded should be informally set up for basic use.
-This is to say that it will probably run to create hindcast and
+The script as downloaded is set up for basic use.
+This is to say that it will run to create hindcast and
 forecast verification and charts for a specified time frame, location
 and variable. However, it is in the nature of the toolkit as well as
 forecasting that these things will want to be specified by a user to
@@ -42,23 +29,21 @@ To do this we will want to start with the master.sh file. The first
 step here is to open the file which can be found under the scripts
 section of the osop toolkit. It does not matter how this is opened.
 One option for people who have followed this text up to this point is
-to open it with nano from a terminal as was done earlier in 2b.ii.
+to open it with nano from a terminal as was done earlier.
 
-Once open -- near the start of this script will be a set out of
-variables. They will appear in the bashformatt as follows.
+Once open -- near the start of this script will be a set of
+variables. They will appear in the file as follows.
 
 ![Script example](media/image1.png)
 
-This is the part of most importance. As this is the direct locations
-to change for a base user to return a output that is of significant
-use.
+This section is the most important part  as this
+where you can set up the scripts to download the season and
+area you need.
 
 The parts labelled `"name"dir =
-\$SCRATCH/seafoam/data/master/hindcast/"name"` is where the plots will
-be stored. Scratch is generally recommended as computers are more
-often than not set up to keep these as temporary files. If the files
-are to be stored for more permeant usage. It would be worth changing
-this to something more appropriate.
+\$SCRATCH/seafoam/data/master/hindcast/"name"` is where the data and plots will
+be stored. Change this to a more appropriate location on your machine,
+for example on Windows you might choose `/c/Users/\<username\>/seasonal`.
 
 The next section marked `"month="` and so on is the variables section.
 This will allow you to set the base parameters for your desired

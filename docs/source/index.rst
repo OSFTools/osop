@@ -2,8 +2,8 @@ OSOP documentation
 ==================
 
 The Objective Seasonal Outlook Package (OSOP) is a toolkit designed to
-support objective seasonal forecasting. It contains a sub-set of Python
-and shell scripting that can be edited and tailored to the user\'s
+support objective seasonal forecasting. It contains a collection of Python
+and shell scripts that can be edited and tailored to the user\'s
 needs. The code can be found in the OSOP GitHub repository in the
 Objective Seasonal Forecasting (OFS) Tools GitHub. The product is open
 source and intended for co-production as such it is encouraged for users

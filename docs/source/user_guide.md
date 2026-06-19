@@ -24,7 +24,7 @@ able to generate:
 
 * verification plots of GCM skill against observations
 * direct tercile forecasts
-* CCA based calibarated forecasts
+* CCA based calibrated forecasts
 
 The code can currently download ERa5 data and seasonal forecast models
 available from [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/).

@@ -164,3 +164,19 @@ subheading.
 This concludes the set-up process of the OSOP toolkit. The next
 section outlines running the toolkit and finally exploring
 how to get the best use out of it for your specific needs.
+
+## Create CDS account and set up for seasonal downloads
+
+To be able to download data you will need to first sign up for
+an ECMWF account if you do not have one already. Start by creating
+an account from 
+[Climate Data Store](https://cds.climate.copernicus.eu/#!/home). 
+Click "Login-Register" on the top right and "Register New User".
+
+Then follow the instructions on [CDSAPI setup - Climate Data
+Store](https://cds.climate.copernicus.eu/how-to-api). This 
+shows you how to get your CDS API key (like a password).
+
+You will also need to visit the download page for ERA5 and Seasonal
+datasets when logged in to the website and accept the terms 
+and conditions of use.

@@ -35,7 +35,7 @@ conda activate osop
 set -u
 
 # pick download location
-exp_name=test_pycpt
+exp_name=add_bom
 base_path=$SCRATCH/osop/${exp_name}
 downloaddir=${base_path}/forecast/downloads
 productsdir=${base_path}/forecast/products
@@ -79,12 +79,12 @@ predictor_area="40,0,-40,359" #gcm area for predictor - if pycpt set to off, ign
 
 # for the test version only run two models and get mme - ukmo
 if [ $test -eq 1 ]; then
-    centres="meteo_france ukmo mme"
+    centres="meteo_france bom mme"
     cat <<EOF > "$parseyml"
     Services:
         meteo_france: [9,1]
         jma: [3,0]  #need to leave this in as deleted currently and causes error if not included in yml
-        ukmo: [604,1]
+        bom: [2,1]
         mme: [1,0]
 EOF
 else
@@ -105,6 +105,7 @@ else
         eccc_can: [4,1]
         eccc_gem5: [5,1]
         ukmo: [604,1]
+        bom: [2,1]
         mme: [1,0]
 EOF
 fi

@@ -88,7 +88,7 @@ if [ $test -eq 1 ]; then
         mme: [1,0]
 EOF
 else
-    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme"
+    centres="meteo_france dwd cmcc ncep ukmo ecmwf jma eccc bom mme"
     # Services in use:
     # First column service, second column weight
     # mme weight should be set to 0, 1 on all other for equal weights

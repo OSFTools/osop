@@ -232,10 +232,10 @@ for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
             --leads $leads \
             --area $area \
             --variable $variable\
-            --downloaddir $downloaddir \
-            --logdir $logdir \
+            --downloaddir $fc_downloaddir \
+            --logdir $fc_logdir \
             --years $fc_year \
-            --logdir $logdir \
+            --logdir $fc_logdir \
             --predictor_area $predictor_area \
             --pycpt $pycpt \
             --pycptdir $pycptdir

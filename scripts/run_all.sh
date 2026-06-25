@@ -31,7 +31,7 @@ set -e
 conda activate osop
 set -u
 
-exp_name=test_pycpt
+exp_name=single_script
 # pick download location
 base_path=$SCRATCH/osop/${exp_name}
 downloaddir=${base_path}/hindcast/downloads
@@ -40,12 +40,24 @@ scoresdir=${base_path}/hindcast/scores
 plotdir=${base_path}/hindcast/plots
 logdir=${base_path}/hindcast/logfiles
 pycptdir=${base_path}/hindcast/pycpt
+
+fc_scoresdir=${base_path}/forecast/scores
+fc_plotdir=${base_path}/forecast/plots
+fc_logdir=${base_path}/forecast/logfiles
+fc_pycptdir=${base_path}/forecast/pycpt
+
+
 mkdir -p $downloaddir
 mkdir -p $plotdir
 mkdir -p $logdir
 mkdir -p $productsdir
 mkdir -p $scoresdir
 mkdir -p $pycptdir
+
+mkdir -p $fc_plotdir
+mkdir -p $fc_logdir
+mkdir -p $fc_scoresdir
+mkdir -p $fc_pycptdir
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
@@ -61,10 +73,11 @@ month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="39,60,-11,141" # sub-area in degrees for area of interest (comma separated N,W,S,E) 
 variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
-location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
+location="None" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 method="pmesh" #Remove for smooth plotting on correlation plots
 pycpt="True" #True or False --> True you want pycpt, auto sets to off
 predictor_area="40,0,-40,359" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
+fc_year=2025 #year to run forecast for
 
 
 # for the test version only run two models and get mme - ukmo
@@ -208,6 +221,76 @@ for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
     else
         echo $centre : plot generation failed
         continue
+    fi
+
+    # now can run forecast
+    if [ "$centre" != "mme" ]; then
+        set +e
+        python get_any_hindcast.py \
+            --centre $centre \
+            --month $month \
+            --leads $leads \
+            --area $area \
+            --variable $variable\
+            --downloaddir $downloaddir \
+            --logdir $logdir \
+            --years $fc_year \
+            --logdir $logdir \
+            --predictor_area $predictor_area \
+            --pycpt $pycpt \
+            --pycptdir $pycptdir
+        exitcode=$?
+        set -e
+        if [ $exitcode -eq 0 ]; then
+            echo $centre : download successful
+        else
+            echo $centre : download failed
+        fi
+        # calculate products 
+    fi
+    set +e
+    python forecast_products.py \
+        --centre $centre \
+        --month $month \
+        --variable $variable \
+        --leads $leads \
+        --area $area \
+        --downloaddir $downloaddir \
+        --downloadhcdir $downloadhcdir \
+        --productshcdir $productshcdir \
+        --productsfcdir $productsdir \
+        --yearsfc $fc_year \
+        --logdir $logdir \
+        --predictor_area $predictor_area \
+        --pycpt $pycpt \
+        --pycptdir $pycptdir \
+        --hindcast_pycptdir $hindcast_pycptdir
+    exitcode=$?
+    set -e
+    if [ $exitcode -eq 0 ]; then
+        echo $centre : forecast products generated
+    else
+        echo $centre : forecast products failed -  check master.sh has been run correctly
+    fi
+    set +e
+    python forecast_plots.py \
+        --location $location \
+        --centre $centre \
+        --month $month \
+        --variable $variable \
+        --leads $leads \
+        --area $area \
+        --downloaddir $downloaddir \
+        --productsfcdir $productsdir \
+        --plotsdir $plotdir \
+        --yearsfc $fc_year \
+        --logdir $logdir
+    exitcode=$?
+    set -e
+    if [ $exitcode -eq 0 ]; then
+        echo $centre : forecast plots generated
+    else
+        echo $centre : forecast plots failed 
     fi
 done
 echo DONE

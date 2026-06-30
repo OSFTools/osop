@@ -9,6 +9,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import calendar
+
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.colors as colors
@@ -90,7 +92,7 @@ def get_cmap(precip_cs=False, wmo_cs=True):
     return cmap_below, cmap_normal, cmap_above
 
 
-def fc_title(config):
+def fc_title(config, threem=False):
     """Create a title string for the forecast plot based on the configuration.
 
     Parameters
@@ -103,11 +105,38 @@ def fc_title(config):
     str
         Formatted title string.
     """
-    lead = int(config["i"]) + 1
-    atitle = (
-        f"Tercile Summary:{config['origin']} {config['systemfc']} {config['fcstarty']} \n"
-        f"startmonth:{config['start_month']} \nlead:{lead} \nVariable: {config['hc_var']}"
-    )
+    start_display_month = calendar.month_abbr[config["start_month"]].upper()
+    lead = int(config["i"]) + 1  # Turn imonth back into a IRI style lead.
+    valid_month = lead + int(config["start_month"])  # add to start month
+    if valid_month > 12:
+        valid_month = (
+            valid_month - 12
+        )  # make exception for where it loops around a year
+    display_month = calendar.month_abbr[valid_month].upper()  # convert to name
+
+    # temporarily handling 3 months like this until the lead times issue overall is resolved.
+    if threem == True:
+        lead_0 = int(config["i"]) - 1
+        valid_month_0 = lead_0 + int(config["start_month"])
+
+        if valid_month_0 > 12:
+            valid_month_0 = (
+                valid_month_0 - 12
+            )  # make exception for where it loops around a year
+
+        display_month_0 = calendar.month_abbr[valid_month_0].upper()  # convert to name
+
+        atitle = (
+            f"Tercile Summary: {config['origin']} {config['systemfc']} \n"
+            f"Nominal Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month_0}-{display_month} \nVariable: {config['hc_var']}"
+        )
+
+        return atitle
+    else:
+        atitle = (
+            f"Tercile Summary: {config['origin']} {config['systemfc']} \n"
+            f"Nominal Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month} \nVariable: {config['hc_var']}"
+        )
     return atitle
 
 
@@ -189,7 +218,7 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
     )
 
     # Set title once
-    plt.title(atitle, fontsize=12, loc="left")
+    plt.title(atitle, fontsize=10, loc="left")
     ax.coastlines()
 
     # Optional map feature
@@ -215,20 +244,6 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
     cbar.set_label("Prob. above (%)")
     for label in cbar.ax.xaxis.get_ticklabels()[1::2]:
         label.set_visible(False)
-
-    # Gridlines
-    gl = ax.gridlines(
-        crs=ccrs.PlateCarree(),
-        draw_labels=True,
-        linewidth=1,
-        color="black",
-        linestyle="--",
-        x_inline=False,
-        y_inline=False,
-    )
-
-    gl.top_labels = False
-    gl.right_labels = False
 
     # Optional dry mask
     if mask is not None:
@@ -340,16 +355,18 @@ def plot_forecasts(productdir, plotsdir, config):
 
     # Tercile Summary - 1month forecasts, per origin centre.
     map_setting = location(config)
-    atitle = fc_title(config)
+    atitle_1m = fc_title(config)
+    atitle_3m = fc_title(config, threem=True)
+
     fig = plot_tercile_fc(
-        plot_dataset_1m, atitle, var=variable, mask=None, map_setting=map_setting
+        plot_dataset_1m, atitle_1m, var=variable, mask=None, map_setting=map_setting
     )
     # Save figure
     figname = f"{plotsdir}/{forecast_name_1m}.png"
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
 
     fig = plot_tercile_fc(
-        plot_dataset_3m, atitle, var=variable, mask=None, map_setting=map_setting
+        plot_dataset_3m, atitle_3m, var=variable, mask=None, map_setting=map_setting
     )
     # Save figure
     figname = f"{plotsdir}/{forecast_name_3m}.png"

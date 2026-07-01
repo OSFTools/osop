@@ -108,6 +108,19 @@ def prep_titles(config):
     else:
         raise BaseException(f"Unexpected aggregation")
     tit_line3 = f"Verification period: {config['hcstarty']} - {config['hcendy']}"
+
+    if config["origin"] == "mme":
+        services = config["mme_svcs"].split(",")
+        lines = []
+
+        # first line: 2 services
+        lines.append(", ".join(services[:2]))
+
+        # remaining lines: 5 services each
+        for i in range(2, len(services), 5):
+            lines.append(", ".join(services[i : i + 5]))
+
+        tit_line3 += "\n MME services:" + "\n ".join(lines)
     return tit_line1, tit_line2, tit_line3
 
 

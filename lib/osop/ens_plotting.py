@@ -13,6 +13,7 @@ import calendar
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from cartopy.mpl.ticker import LatitudeFormatter, LongitudeFormatter
 import matplotlib.colors as colors
 from matplotlib.colors import BoundaryNorm
 import matplotlib.pyplot as plt
@@ -138,7 +139,6 @@ def fc_title(config, threem=False):
             f"Tercile Summary: {config['origin']} {config['systemfc']} \n"
             f"Nominal Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month_0}-{display_month} \nVariable: {variable_clean}"
         )
-
         return atitle
     else:
         atitle = (
@@ -148,7 +148,9 @@ def fc_title(config, threem=False):
         return atitle
 
 
-def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="False"):
+def plot_tercile_fc(
+    mme, atitle, config, var="precipitation", mask=None, map_setting="False"
+):
     """Plot a tercile forecast.
 
     Uses different colormaps for each of three terciles. Uses a threshold of 40% below which it does not plot.
@@ -226,7 +228,21 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
     )
 
     # Set title once
+    if config["origin"] == "mme":
+        services = config["mme_svcs"].split(",")
+        lines = []
+
+        # first line: 2 services
+        lines.append(", ".join(services[:2]))
+
+        # remaining lines: 5 services each
+        for i in range(2, len(services), 5):
+            lines.append(", ".join(services[i : i + 5]))
+
+        atitle += "\nMME services:" + "\n".join(lines)
+
     plt.title(atitle, fontsize=10, loc="left")
+
     ax.coastlines()
 
     # Optional map feature
@@ -252,6 +268,15 @@ def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="Fa
     cbar.set_label("Prob. above (%)")
     for label in cbar.ax.xaxis.get_ticklabels()[1::2]:
         label.set_visible(False)
+
+    ax.set_yticks(
+        np.arange(min(mme["Y"] - 0.5), max(mme["Y"]) + 1, 10.0), crs=ccrs.PlateCarree()
+    )
+    ax.set_xticks(
+        np.arange(min(mme["X"] - 0.5), max(mme["X"]) + 1, 10.0), crs=ccrs.PlateCarree()
+    )
+    ax.xaxis.set_major_formatter(LongitudeFormatter())
+    ax.yaxis.set_major_formatter(LatitudeFormatter())
 
     # Optional dry mask
     if mask is not None:
@@ -367,14 +392,24 @@ def plot_forecasts(productdir, plotsdir, config):
     atitle_3m = fc_title(config, threem=True)
 
     fig = plot_tercile_fc(
-        plot_dataset_1m, atitle_1m, var=variable, mask=None, map_setting=map_setting
+        plot_dataset_1m,
+        atitle_1m,
+        config,
+        var=variable,
+        mask=None,
+        map_setting=map_setting,
     )
     # Save figure
     figname = f"{plotsdir}/{forecast_name_1m}.png"
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
 
     fig = plot_tercile_fc(
-        plot_dataset_3m, atitle_3m, var=variable, mask=None, map_setting=map_setting
+        plot_dataset_3m,
+        atitle_3m,
+        config,
+        var=variable,
+        mask=None,
+        map_setting=map_setting,
     )
     # Save figure
     figname = f"{plotsdir}/{forecast_name_3m}.png"

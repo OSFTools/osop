@@ -15,6 +15,7 @@ from cartopy import crs as ccrs
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
+from cartopy.mpl.ticker import LatitudeFormatter, LongitudeFormatter
 
 # Libraries for plotting and geospatial data visualisation
 from matplotlib import pyplot as plt
@@ -107,6 +108,19 @@ def prep_titles(config):
     else:
         raise BaseException(f"Unexpected aggregation")
     tit_line3 = f"Verification period: {config['hcstarty']} - {config['hcendy']}"
+
+    if config["origin"] == "mme":
+        services = config["mme_svcs"].split(",")
+        lines = []
+
+        # first line: 2 services
+        lines.append(", ".join(services[:2]))
+
+        # remaining lines: 5 services each
+        for i in range(2, len(services), 5):
+            lines.append(", ".join(services[i : i + 5]))
+
+        tit_line3 += "\n MME services:" + "\n ".join(lines)
     return tit_line1, tit_line2, tit_line3
 
 
@@ -199,8 +213,8 @@ def plot_score(
         lon = score_f[config["var"]].sel(category=category).lon
         lat = score_f[config["var"]].sel(category=category).lat
         cols = "YlGn"
-        ex_dir = "neither"
-        under = "lightgray"
+        ex_dir = "min"
+        under = "white"
         levels = np.linspace(0.5, 1.0, 6)
 
     cs = plt.contourf(
@@ -219,6 +233,11 @@ def plot_score(
     if map_setting != "False":
         ax.add_feature(map_setting, edgecolor="black", linewidth=0.5)
     ax.add_feature(cfeature.COASTLINE, edgecolor="black", linewidth=2.0)
+
+    ax.set_yticks(np.arange(min(lat), max(lat) + 1, 10.0), crs=crs)
+    ax.set_xticks(np.arange(min(lon), max(lon) + 1, 10.0), crs=crs)
+    ax.xaxis.set_major_formatter(LongitudeFormatter())
+    ax.yaxis.set_major_formatter(LatitudeFormatter())
 
     plt.colorbar(extend="max")
     plt.savefig(
@@ -398,6 +417,9 @@ def corr_plots(scoresdir, plotdir, hcst_bname, aggr, config, score, titles, meth
     # We need to ensure after running plt.contourf() the ylim hasn't changed
     if ax.get_ylim() != origylim:
         ax.set_ylim(origylim)
+
+    ax.set_yticks(np.arange(min(corr.lat), max(corr.lat) + 1, 10.0))
+    ax.set_xticks(np.arange(min(corr.lon), max(corr.lon) + 1, 10.0))
 
     plt.title(
         f"{titles[0]}\n {config['var']}\n {config['score']} (stippling where p>0.05)\n {titles[1]} \n {titles[2]}",

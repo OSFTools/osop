@@ -122,19 +122,6 @@ if __name__ == "__main__":
         logger.error(f"Unknown hindcast variable: {hc_var}")
         raise ValueError(f"Unknown hindcast variable: {hc_var}")
 
-    # add arguments to config
-    config = dict(
-        start_month=month,
-        origin=centre,
-        area_str=area_str,
-        leads_str=leads_str,
-        leads=leadtime_month,
-        obs_str=obs_str,
-        var=var,
-        hc_var=hc_var,
-        i=i,
-        border=location,
-    )
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
@@ -149,8 +136,28 @@ if __name__ == "__main__":
                 svc: (val[0] if isinstance(val, (list, tuple)) else val)
                 for svc, val in ServicesRaw.items()
             }
+            mme_svcs = ",".join(
+                svc
+                for svc, val in ServicesRaw.items()
+                if isinstance(val, (list, tuple)) and len(val) > 1 and val[1] != 0
+            )
         except yaml.YAMLError as e:
             logger.error(f"Error reading YAML file: {e}", stack_info=True)
+
+    # add arguments to config
+    config = dict(
+        start_month=month,
+        origin=centre,
+        area_str=area_str,
+        leads_str=leads_str,
+        leads=leadtime_month,
+        obs_str=obs_str,
+        var=var,
+        hc_var=hc_var,
+        i=i,
+        border=location,
+        mme_svcs=mme_svcs,
+    )
 
     if args.yearsfc:
         years = [int(yr) for yr in args.yearsfc.split(",")]

@@ -99,45 +99,53 @@ def fc_title(config, threem=False):
     ----------
     config : dict
         Dictionary containing configuration parameters.
+    threem : bool
+        True or False for grouped forecasts.
 
     Returns
     -------
     str
         Formatted title string.
     """
+    # Strip underscores
+    variable_clean = config["hc_var"].replace("_", " ")
+
+    # Convert start month to calendar month name
     start_display_month = calendar.month_abbr[config["start_month"]].upper()
-    lead = int(config["i"]) + 1  # Turn imonth back into a IRI style lead.
-    valid_month = lead + int(config["start_month"])  # add to start month
+
+    # Turn imonth back into a IRI style lead.
+    lead = int(config["i"]) + 1
+    # add to start month
+    valid_month = lead + int(config["start_month"])
+    # Deal with loops around a year
     if valid_month > 12:
-        valid_month = (
-            valid_month - 12
-        )  # make exception for where it loops around a year
-    display_month = calendar.month_abbr[valid_month].upper()  # convert to name
+        valid_month = valid_month - 12
+    # convert to name
+    display_month = calendar.month_abbr[valid_month].upper()
 
     # temporarily handling 3 months like this until the lead times issue overall is resolved.
+    # Make a forecast start month using "i" to allow for a range in 3m.
     if threem == True:
         lead_0 = int(config["i"]) - 1
         valid_month_0 = lead_0 + int(config["start_month"])
 
         if valid_month_0 > 12:
-            valid_month_0 = (
-                valid_month_0 - 12
-            )  # make exception for where it loops around a year
+            valid_month_0 = valid_month_0 - 12
 
-        display_month_0 = calendar.month_abbr[valid_month_0].upper()  # convert to name
+        display_month_0 = calendar.month_abbr[valid_month_0].upper()
 
         atitle = (
             f"Tercile Summary: {config['origin']} {config['systemfc']} \n"
-            f"Nominal Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month_0}-{display_month} \nVariable: {config['hc_var']}"
+            f"Nominal Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month_0}-{display_month} \nVariable: {variable_clean}"
         )
 
         return atitle
     else:
         atitle = (
             f"Tercile Summary: {config['origin']} {config['systemfc']} \n"
-            f"Nominal Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month} \nVariable: {config['hc_var']}"
+            f"Nominal Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month} \nVariable: {variable_clean}"
         )
-    return atitle
+        return atitle
 
 
 def plot_tercile_fc(mme, atitle, var="precipitation", mask=None, map_setting="False"):

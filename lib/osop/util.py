@@ -6,6 +6,7 @@
 """A module with utility functions for seasonal forecasts."""
 
 import logging
+import warnings
 
 import eccodes
 
@@ -169,3 +170,18 @@ def index(forecast_local, st_dim_name):
         {"latitude": "lat", "longitude": "lon", st_dim_name: "start_date"}
     )
     return forecast_data
+
+
+showwarning = warnings.showwarning
+
+
+def log_warning(message, category, filename, lineno, file=None, line=None):
+    msg = str(message)
+
+    if "FigureCanvasAgg is non-interactive" in msg:
+        logger.warning(msg)
+    else:
+        showwarning(message, category, filename, lineno, file=file, line=line)
+
+
+warnings.showwarning = log_warning

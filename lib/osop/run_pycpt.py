@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 import eccodes
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import packaging
 
@@ -265,12 +266,16 @@ def calibrate(
     ]
 
     pycpt.plot_skill(predictor_names, skill, MOS, domain_dir, skill_metrics)
+    plt.close("all")
     pycpt.plot_eof_modes(MOS, predictor_names, pxs, pys, domain_dir)
+    plt.close("all")
     if MOS == "CCA":
         pycpt.plot_cca_modes(MOS, predictor_names, pxs, pys, domain_dir)
+        plt.close("all")
     pycpt.plot_forecasts(
         cpt_args, predictand_name, fcsts, domain_dir, predictor_names, MOS
     )
+    plt.close("all")
 
     # only attempt an mme if there is greater than 2 services picked up
     if len(predictor_names) < 2:
@@ -305,9 +310,11 @@ def calibrate(
     pycpt.plot_mme_skill(
         predictor_names, nextgen_skill, MOS, domain_dir, mme_skill_metrics
     )
+    plt.close("all")
     pycpt.plot_mme_forecasts(
         cpt_args, predictand_name, pr_fcst, MOS, domain_dir, det_fcst
     )
+    plt.close("all")
 
     threshold = 0.5
     isPercentile = True
@@ -349,6 +356,7 @@ def calibrate(
         location_selector=location_selector,
         color_bar=forecast_colors,
     )
+    plt.close("all")
 
     print("Run complete. Outputs saved to:", case_dir)
     return

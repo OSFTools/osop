@@ -134,6 +134,7 @@ if __name__ == "__main__":
         origin=centre,
         area_str=area_str,
         leads_str=leads_str,
+        leads=leads,
         obs_str=obs_str,
         fname_var=fname_var,
         var=var,
@@ -174,18 +175,18 @@ if __name__ == "__main__":
                 # two models aka systems are live - call twice with each system number
                 config["system"] = Services["eccc_can"]
                 ## set titles
-                titles = prep_titles(config)
+                titles = prep_titles(config, scoresdir)
                 generate_plots(config, titles, scoresdir, plotdir, method)
 
                 ## repeat for second system
                 config["system"] = Services["eccc_gem5"]
                 ## set titles
-                titles = prep_titles(config)
+                titles = prep_titles(config, scoresdir)
                 generate_plots(config, titles, scoresdir, plotdir, method)
             else:
                 if centre not in Services.keys():
                     raise ValueError(f"Unknown system for C3S: {centre}")
                 config["system"] = Services[centre]
                 ## set titles
-                titles = prep_titles(config)
+                titles = prep_titles(config, scoresdir)
                 generate_plots(config, titles, scoresdir, plotdir, method)

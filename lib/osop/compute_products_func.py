@@ -241,9 +241,9 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
     # NOTE rolling() assigns the label to the end of the N month period, so the first N-1 elements have NaN and can be dropped
     logger.debug("Computing 3-month aggregation")
     # rollng method defaults to look backwards
-    hcst_3m = hcst.rolling(forecastMonth=3).mean()
-    # Want only 3 month mean with complete 3 months
-    hcst_3m = hcst_3m.where(hcst_3m.forecastMonth >= int(config["leads"][2]), drop=True)
+    hcst_3m = (
+        hcst.rolling(forecastMonth=len(config["leads"])).mean().dropna("forecastMonth")
+    )
 
     # Calculate Anomalies (and save to file)
     logger.debug("Computing anomalies 1m")

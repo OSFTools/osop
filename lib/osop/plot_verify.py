@@ -68,7 +68,7 @@ def location(config):
         )
 
 
-def prep_titles(config):
+def prep_titles(config, scoresdir):
     """Prepare titles for the plot based on the arguments in the config dictionary.
 
     Currently this replicates the titles here:
@@ -85,6 +85,15 @@ def prep_titles(config):
         Tuple containing the prepared titles for the plot:
         (first line, second line, third line).
     """
+    score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc".format(
+        **config
+    )
+    score_data = xr.open_dataset(os.path.join(scoresdir, score_fname))
+
+    print("this is config", config)
+    lead_list = [int(l) for l in config["leads"].split(",")]
+    print(len(lead_list))
+
     tit_line1 = "{origin} {system}".format(**config)
     tit_line2_base = (
         f"Start month: {calendar.month_abbr[config['start_month']].upper()}"
@@ -100,7 +109,7 @@ def prep_titles(config):
     elif config["aggr"] == "3m":
         validmonths = [
             vm if vm <= 12 else vm - 12
-            for vm in [config["valid_month"] + shift for shift in range(3)]
+            for vm in [config["valid_month"] + shift for shift in range(len(lead_list))]
         ]
         validmonths = [calendar.month_abbr[vm][0] for vm in validmonths]
         tit_line2 = tit_line2_base + f" - Valid months: {''.join(validmonths)}"

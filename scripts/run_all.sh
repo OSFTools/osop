@@ -12,6 +12,38 @@
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 
+# set parameters
+do_hc=1 # 1 to run hindcast, 0 to skip. Need to have run at least once to calculate terciles for forecast to work
+do_fc=0 # 1 to run forecast, 0 to skip. 
+month=5 # initialisation month
+leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
+area="39,60,-11,141" # sub-area in degrees for area of interest (comma separated N,W,S,E) 
+variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
+location="None" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
+method="pmesh" #Remove for smooth plotting on correlation plots
+pycpt="True" #True or False --> True you want pycpt, auto sets to off
+predictor_area="40,0,-40,359" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
+fc_year=2025 #year to run forecast for
+
+exp_name=single_script
+# pick download location
+base_path=$SCRATCH/osop/${exp_name}
+logdir=${base_path}/logfiles
+
+downloaddir=${base_path}/hindcast/downloads
+productsdir=${base_path}/hindcast/products
+scoresdir=${base_path}/hindcast/scores
+plotdir=${base_path}/hindcast/plots
+pycptdir=${base_path}/hindcast/pycpt
+
+fc_downloaddir=${base_path}/forecast/downloads
+fc_productsdir=${base_path}/forecast/products
+fc_scoresdir=${base_path}/forecast/scores
+fc_plotdir=${base_path}/forecast/plots
+fc_pycptdir=${base_path}/forecast/pycpt
+
+# end of user chosen options
+
 test=0
 while getopts ":t" option; do
    case $option in
@@ -31,33 +63,20 @@ set -e
 conda activate osop
 set -u
 
-exp_name=single_script
-# pick download location
-base_path=$SCRATCH/osop/${exp_name}
-downloaddir=${base_path}/hindcast/downloads
-productsdir=${base_path}/hindcast/products
-scoresdir=${base_path}/hindcast/scores
-plotdir=${base_path}/hindcast/plots
-logdir=${base_path}/hindcast/logfiles
-pycptdir=${base_path}/hindcast/pycpt
-
-fc_scoresdir=${base_path}/forecast/scores
-fc_plotdir=${base_path}/forecast/plots
-fc_logdir=${base_path}/forecast/logfiles
-fc_pycptdir=${base_path}/forecast/pycpt
-
+mkdir -p $logdir
 
 mkdir -p $downloaddir
 mkdir -p $plotdir
-mkdir -p $logdir
 mkdir -p $productsdir
 mkdir -p $scoresdir
 mkdir -p $pycptdir
 
+mkdir -p $fc_downloaddir
+mkdir -p $fc_productsdir
 mkdir -p $fc_plotdir
-mkdir -p $fc_logdir
 mkdir -p $fc_scoresdir
 mkdir -p $fc_pycptdir
+
 
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
@@ -67,18 +86,6 @@ set -u
 
 #create a yml file to pass dictionary parameters
 parseyml="$downloaddir/parseyml.yml"
-
-# set parameters
-month=5 # initialisation month
-leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
-area="39,60,-11,141" # sub-area in degrees for area of interest (comma separated N,W,S,E) 
-variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
-location="None" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
-method="pmesh" #Remove for smooth plotting on correlation plots
-pycpt="True" #True or False --> True you want pycpt, auto sets to off
-predictor_area="40,0,-40,359" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
-fc_year=2025 #year to run forecast for
-
 
 # for the test version only run two models and get mme - ukmo
 if [ $test -eq 1 ]; then
@@ -113,6 +120,9 @@ EOF
 fi
 echo "YML file created: $parseyml"
 
+# currently forecast expects a copy of this in fc_downloaddir
+cp $parseyml $fc_downloaddir
+
 # get ERA5 data
 set +e
 python get_era5.py \
@@ -135,7 +145,8 @@ fi
 
 #
 # loop over all centres of interest and get data #for centre in meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme ;do 
-for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
+for centre in $centres ;do  
+  if [ "$do_hc" -eq 1 ]; then
     if [ "$centre" != "mme" ]; then
         set +e
         python get_any_hindcast.py \
@@ -222,8 +233,9 @@ for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         echo $centre : plot generation failed
         continue
     fi
-
-    # now can run forecast
+  fi
+  if [ "$do_fc" -eq 1 ]; then
+    # run forecast
     if [ "$centre" != "mme" ]; then
         set +e
         python get_any_hindcast.py \
@@ -233,12 +245,11 @@ for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
             --area $area \
             --variable $variable\
             --downloaddir $fc_downloaddir \
-            --logdir $fc_logdir \
+            --logdir $logdir \
             --years $fc_year \
-            --logdir $fc_logdir \
             --predictor_area $predictor_area \
             --pycpt $pycpt \
-            --pycptdir $pycptdir
+            --pycptdir $fc_pycptdir
         exitcode=$?
         set -e
         if [ $exitcode -eq 0 ]; then
@@ -255,16 +266,16 @@ for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         --variable $variable \
         --leads $leads \
         --area $area \
-        --downloaddir $downloaddir \
-        --downloadhcdir $downloadhcdir \
-        --productshcdir $productshcdir \
-        --productsfcdir $productsdir \
+        --downloaddir $fc_downloaddir \
+        --downloadhcdir $downloaddir \
+        --productshcdir $productsdir \
+        --productsfcdir $fc_productsdir \
         --yearsfc $fc_year \
         --logdir $logdir \
         --predictor_area $predictor_area \
         --pycpt $pycpt \
-        --pycptdir $pycptdir \
-        --hindcast_pycptdir $hindcast_pycptdir
+        --pycptdir $fc_pycptdir \
+        --hindcast_pycptdir $pycptdir
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then
@@ -280,9 +291,9 @@ for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
         --variable $variable \
         --leads $leads \
         --area $area \
-        --downloaddir $downloaddir \
-        --productsfcdir $productsdir \
-        --plotsdir $plotdir \
+        --downloaddir $fc_downloaddir \
+        --productsfcdir $fc_productsdir \
+        --plotsdir $fc_plotdir \
         --yearsfc $fc_year \
         --logdir $logdir
     exitcode=$?
@@ -292,5 +303,6 @@ for centre in $centres ;do  #meteo_france dwd cmcc ncep ukmo ecmwf jma eccc mme
     else
         echo $centre : forecast plots failed 
     fi
+  fi  
 done
 echo DONE

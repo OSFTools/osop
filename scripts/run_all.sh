@@ -12,6 +12,9 @@
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 
+# Script to calculate download hindcasts, calculate terciles and plot verification measures.
+set -eu
+
 # set parameters
 do_hc=1 # 1 to run hindcast, 0 to skip. Need to have run at least once to calculate terciles for forecast to work
 do_fc=0 # 1 to run forecast, 0 to skip. 
@@ -55,27 +58,25 @@ while getopts ":t" option; do
    esac
 done
 
-# Script to calculate download hindcasts, calculate terciles and plot verification measures.
-set -e
-
 # this conda env gives an error on load, so
 # can't use -u option
+set +u
 conda activate osop
 set -u
 
-mkdir -p $logdir
+mkdir -p "$logdir"
 
-mkdir -p $downloaddir
-mkdir -p $plotdir
-mkdir -p $productsdir
-mkdir -p $scoresdir
-mkdir -p $pycptdir
+mkdir -p "$downloaddir"
+mkdir -p "$plotdir"
+mkdir -p "$productsdir"
+mkdir -p "$scoresdir"
+mkdir -p "$pycptdir"
 
-mkdir -p $fc_downloaddir
-mkdir -p $fc_productsdir
-mkdir -p $fc_plotdir
-mkdir -p $fc_scoresdir
-mkdir -p $fc_pycptdir
+mkdir -p "$fc_downloaddir"
+mkdir -p "$fc_productsdir"
+mkdir -p "$fc_plotdir"
+mkdir -p "$fc_scoresdir"
+mkdir -p "$fc_pycptdir"
 
 
 # set PYTHONPATH relative to this location
@@ -122,7 +123,7 @@ fi
 echo "YML file created: $parseyml"
 
 # currently forecast expects a copy of this in fc_downloaddir
-cp $parseyml $fc_downloaddir
+cp "$parseyml" "$fc_downloaddir/$(basename "$parseyml")"
 
 # get ERA5 data
 set +e

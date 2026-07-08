@@ -82,7 +82,7 @@ mkdir -p "$fc_pycptdir"
 # set PYTHONPATH relative to this location
 lib_path=$(pushd ./../lib > /dev/null && pwd && popd > /dev/null)
 set +u
-export PYTHONPATH=$PYTHONPATH:$lib_path
+export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$lib_path"
 set -u
 
 #create a yml file to pass dictionary parameters

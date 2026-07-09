@@ -140,7 +140,7 @@ def _assemble_season_coords(agg_data, T_mid, Ti_season, Tf_season, S_val):
     return agg_data.expand_dims(T=[T_mid.astype("datetime64[ns]")]).assign_coords(
         Ti=("T", [Ti_season.astype("datetime64[ns]")]),
         Tf=("T", [Tf_season.astype("datetime64[ns]")]),
-        S=("T", [S_val.astype("datetime64[ns]")]),
+        S=("T", [S_val]),
     )
 
 

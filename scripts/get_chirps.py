@@ -67,21 +67,6 @@ def get_obs(downloaddir, config):
             try:
                 # use a short timeout and stream to avoid loading large responses into memory
                 response = requests.get(url, timeout=30, stream=True)
-                # If server rejects default requests UA, we'll detect 403 and retry with a common browser UA
-                if response.status_code == 403:
-                    logger.info(
-                        f"Received 403, retrying with browser User-Agent for {url}"
-                    )
-                    headers = {
-                        "User-Agent": (
-                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                            "AppleWebKit/537.36 (KHTML, like Gecko) "
-                            "Chrome/115.0.0.0 Safari/537.36"
-                        )
-                    }
-                    response = requests.get(
-                        url, timeout=30, stream=True, headers=headers
-                    )
                 response.raise_for_status()  # Raise an error for bad responses
                 with open(obs_fullpath, "wb") as f:
                     for chunk in response.iter_content(chunk_size=8192):

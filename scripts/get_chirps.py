@@ -50,6 +50,7 @@ def get_obs(downloaddir, config):
         )
         endy = now.year
 
+    nfail = 0
     for year in range(starty, endy + 1):
         for month in range(1, 13):
             logger.info(f"Downloading CHIRPS for {year}-{month:02d}")
@@ -59,7 +60,9 @@ def get_obs(downloaddir, config):
             obs_fullpath = Path(downloaddir) / obs_filename
 
             if obs_fullpath.exists():
-                logger.warning(f"File {obs_fullpath} already exists")
+                message = f"File {obs_fullpath} already exists, skipping download."
+                logger.warning(message)
+                print(message)
                 continue
 
             # now do the actual download (construct URL robustly to avoid double slashes)
@@ -72,9 +75,9 @@ def get_obs(downloaddir, config):
                     for chunk in response.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
-                logger.info(
-                    f"Downloaded CHIRPS data for {year}-{month:02d} to {obs_fullpath}"
-                )
+                message = f"Successfully downloaded CHIRPS data for {year}-{month:02d} to {obs_fullpath}"
+                logger.info(message)
+                print(message)
             except requests.exceptions.RequestException as e:
                 # log the URL and status if available to help debugging 403/forbidden
                 status = (
@@ -82,9 +85,14 @@ def get_obs(downloaddir, config):
                     if getattr(e, "response", None)
                     else None
                 )
-                logger.error(
-                    f"Failed to download CHIRPS data for {year}-{month:02d}: {e} (url={url}, status={status})"
-                )
+                message = f"Failed to download CHIRPS data for {year}-{month:02d}: {e} (url={url}, status={status})"
+                logger.error(message)
+                print(message)
+                nfail += 1
+    if nfail > 0:
+        message = f"Finished downloading CHIRPS data with {nfail} failures."
+        logger.error(message)
+        raise RuntimeError(message)
 
 
 def parse_args():

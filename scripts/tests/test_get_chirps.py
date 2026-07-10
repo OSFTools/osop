@@ -218,6 +218,9 @@ def test_get_obs_does_not_write_on_request_error(get_chirps_module):
             get_chirps_module.requests, "get", return_value=response
         ) as get_mock,
         patch("builtins.open", mock_open()) as open_mock,
+        pytest.raises(
+            RuntimeError, match="Finished downloading CHIRPS data with 12 failures"
+        ),
     ):
         get_chirps_module.get_obs("/tmp/chirps", config)
 

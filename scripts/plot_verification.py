@@ -126,21 +126,6 @@ if __name__ == "__main__":
 
     valid_month = month + (leadtime_month[0] - 1)
 
-    # add arguments to config
-    config = dict(
-        border=border,
-        start_month=month,
-        valid_month=valid_month,
-        origin=centre,
-        area_str=area_str,
-        leads_str=leads_str,
-        obs_str=obs_str,
-        fname_var=fname_var,
-        var=var,
-    )
-
-    logger.debug(config)
-
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
@@ -155,8 +140,30 @@ if __name__ == "__main__":
                 svc: (val[0] if isinstance(val, (list, tuple)) else val)
                 for svc, val in ServicesRaw.items()
             }
+            mme_svcs = ",".join(
+                svc
+                for svc, val in ServicesRaw.items()
+                if isinstance(val, (list, tuple)) and len(val) > 1 and val[1] != 0
+            )
         except yaml.YAMLError as e:
             logger.error(f"Error reading YAML file: {e}", stack_info=True)
+
+    # add arguments to config
+    config = dict(
+        border=border,
+        start_month=month,
+        valid_month=valid_month,
+        origin=centre,
+        area_str=area_str,
+        leads_str=leads_str,
+        obs_str=obs_str,
+        fname_var=fname_var,
+        var=var,
+        mme_svcs=mme_svcs,
+    )
+
+    logger.debug(config)
+
     if args.years:
         config["hcstarty"] = args.years[0]
         config["hcendy"] = args.years[1]

@@ -8,6 +8,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 import logging
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
@@ -64,6 +65,102 @@ def test_parse_args(get_chirps_module, monkeypatch):
     assert args.pycptdir == "/tmp/pycpt"
     assert args.pycpt == "False"
     assert args.years == "1990,1995"
+
+
+def test_unpack_args_and_run_with_years(get_chirps_module, monkeypatch):
+    """Test unpack_args_and_run branch when explicit years are provided."""
+    captured = {}
+
+    def fake_get_obs(downloaddir, config):
+        captured["downloaddir"] = downloaddir
+        captured["config"] = config
+
+    monkeypatch.setattr(get_chirps_module, "get_obs", fake_get_obs)
+    monkeypatch.setattr(get_chirps_module.logging, "basicConfig", lambda **kwargs: None)
+
+    args = SimpleNamespace(
+        month="3",
+        leads="1,3,6",
+        area="10,-20,-10,20",
+        downloaddir="/tmp/downloads",
+        logdir="/tmp/logs",
+        pycptdir="/tmp/pycpt",
+        pycpt="False",
+        years="1990,1995",
+    )
+
+    get_chirps_module.unpack_args_and_run(args)
+
+    assert captured["downloaddir"] == "/tmp/downloads"
+    assert captured["config"]["start_month"] == 3
+    assert captured["config"]["leads_obs"] == [0, 2, 5]
+    assert captured["config"]["leads_str"] == "025"
+    assert captured["config"]["area"] == [10.0, -20.0, -10.0, 20.0]
+    assert captured["config"]["hcstarty"] == 1990
+    assert captured["config"]["hcendy"] == 1995
+
+
+def test_unpack_args_and_run_uses_default_years(get_chirps_module, monkeypatch):
+    """Test unpack_args_and_run branch when years are not provided."""
+    captured = {}
+
+    def fake_get_obs(downloaddir, config):
+        captured["downloaddir"] = downloaddir
+        captured["config"] = config
+
+    monkeypatch.setattr(get_chirps_module, "get_obs", fake_get_obs)
+    monkeypatch.setattr(get_chirps_module.logging, "basicConfig", lambda **kwargs: None)
+
+    args = SimpleNamespace(
+        month="11",
+        leads="2,4",
+        area="5,6,7,8",
+        downloaddir="/tmp/downloads",
+        logdir="/tmp/logs",
+        pycptdir="/tmp/pycpt",
+        pycpt="False",
+        years=None,
+    )
+
+    get_chirps_module.unpack_args_and_run(args)
+
+    assert captured["downloaddir"] == "/tmp/downloads"
+    assert captured["config"]["start_month"] == 11
+    assert captured["config"]["leads_obs"] == [1, 3]
+    assert captured["config"]["leads_str"] == "13"
+    assert captured["config"]["area"] == [5.0, 6.0, 7.0, 8.0]
+    assert captured["config"]["hcstarty"] == 1993
+    assert captured["config"]["hcendy"] == 2016
+
+
+def test_unpack_args_and_run_raises_for_pycpt_true(get_chirps_module, monkeypatch):
+    """Test unpack_args_and_run raises NotImplementedError when pycpt is True."""
+    state = {"calls": 0}
+
+    def fake_get_obs(downloaddir, config):
+        state["calls"] += 1
+
+    monkeypatch.setattr(get_chirps_module, "get_obs", fake_get_obs)
+    monkeypatch.setattr(get_chirps_module.logging, "basicConfig", lambda **kwargs: None)
+
+    args = SimpleNamespace(
+        month="7",
+        leads="1,2",
+        area="1,2,3,4",
+        downloaddir="/tmp/downloads",
+        logdir="/tmp/logs",
+        pycptdir="/tmp/pycpt",
+        pycpt="True",
+        years=None,
+    )
+
+    with pytest.raises(
+        NotImplementedError, match="pycpt calibration not yet implemented"
+    ):
+        get_chirps_module.unpack_args_and_run(args)
+
+    # get_obs is called before the pycpt not-implemented guard is raised.
+    assert state["calls"] == 1
 
 
 def test_get_obs_downloads_and_writes_chunks(get_chirps_module):

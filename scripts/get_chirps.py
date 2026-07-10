@@ -138,18 +138,7 @@ def parse_args():
     return args
 
 
-if __name__ == "__main__":
-    """
-    Called when this is run as a script.
-
-    Gets the command line arguments using argparse and calls the main function to download ERA5.
-
-    Returns
-    -------
-    None
-    """
-    # get command line args
-    args = parse_args()
+def unpack_args_and_run(args):
 
     # unpack args and reformat if needed
     downloaddir = args.downloaddir
@@ -203,3 +192,18 @@ if __name__ == "__main__":
         raise NotImplementedError(
             "pycpt calibration not yet implemented for ERA5 retrievals"
         )
+
+
+if __name__ == "__main__":
+    """
+    Called when this is run as a script.
+
+    Gets the command line arguments using argparse and calls the main function to download ERA5.
+
+    Returns
+    -------
+    None
+    """
+    # get command line args
+    args = parse_args()
+    unpack_args_and_run(args)

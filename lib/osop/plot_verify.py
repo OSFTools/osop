@@ -88,7 +88,7 @@ def prep_titles(config):
     """
     tit_line1 = "{origin} {system}".format(**config)
     tit_line2_base = (
-        f"Start month: {calendar.month_abbr[config['start_month']].upper()}"
+        f"Nominal FC Start Month: {calendar.month_abbr[config['start_month']].upper()}"
     )
 
     if config["aggr"] == "1m":

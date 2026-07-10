@@ -137,19 +137,19 @@ def fc_title(config, threem=False):
 
         atitle = (
             f"Tercile Summary: {config['origin']} {config['systemfc']} \n"
-            f"Nominal Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month_0}-{display_month} \nVariable: {variable_clean}"
+            f"Nominal FC Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month_0}-{display_month} \nProb (most likely category of:{variable_clean})"
         )
         return atitle
     else:
         atitle = (
             f"Tercile Summary: {config['origin']} {config['systemfc']} \n"
-            f"Nominal Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month} \nVariable: {variable_clean}"
+            f"Nominal FC Start: {start_display_month} {config['fcstarty']} \nForecasting: {display_month} \nProb (most likely category of:{variable_clean})"
         )
         return atitle
 
 
 def plot_tercile_fc(
-    mme, atitle, config, var="precipitation", mask=None, map_setting="False"
+    mme, atitle, centre, mme_svc, var="precipitation", mask=None, map_setting="False"
 ):
     """Plot a tercile forecast.
 
@@ -228,8 +228,8 @@ def plot_tercile_fc(
     )
 
     # Set title once
-    if config["origin"] == "mme":
-        services = config["mme_svcs"].split(",")
+    if centre == "mme":
+        services = mme_svc.split(",")
         lines = []
 
         # first line: 2 services
@@ -394,7 +394,8 @@ def plot_forecasts(productdir, plotsdir, config):
     fig = plot_tercile_fc(
         plot_dataset_1m,
         atitle_1m,
-        config,
+        centre=config["origin"],
+        mme_svc=config["mme_svcs"],
         var=variable,
         mask=None,
         map_setting=map_setting,
@@ -406,7 +407,8 @@ def plot_forecasts(productdir, plotsdir, config):
     fig = plot_tercile_fc(
         plot_dataset_3m,
         atitle_3m,
-        config,
+        centre=config["origin"],
+        mme_svc=config["mme_svcs"],
         var=variable,
         mask=None,
         map_setting=map_setting,

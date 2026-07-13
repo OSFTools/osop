@@ -54,7 +54,7 @@ def get_obs(downloaddir, config):
     # set up a list of datetimes for the requested months and years
 
     mon_dt = [
-        datetime(iy, config["month"], 1) + relativedelta(months=ioff - 1)
+        datetime(iy, config["month"], 1) + relativedelta(months=ioff)
         for iy in range(starty, endy + 1)
         for ioff in config["leadtime_month"]
     ]

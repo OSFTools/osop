@@ -189,6 +189,17 @@ def test_get_obs_downloads_and_writes_chunks(get_chirps_module):
     assert open_mock.call_count == 2
     assert open_mock().write.call_count == 4
 
+    # Verify exact URL and kwargs passed to requests.get
+    expected_urls = [
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2020.01.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2020.02.tif",
+    ]
+    observed_urls = [call.args[0] for call in get_mock.call_args_list]
+    assert observed_urls == expected_urls
+    for call in get_mock.call_args_list:
+        assert call.kwargs["timeout"] == 30
+        assert call.kwargs["stream"] is True
+
 
 def test_get_obs_skips_when_file_exists(get_chirps_module):
     """Test that get_obs does not download or write if file already exists."""
@@ -240,9 +251,19 @@ def test_get_obs_does_not_write_on_request_error(get_chirps_module):
     ):
         get_chirps_module.get_obs("/tmp/chirps", config)
 
-    # Some implementations retry 403 responses once, so accept >= 2 calls.
-    assert get_mock.call_count >= 2
+    assert get_mock.call_count == 2
     open_mock.assert_not_called()
+
+    # Verify exact URL and kwargs passed to requests.get
+    expected_urls = [
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2020.01.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2020.02.tif",
+    ]
+    observed_urls = [call.args[0] for call in get_mock.call_args_list]
+    assert observed_urls == expected_urls
+    for call in get_mock.call_args_list:
+        assert call.kwargs["timeout"] == 30
+        assert call.kwargs["stream"] is True
 
 
 def test_get_obs_clamps_start_year_before_1981(get_chirps_module, caplog):
@@ -277,6 +298,17 @@ def test_get_obs_clamps_start_year_before_1981(get_chirps_module, caplog):
     assert (
         "Data from before 1981 not available, setting start year to 1981" in caplog.text
     )
+
+    # Verify exact URL and kwargs passed to requests.get
+    expected_urls = [
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.1981.01.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.1981.02.tif",
+    ]
+    observed_urls = [call.args[0] for call in get_mock.call_args_list]
+    assert observed_urls == expected_urls
+    for call in get_mock.call_args_list:
+        assert call.kwargs["timeout"] == 30
+        assert call.kwargs["stream"] is True
 
 
 def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
@@ -317,3 +349,22 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
     assert get_mock.call_count == 10
     assert open_mock.call_count == 10
     assert "Data from after 2024 not available, setting end year to 2024" in caplog.text
+
+    # Verify exact URL and kwargs passed to requests.get
+    expected_urls = [
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2020.01.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2020.02.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2021.01.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2021.02.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2022.01.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2022.02.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2023.01.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2023.02.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2024.01.tif",
+        "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/chirps-v3.0.2024.02.tif",
+    ]
+    observed_urls = [call.args[0] for call in get_mock.call_args_list]
+    assert observed_urls == expected_urls
+    for call in get_mock.call_args_list:
+        assert call.kwargs["timeout"] == 30
+        assert call.kwargs["stream"] is True

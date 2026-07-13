@@ -92,9 +92,8 @@ def test_unpack_args_and_run_with_years(get_chirps_module, monkeypatch):
     get_chirps_module.unpack_args_and_run(args)
 
     assert captured["downloaddir"] == "/tmp/downloads"
-    assert captured["config"]["start_month"] == 3
-    assert captured["config"]["leads_obs"] == [0, 2, 5]
-    assert captured["config"]["leads_str"] == "025"
+    assert captured["config"]["month"] == 3
+    assert captured["config"]["leadtime_month"] == [0, 2, 5]
     assert captured["config"]["area"] == [10.0, -20.0, -10.0, 20.0]
     assert captured["config"]["hcstarty"] == 1990
     assert captured["config"]["hcendy"] == 1995
@@ -125,9 +124,8 @@ def test_unpack_args_and_run_uses_default_years(get_chirps_module, monkeypatch):
     get_chirps_module.unpack_args_and_run(args)
 
     assert captured["downloaddir"] == "/tmp/downloads"
-    assert captured["config"]["start_month"] == 11
-    assert captured["config"]["leads_obs"] == [1, 3]
-    assert captured["config"]["leads_str"] == "13"
+    assert captured["config"]["month"] == 11
+    assert captured["config"]["leadtime_month"] == [1, 3]
     assert captured["config"]["area"] == [5.0, 6.0, 7.0, 8.0]
     assert captured["config"]["hcstarty"] == 1993
     assert captured["config"]["hcendy"] == 2016
@@ -170,7 +168,13 @@ def test_get_obs_downloads_and_writes_chunks(get_chirps_module):
     response.raise_for_status.return_value = None
     response.iter_content.return_value = [b"abc", b"", b"def"]
 
-    config = {"hcstarty": 2020, "hcendy": 2020}
+    config = {
+        "hcstarty": 2020,
+        "hcendy": 2020,
+        "month": 1,
+        "leadtime_month": [0, 1],
+        "area": [10.0, -20.0, -10.0, 20.0],
+    }
 
     with (
         patch.object(get_chirps_module.Path, "exists", return_value=False),
@@ -181,14 +185,20 @@ def test_get_obs_downloads_and_writes_chunks(get_chirps_module):
     ):
         get_chirps_module.get_obs("/tmp/chirps", config)
 
-    assert get_mock.call_count == 12
-    assert open_mock.call_count == 12
-    assert open_mock().write.call_count == 24
+    assert get_mock.call_count == 2
+    assert open_mock.call_count == 2
+    assert open_mock().write.call_count == 4
 
 
 def test_get_obs_skips_when_file_exists(get_chirps_module):
     """Test that get_obs does not download or write if file already exists."""
-    config = {"hcstarty": 2020, "hcendy": 2020}
+    config = {
+        "hcstarty": 2020,
+        "hcendy": 2020,
+        "month": 1,
+        "leadtime_month": [0, 1],
+        "area": [10.0, -20.0, -10.0, 20.0],
+    }
 
     with (
         patch.object(get_chirps_module.Path, "exists", return_value=True),
@@ -210,7 +220,13 @@ def test_get_obs_does_not_write_on_request_error(get_chirps_module):
         response=response,
     )
 
-    config = {"hcstarty": 2020, "hcendy": 2020}
+    config = {
+        "hcstarty": 2020,
+        "hcendy": 2020,
+        "month": 1,
+        "leadtime_month": [0, 1],
+        "area": [10.0, -20.0, -10.0, 20.0],
+    }
 
     with (
         patch.object(get_chirps_module.Path, "exists", return_value=False),
@@ -219,13 +235,13 @@ def test_get_obs_does_not_write_on_request_error(get_chirps_module):
         ) as get_mock,
         patch("builtins.open", mock_open()) as open_mock,
         pytest.raises(
-            RuntimeError, match="Finished downloading CHIRPS data with 12 failures"
+            RuntimeError, match="Finished downloading CHIRPS data with 2 failures"
         ),
     ):
         get_chirps_module.get_obs("/tmp/chirps", config)
 
-    # Some implementations retry 403 responses once, so accept >= 12 calls.
-    assert get_mock.call_count >= 12
+    # Some implementations retry 403 responses once, so accept >= 2 calls.
+    assert get_mock.call_count >= 2
     open_mock.assert_not_called()
 
 
@@ -236,7 +252,13 @@ def test_get_obs_clamps_start_year_before_1981(get_chirps_module, caplog):
     response.raise_for_status.return_value = None
     response.iter_content.return_value = [b"ok"]
 
-    config = {"hcstarty": 1979, "hcendy": 1981}
+    config = {
+        "hcstarty": 1979,
+        "hcendy": 1981,
+        "month": 1,
+        "leadtime_month": [0, 1],
+        "area": [10.0, -20.0, -10.0, 20.0],
+    }
 
     with caplog.at_level(logging.WARNING):
         with (
@@ -250,8 +272,8 @@ def test_get_obs_clamps_start_year_before_1981(get_chirps_module, caplog):
         ):
             get_chirps_module.get_obs("/tmp/chirps", config)
 
-    assert get_mock.call_count == 12
-    assert open_mock.call_count == 12
+    assert get_mock.call_count == 2
+    assert open_mock.call_count == 2
     assert (
         "Data from before 1981 not available, setting start year to 1981" in caplog.text
     )
@@ -264,14 +286,24 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
     response.raise_for_status.return_value = None
     response.iter_content.return_value = [b"ok"]
 
-    config = {"hcstarty": 2024, "hcendy": 2026}
+    config = {
+        "hcstarty": 2020,
+        "hcendy": 3000,
+        "month": 1,
+        "leadtime_month": [0, 1],
+        "area": [10.0, -20.0, -10.0, 20.0],
+    }
 
-    mocked_now = MagicMock()
-    mocked_now.year = 2024
+    real_datetime = get_chirps_module.datetime
+
+    class FixedDateTime(real_datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return real_datetime(2024, 1, 1)
 
     with caplog.at_level(logging.WARNING):
         with (
-            patch.object(get_chirps_module, "datetime") as datetime_mock,
+            patch.object(get_chirps_module, "datetime", FixedDateTime),
             patch.object(get_chirps_module.Path, "exists", return_value=False),
             patch.object(
                 get_chirps_module.requests,
@@ -280,9 +312,8 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
             ) as get_mock,
             patch("builtins.open", mock_open()) as open_mock,
         ):
-            datetime_mock.now.return_value = mocked_now
             get_chirps_module.get_obs("/tmp/chirps", config)
 
-    assert get_mock.call_count == 12
-    assert open_mock.call_count == 12
+    assert get_mock.call_count == 10
+    assert open_mock.call_count == 10
     assert "Data from after 2024 not available, setting end year to 2024" in caplog.text

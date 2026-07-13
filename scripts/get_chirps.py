@@ -9,6 +9,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 
+from dateutil.relativedelta import relativedelta
 import requests
 
 logger = logging.getLogger(__name__)
@@ -50,45 +51,54 @@ def get_obs(downloaddir, config):
         )
         endy = now.year
 
+    # set up a list of datetimes for the requested months and years
+
+    mon_dt = [
+        datetime(iy, config["month"], 1) + relativedelta(months=ioff - 1)
+        for iy in range(starty, endy + 1)
+        for ioff in config["leadtime_month"]
+    ]
     nfail = 0
-    for year in range(starty, endy + 1):
-        for month in range(1, 13):
-            logger.info(f"Downloading CHIRPS for {year}-{month:02d}")
-            # Download the data for the specified year and month
-            # Here we just simulate the download with a log message.
-            obs_filename = f"chirps-v3.0.{year}.{month:02d}.tif"
-            obs_fullpath = Path(downloaddir) / obs_filename
 
-            if obs_fullpath.exists():
-                message = f"File {obs_fullpath} already exists, skipping download."
-                logger.warning(message)
-                print(message)
-                continue
+    for dt in mon_dt:
+        year = dt.year
+        month = dt.month
+        logger.info(f"Downloading CHIRPS for {dt}")
+        # Download the data for the specified year and month
+        # Here we just simulate the download with a log message.
+        obs_filename = f"chirps-v3.0.{year}.{month:02d}.tif"
+        obs_fullpath = Path(downloaddir) / obs_filename
 
-            # now do the actual download (construct URL robustly to avoid double slashes)
-            url = BASE_URL.rstrip("/") + "/" + obs_filename
-            try:
-                # use a short timeout and stream to avoid loading large responses into memory
-                response = requests.get(url, timeout=30, stream=True)
-                response.raise_for_status()  # Raise an error for bad responses
-                with open(obs_fullpath, "wb") as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-                message = f"Successfully downloaded CHIRPS data for {year}-{month:02d} to {obs_fullpath}"
-                logger.info(message)
-                print(message)
-            except requests.exceptions.RequestException as e:
-                # log the URL and status if available to help debugging 403/forbidden
-                status = (
-                    getattr(e.response, "status_code", None)
-                    if getattr(e, "response", None)
-                    else None
-                )
-                message = f"Failed to download CHIRPS data for {year}-{month:02d}: {e} (url={url}, status={status})"
-                logger.error(message)
-                print(message)
-                nfail += 1
+        if obs_fullpath.exists():
+            message = f"File {obs_fullpath} already exists, skipping download."
+            logger.warning(message)
+            print(message)
+            continue
+
+        # now do the actual download (construct URL robustly to avoid double slashes)
+        url = BASE_URL.rstrip("/") + "/" + obs_filename
+        try:
+            # use a short timeout and stream to avoid loading large responses into memory
+            response = requests.get(url, timeout=30, stream=True)
+            response.raise_for_status()  # Raise an error for bad responses
+            with open(obs_fullpath, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            message = f"Successfully downloaded CHIRPS data for {year}-{month:02d} to {obs_fullpath}"
+            logger.info(message)
+            print(message)
+        except requests.exceptions.RequestException as e:
+            # log the URL and status if available to help debugging 403/forbidden
+            status = (
+                getattr(e.response, "status_code", None)
+                if getattr(e, "response", None)
+                else None
+            )
+            message = f"Failed to download CHIRPS data for {year}-{month:02d}: {e} (url={url}, status={status})"
+            logger.error(message)
+            print(message)
+            nfail += 1
     if nfail > 0:
         message = f"Finished downloading CHIRPS data with {nfail} failures."
         logger.error(message)
@@ -158,15 +168,13 @@ def unpack_args_and_run(args):
     month = int(args.month)
     leadtime_month = [int(l) - 1 for l in args.leads.split(",")]
     # for filename to keep consistent with hindcast filenames
-    leads_str = "".join([str(mon) for mon in leadtime_month])
     area_bounds = [float(pt) for pt in args.area.split(",")]
 
     # add arguments to config dictionary used to pass parameters
     config = dict(
-        start_month=month,
-        leads_obs=leadtime_month,
+        month=month,
         area=area_bounds,
-        leads_str=leads_str,
+        leadtime_month=leadtime_month,
     )
 
     logger.debug(config)
@@ -178,7 +186,6 @@ def unpack_args_and_run(args):
     else:
         config["hcstarty"] = 1993
         config["hcendy"] = 2016
-
     get_obs(downloaddir, config)
 
     if pycpt == "True":

@@ -166,7 +166,7 @@ if __name__ == "__main__":
         config["hcendy"] = 2016
 
     for score in scores:
-        for aggr in ["1m", "3m"]:
+        for aggr in ["1m", "nm"]:
             config["aggr"] = aggr
             config["score"] = score
 

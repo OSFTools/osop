@@ -44,7 +44,7 @@ def read_obs(obs_fname, config):
     -------
     obs_ds : xarray.Dataset
         Preprocessed observation data with monthly time resolution.
-    obs_ds_3m : xarray.Dataset
+    obs_ds_nm : xarray.Dataset
         Preprocessed observation data with 3-monthly time resolution.
     """
     obs_ds = xr.open_dataset(obs_fname, engine="cfgrib")
@@ -74,18 +74,18 @@ def read_obs(obs_fname, config):
     # Calculate 3-month aggregations
     # NOTE rolling() assigns the label to the end of the N month period
     logger.debug("Calculate observation 3-monthly aggregations")
-    obs_ds_3m = obs_ds.rolling(valid_time=3).mean()
-    obs_ds_3m = obs_ds_3m.where(
-        obs_ds_3m.forecastMonth >= int(config["leads"][2]), drop=True
+    obs_ds_nm = obs_ds.rolling(valid_time=3).mean()
+    obs_ds_nm = obs_ds_nm.where(
+        obs_ds_nm.forecastMonth >= int(config["leads"][2]), drop=True
     )
 
     # As we don't need it anymore, we can safely remove 'forecastMonth'
     obs_ds = obs_ds.drop("forecastMonth")
-    obs_ds_3m = obs_ds_3m.drop("forecastMonth")
+    obs_ds_nm = obs_ds_nm.drop("forecastMonth")
 
     obs_ds["valid_time"] = obs_ds.valid_time.dt.strftime("%Y-%m")
-    obs_ds_3m["valid_time"] = obs_ds_3m.valid_time.dt.strftime("%Y-%m")
-    return obs_ds, obs_ds_3m
+    obs_ds_nm["valid_time"] = obs_ds_nm.valid_time.dt.strftime("%Y-%m")
+    return obs_ds, obs_ds_nm
 
 
 def swap_dims(hcst, obs):
@@ -121,14 +121,14 @@ def swap_dims(hcst, obs):
         return thishcst, thisobs
 
 
-def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
+def scores_dtrmnstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir):
     """Compute deterministic scores.
 
     Parameters
     ----------
     obs_ds : xarray.Dataset
         Observation / reanalysis data, monthly resolution.
-    obs_ds_3m : xarray.Dataset
+    obs_ds_nm : xarray.Dataset
         Observation / reanalysis 3-month aggregated data.
     hcst_bname : str
         Basename of the hindcast data.
@@ -146,11 +146,11 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
     Saves spearman and pearson correlation and p-value to netCDF files.
     """
     # Loop over aggregations
-    for aggr in ["1m", "3m"]:
+    for aggr in ["1m", "nm"]:
         if aggr == "1m":
             o = obs_ds
-        elif aggr == "3m":
-            o = obs_ds_3m
+        elif aggr == "nm":
+            o = obs_ds_nm
         else:
             raise ValueError(f"Unknown aggregation {aggr}")
 
@@ -223,14 +223,14 @@ def scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
         r_corr_pval.to_netcdf(f"{scoresdir}/{hcst_bname}.{aggr}.pearson_corr_pval.nc")
 
 
-def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
+def scores_prblstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir):
     """Compute probabilistic scores and save results to NetCDF files.
 
     Parameters
     ----------
     obs_ds : xarray.Dataset
         Observation / Reanalysis monthly data.
-    obs_ds_3m : xarray.Dataset
+    obs_ds_nm : xarray.Dataset
         Observation / Reanalysis 3-month aggregated data.
     hcst_bname : str
         Basename of the hindcast probabilities file.
@@ -251,11 +251,11 @@ def scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir):
     quantiles = [1 / 3.0, 2 / 3.0]
     numcategories = len(quantiles) + 1
     # Loop over aggregations
-    for aggr in ["1m", "3m"]:
+    for aggr in ["1m", "nm"]:
         if aggr == "1m":
             o = obs_ds
-        elif aggr == "3m":
-            o = obs_ds_3m
+        elif aggr == "nm":
+            o = obs_ds_nm
         else:
             raise BaseException(f"Unknown aggregation {aggr}")
 
@@ -399,17 +399,17 @@ def calc_scores(config, downloaddir, scoresdir, productsdir):
     )
 
     ## read obs
-    obs_ds, obs_ds_3m = read_obs(obs_fname, config)
+    obs_ds, obs_ds_nm = read_obs(obs_fname, config)
 
     # if the observations are ERA5, rename tprate
     # and convert from m/day to m/s
     if config["obs_name"] == "era5" and config["hc_var"] == "total_precipitation":
         obs_ds = obs_ds.rename({"tp": "tprate"})
-        obs_ds_3m = obs_ds_3m.rename({"tp": "tprate"})
+        obs_ds_nm = obs_ds_nm.rename({"tp": "tprate"})
         obs_ds["tprate"].attrs["units"] = "m/s"
         obs_ds["tprate"] = obs_ds["tprate"] * 3600 * 24
-        obs_ds_3m["tprate"] = obs_ds_3m["tprate"] * 3600 * 24
-        obs_ds_3m["tprate"].attrs["units"] = "m/s"
+        obs_ds_nm["tprate"] = obs_ds_nm["tprate"] * 3600 * 24
+        obs_ds_nm["tprate"].attrs["units"] = "m/s"
     ## calc scores
-    scores_prblstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir)
-    scores_dtrmnstc(obs_ds, obs_ds_3m, hcst_bname, scoresdir, productsdir)
+    scores_prblstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir)
+    scores_dtrmnstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir)

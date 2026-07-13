@@ -90,9 +90,7 @@ def prep_titles(config, scoresdir):
     )
     score_data = xr.open_dataset(os.path.join(scoresdir, score_fname))
 
-    print("this is config", config)
     lead_list = [int(l) for l in config["leads"].split(",")]
-    print(len(lead_list))
 
     tit_line1 = "{origin} {system}".format(**config)
     tit_line2_base = (
@@ -106,7 +104,7 @@ def prep_titles(config, scoresdir):
             tit_line2_base
             + f" - Valid month: {calendar.month_abbr[validmonth].upper()}"
         )
-    elif config["aggr"] == "3m":
+    elif config["aggr"] == "nm":
         validmonths = [
             vm if vm <= 12 else vm - 12
             for vm in [config["valid_month"] + shift for shift in range(len(lead_list))]

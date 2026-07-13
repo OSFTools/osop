@@ -91,7 +91,7 @@ def process_mme_products(array, output, aggr, config, sig, member_weight=0.1):
     output : dict
         Enters as an empty array.
     aggr : str
-        '1m' or '3m' array.
+        '1m' or 'nm' array.
     config : dict
         Configuration parameters.
     sig : str
@@ -158,7 +158,7 @@ def mme_products_hindcast(services, config, productsdir):
         for origin, val in services.items()
     }
 
-    for aggr in ["1m", "3m"]:
+    for aggr in ["1m", "nm"]:
         mme_combined[aggr] = None
         mme_combined_mean[aggr] = None
         mme_combined_anom[aggr] = None
@@ -172,7 +172,7 @@ def mme_products_hindcast(services, config, productsdir):
             for origin, system_value in services_values.items():
                 config_copy_hc = update_config(origin, system_value, config)
 
-                # Load and run each array, 1m-3m and tercile, mean and anom
+                # Load and run each array, 1m-nm and tercile, mean and anom
                 file_name = "{fpath}/{origin}_{systemfc}_1993-2016_monthly_mean_{start_month}_{leads_str}_{area_str}_{var}.{aggr}.{suffix}".format(
                     fpath=productsdir,
                     **config_copy_hc,
@@ -241,7 +241,7 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
     # NOTE rolling() assigns the label to the end of the N month period, so the first N-1 elements have NaN and can be dropped
     logger.debug("Computing 3-month aggregation")
     # rollng method defaults to look backwards
-    hcst_3m = (
+    hcst_nm = (
         hcst.rolling(forecastMonth=len(config["leads"])).mean().dropna("forecastMonth")
     )
 
@@ -253,21 +253,21 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
     anom = hcst - hcmean
     anom = anom.assign_attrs(reference_period="{hcstarty}-{hcendy}".format(**config))
 
-    logger.debug("Computing anomalies 3m")
-    hcmean_3m = hcst_3m.mean(["number", "start_date"])
-    hc_ens_mean_3m = hcst_3m.mean(["number"])
-    anom_3m = hcst_3m - hcmean_3m
-    anom_3m = anom_3m.assign_attrs(
+    logger.debug("Computing anomalies nm")
+    hcmean_nm = hcst_nm.mean(["number", "start_date"])
+    hc_ens_mean_nm = hcst_nm.mean(["number"])
+    anom_nm = hcst_nm - hcmean_nm
+    anom_nm = anom_nm.assign_attrs(
         reference_period="{hcstarty}-{hcendy}".format(**config)
     )
 
-    logger.debug("Saving mean and anomalies 1m/3m to netCDF files")
+    logger.debug("Saving mean and anomalies 1m/nm to netCDF files")
     anom.to_netcdf(f"{productsdir}/{hcst_bname}.1m.anom.nc")
-    anom_3m.to_netcdf(f"{productsdir}/{hcst_bname}.3m.anom.nc")
+    anom_nm.to_netcdf(f"{productsdir}/{hcst_bname}.nm.anom.nc")
     hc_ens_mean.to_netcdf(f"{productsdir}/{hcst_bname}.1m.ensmean.nc")
-    hc_ens_mean_3m.to_netcdf(f"{productsdir}/{hcst_bname}.3m.ensmean.nc")
+    hc_ens_mean_nm.to_netcdf(f"{productsdir}/{hcst_bname}.nm.ensmean.nc")
 
-    return hcst, hcst_3m
+    return hcst, hcst_nm
 
 
 def get_thresh(icat, quantiles, xrds, dims=["number", "start_date"]):
@@ -316,7 +316,7 @@ def get_thresh(icat, quantiles, xrds, dims=["number", "start_date"]):
     return xrds_lo, xrds_hi
 
 
-def prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir):
+def prob_terc(config, hcst_bname, hcst, hcst_nm, productsdir):
     """Calculate probabilities for tercile categories.
 
     Counts members within each category and saves them to netCDF files.
@@ -331,7 +331,7 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir):
         Basename of hindcast file.
     hcst : xarray.Dataset
         The dataset containing the hindcast data.
-    hcst_3m : xarray.Dataset
+    hcst_nm : xarray.Dataset
         The dataset containing the 3-month aggregated hindcast data.
     productsdir : str
         Directory path to save the netCDF files.
@@ -348,7 +348,7 @@ def prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir):
     quantiles = [1 / 3.0, 2 / 3.0]
     numcategories = len(quantiles) + 1
 
-    for aggr, h in [("1m", hcst), ("3m", hcst_3m)]:
+    for aggr, h in [("1m", hcst), ("nm", hcst_nm)]:
         if os.path.isfile(f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc"):
             logger.debug(f"{productsdir}/{hcst_bname}.{aggr}.tercile_probs.nc exists")
         else:
@@ -419,10 +419,10 @@ def calc_products(config, downloaddir, productsdir):
 
     ## calc anoms
     logger.info(f"Calculating anomalies for {hcst_bname}")
-    hcst, hcst_3m = calc_anoms(hcst, hcst_bname, config, productsdir)
+    hcst, hcst_nm = calc_anoms(hcst, hcst_bname, config, productsdir)
     ## calc terc probs and thresholds
     logger.info(f"Calculating tercile probabilities for {hcst_bname}")
-    prob_terc(config, hcst_bname, hcst, hcst_3m, productsdir)
+    prob_terc(config, hcst_bname, hcst, hcst_nm, productsdir)
 
 
 def calc_products_mme(services, config, productsdir):

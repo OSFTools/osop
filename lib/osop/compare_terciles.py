@@ -50,7 +50,7 @@ def mme_process_forecasts(
     months : int or None
         Set to None or value of month based on leads.
     suffix : str
-        Used for naming between 3months or the imonth lead.
+        Used for naming between nmonths or the imonth lead.
     Services : dict
         List of services to combine.
     services_values : dict
@@ -78,7 +78,7 @@ def mme_process_forecasts(
                 fpath=productsfcdir, month=months, **config_copy
             )
         else:
-            file_name = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
+            file_name = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.nm.forecast_percentages.nc".format(
                 fpath=productsfcdir, **config_copy
             )
         ds = xr.open_dataset(file_name)
@@ -141,14 +141,14 @@ def mme_products(Services, config, productsfcdir):
             f"{productsfcdir}/{mme_fname_1m}.forecast_percentages.nc"
         )
 
-    mme_products_3m = mme_process_forecasts(
-        None, "3m", Services, services_values, productsfcdir, config, services_weights
+    mme_products_nm = mme_process_forecasts(
+        None, "nm", Services, services_values, productsfcdir, config, services_weights
     )
-    mme_fname_3m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
+    mme_fname_nm = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}".format(
         **config
     )
-    mme_products_3m.to_netcdf(
-        f"{productsfcdir}/{mme_fname_3m}.3m.forecast_percentages.nc"
+    mme_products_nm.to_netcdf(
+        f"{productsfcdir}/{mme_fname_nm}.nm.forecast_percentages.nc"
     )
 
 
@@ -189,11 +189,14 @@ def mask_cat(fcst, terciles):
     """
     v = list(terciles.data_vars)[0]
     lo, hi = [terciles[v].sel(category=c) for c in (0, 1)]
+
     return fcst < lo, fcst > hi, (fcst > lo) & (fcst < hi)
 
 
-def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fname):
-    """Produce a three month tercile forecast.
+def nth_month(
+    forecast_data, hindcast_terciles, products_forecast, forecast_fname, config
+):
+    """Produce a nth month tercile forecast.
 
     This takes data in the form of an xarray that contains the month, the percentage and the lat-lon coordinates.
 
@@ -217,10 +220,12 @@ def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fn
     Saves output data-array that contains the percent values for each tercile and co-ord.
     """
     # Calculate average over the months
-    fcst_3m = forecast_data.rolling(forecastMonth=3).mean()
-    fcst_3m = fcst_3m.isel(forecastMonth=(fcst_3m["forecastMonth"] == 4))
-    # Select for data
-    fcst = fcst_3m[list(fcst_3m.data_vars)[0]]
+    fcst_nm = (
+        forecast_data.rolling(forecastMonth=len(config["leads"]))
+        .mean()
+        .dropna("forecastMonth")
+    )
+    fcst = fcst_nm[list(fcst_nm.data_vars)[0]]
 
     # Form masks based on categories
     lower, higher, middle = mask_cat(fcst, hindcast_terciles)
@@ -233,7 +238,7 @@ def three_month(forecast_data, hindcast_terciles, products_forecast, forecast_fn
     )
     # Save out file for plots
     total_percentage.to_netcdf(
-        f"{products_forecast}/{forecast_fname}.3m.forecast_percentages.nc"
+        f"{products_forecast}/{forecast_fname}.nm.forecast_percentages.nc"
     )
 
 
@@ -313,10 +318,10 @@ def compute_forecast(config, downloaddir, products_hindcast, products_forecast):
     )
     hcst_terciles_1m = xr.open_dataset(hcst_terciles_1m)
     # 3 Month
-    hcst_terciles_3m = "{fpath}/{origin}_{systemhc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.tercile_thresholds.nc".format(
+    hcst_terciles_nm = "{fpath}/{origin}_{systemhc}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.nm.tercile_thresholds.nc".format(
         fpath=products_hindcast, **config
     )
-    hcst_terciles_3m = xr.open_dataset(hcst_terciles_3m)
+    hcst_terciles_nm = xr.open_dataset(hcst_terciles_nm)
 
     # forecast data set info
     forecast_local = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.grib".format(
@@ -328,4 +333,6 @@ def compute_forecast(config, downloaddir, products_hindcast, products_forecast):
     st_dim_name = get_tindex(forecast_local)
     forecast_data = index(forecast_local, st_dim_name)
     one_month(forecast_data, hcst_terciles_1m, products_forecast, forecast_fname)
-    three_month(forecast_data, hcst_terciles_3m, products_forecast, forecast_fname)
+    nth_month(
+        forecast_data, hcst_terciles_nm, products_forecast, forecast_fname, config
+    )

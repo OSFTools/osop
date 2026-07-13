@@ -312,10 +312,10 @@ def plot_forecasts(productdir, plotsdir, config):
     forecast_name_1m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}".format(
         **config
     )
-    forecast_local_3m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
+    forecast_local_nm = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.nm.forecast_percentages.nc".format(
         fpath=productdir, **config
     )
-    forecast_name_3m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m".format(
+    forecast_name_nm = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.nm".format(
         **config
     )
 
@@ -332,11 +332,11 @@ def plot_forecasts(productdir, plotsdir, config):
 
     # Reformat dataset for plotting
     fcst_local_1m = xr.open_dataset(forecast_local_1m)
-    fcst_local_3m = xr.open_dataset(forecast_local_3m)
-    fcst_local_3m = fcst_local_3m.squeeze(dim="forecastMonth")
+    fcst_local_nm = xr.open_dataset(forecast_local_nm)
+    fcst_local_nm = fcst_local_nm.squeeze(dim="forecastMonth")
 
     plot_dataset_1m = reformatt(fcst_local_1m, variable)
-    plot_dataset_3m = reformatt(fcst_local_3m, variable)
+    plot_dataset_nm = reformatt(fcst_local_nm, variable)
 
     # Tercile Summary - 1month forecasts, per origin centre.
     map_setting = location(config)
@@ -349,8 +349,8 @@ def plot_forecasts(productdir, plotsdir, config):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
 
     fig = plot_tercile_fc(
-        plot_dataset_3m, atitle, var=variable, mask=None, map_setting=map_setting
+        plot_dataset_nm, atitle, var=variable, mask=None, map_setting=map_setting
     )
     # Save figure
-    figname = f"{plotsdir}/{forecast_name_3m}.png"
+    figname = f"{plotsdir}/{forecast_name_nm}.png"
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)

@@ -2,7 +2,7 @@
 
 # This file is part of osop and is released under the BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
-"""Python script to download CHIRPS data for a specific month, area and variable."""
+"""Python script to download CHIRPS data for requested months and years."""
 
 import argparse
 from datetime import datetime
@@ -19,19 +19,19 @@ def get_obs(downloaddir, config):
     """Download CHIRPS for the requested period and area.
 
     Retrieves monthly averaged CHIRPS data. No server side subsetting is available,
-    so the full dataset is downloaded and then subsetted to the requested area.
+    so the full dataset is downloaded (no subsetting yet).
 
     Parameters
     ----------
-    obs_fname : str
-        Filename to save to, and to check not already downloaded.
+    downloaddir : str | pathlib.Path
+        Directory to save downloaded global GeoTIFFs.
     config : dict
         Dictionary containing necessary arguments.
 
     Returns
     -------
-    str
-        The filename where data is saved.
+    None
+        Downloads files into downloaddir; raises RuntimeError if any downloads fail.
     """
     BASE_URL = "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/"
 
@@ -142,7 +142,7 @@ def parse_args():
 
 
 def unpack_args_and_run(args):
-
+    """Unpack command line arguments and call the main function to download CHIRPS."""
     # unpack args and reformat if needed
     downloaddir = args.downloaddir
     pycptdir = args.pycptdir
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     """
     Called when this is run as a script.
 
-    Gets the command line arguments using argparse and calls the main function to download ERA5.
+    Gets the command line arguments using argparse and calls the main function to download CHIRPS.
 
     Returns
     -------

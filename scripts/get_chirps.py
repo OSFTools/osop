@@ -64,8 +64,8 @@ def get_obs(downloaddir, config):
         year = dt.year
         month = dt.month
         logger.info(f"Downloading CHIRPS for {dt}")
-        # Download the data for the specified year and month
-        # Here we just simulate the download with a log message.
+        # Download the data for the specified year and month.
+        # (Actual HTTP download is performed below.)
         obs_filename = f"chirps-v3.0.{year}.{month:02d}.tif"
         obs_fullpath = Path(downloaddir) / obs_filename
 

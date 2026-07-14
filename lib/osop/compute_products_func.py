@@ -102,7 +102,7 @@ def process_mme_products(array, output, aggr, config, sig, member_weight=0.1):
     Returns
     -------
     xarray.DataArray
-        The combined mme for 1 month and 3 month combined.
+        The combined mme for 1 month and n month combined.
     str
         The save name for the output file.
     """
@@ -212,11 +212,11 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
     Returns
     -------
     tuple of xarray.Dataset
-        The original hindcast data and the 3-month aggregated data.
+        The original hindcast data and the n-month aggregated data.
 
     Notes
     -----
-    Saves 1 month and 3 month anomalies to netCDF files.
+    Saves 1 month and n month anomalies to netCDF files.
     """
     logger.debug("Re-arranging time metadata in xr.Dataset object")
     # Add start_month to the xr.Dataset
@@ -237,9 +237,9 @@ def calc_anoms(hcst, hcst_bname, config, productsdir):
     ]
     hcst = hcst.assign_coords(valid_time=vt)
 
-    # CALCULATE 3-month AGGREGATIONS
+    # CALCULATE n-month AGGREGATIONS
     # NOTE rolling() assigns the label to the end of the N month period, so the first N-1 elements have NaN and can be dropped
-    logger.debug("Computing 3-month aggregation")
+    logger.debug("Computing n-month aggregation")
     # rollng method defaults to look backwards
     hcst_nm = (
         hcst.rolling(forecastMonth=len(config["leads"])).mean().dropna("forecastMonth")
@@ -320,7 +320,7 @@ def prob_terc(config, hcst_bname, hcst, hcst_nm, productsdir):
     """Calculate probabilities for tercile categories.
 
     Counts members within each category and saves them to netCDF files.
-    This function computes the tercile thresholds for both 1-month and 3-month aggregated hindcast data
+    This function computes the tercile thresholds for both 1-month and n-month aggregated hindcast data
     and saves them to netCDF files.
 
     Parameters
@@ -332,7 +332,7 @@ def prob_terc(config, hcst_bname, hcst, hcst_nm, productsdir):
     hcst : xarray.Dataset
         The dataset containing the hindcast data.
     hcst_nm : xarray.Dataset
-        The dataset containing the 3-month aggregated hindcast data.
+        The dataset containing the n-month aggregated hindcast data.
     productsdir : str
         Directory path to save the netCDF files.
 

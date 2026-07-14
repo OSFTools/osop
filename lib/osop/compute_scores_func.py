@@ -31,7 +31,7 @@ from osop.regridders import regrid_data_std
 
 
 def read_obs(obs_fname, config):
-    """Read observation data from a file and calculate 3 month averages.
+    """Read observation data from a file and calculate n month averages.
 
     Parameters
     ----------
@@ -45,7 +45,7 @@ def read_obs(obs_fname, config):
     obs_ds : xarray.Dataset
         Preprocessed observation data with monthly time resolution.
     obs_ds_nm : xarray.Dataset
-        Preprocessed observation data with 3-monthly time resolution.
+        Preprocessed observation data with n-monthly time resolution.
     """
     obs_ds = xr.open_dataset(obs_fname, engine="cfgrib")
 
@@ -64,19 +64,18 @@ def read_obs(obs_fname, config):
     ]
     obs_ds = obs_ds.assign_coords(forecastMonth=("valid_time", fcmonths))
     # Drop obs values not needed (earlier than first start date)
-    # to create well shaped 3-month aggregations from obs.
+    # to create well shaped n-month aggregations from obs.
     obs_ds = obs_ds.where(
         obs_ds.valid_time
         >= np.datetime64("{hcstarty}-{start_month:02d}-01".format(**config)),
         drop=True,
     )
 
-    # Calculate 3-month aggregations
+    # Calculate n-month aggregations
     # NOTE rolling() assigns the label to the end of the N month period
-    logger.debug("Calculate observation 3-monthly aggregations")
-    obs_ds_nm = obs_ds.rolling(valid_time=3).mean()
-    obs_ds_nm = obs_ds_nm.where(
-        obs_ds_nm.forecastMonth >= int(config["leads"][2]), drop=True
+    logger.debug("Calculate observation n-monthly aggregations")
+    obs_ds_nm = (
+        obs_ds.rolling(valid_time=len(config["leads"])).mean().dropna("valid_time")
     )
 
     # As we don't need it anymore, we can safely remove 'forecastMonth'
@@ -129,7 +128,7 @@ def scores_dtrmnstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir):
     obs_ds : xarray.Dataset
         Observation / reanalysis data, monthly resolution.
     obs_ds_nm : xarray.Dataset
-        Observation / reanalysis 3-month aggregated data.
+        Observation / reanalysis n-month aggregated data.
     hcst_bname : str
         Basename of the hindcast data.
     scoresdir : str
@@ -231,7 +230,7 @@ def scores_prblstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir):
     obs_ds : xarray.Dataset
         Observation / Reanalysis monthly data.
     obs_ds_nm : xarray.Dataset
-        Observation / Reanalysis 3-month aggregated data.
+        Observation / Reanalysis n-month aggregated data.
     hcst_bname : str
         Basename of the hindcast probabilities file.
     scoresdir : str

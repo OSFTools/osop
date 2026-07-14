@@ -85,11 +85,6 @@ def prep_titles(config, scoresdir):
         Tuple containing the prepared titles for the plot:
         (first line, second line, third line).
     """
-    score_fname = "{origin}_{system}_{hcstarty}-{hcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{fname_var}.{aggr}.{score}.nc".format(
-        **config
-    )
-    score_data = xr.open_dataset(os.path.join(scoresdir, score_fname))
-
     lead_list = [int(l) for l in config["leads"].split(",")]
 
     tit_line1 = "{origin} {system}".format(**config)

@@ -318,7 +318,7 @@ if __name__ == "__main__":
                 downloaddir,
                 pycptdir,
                 "forecast",
-                steps_to_sum=3,
+                steps_to_sum=len(config["leads"]),
                 lead_months=1,
             )
 
@@ -329,7 +329,7 @@ if __name__ == "__main__":
                 downloaddir,
                 pycptdir,
                 "forecast",
-                steps_to_sum=3,
+                steps_to_sum=len(config["leads"]),
                 lead_months=1,
             )
         elif centre == "mme":
@@ -345,7 +345,7 @@ if __name__ == "__main__":
                 downloaddir,
                 pycptdir,
                 "forecast",
-                steps_to_sum=3,
+                steps_to_sum=len(config["leads"]),
                 lead_months=1,
             )
     else:

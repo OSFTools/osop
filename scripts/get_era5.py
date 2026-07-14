@@ -190,6 +190,6 @@ if __name__ == "__main__":
             downloaddir,
             pycptdir,
             "obs",
-            steps_to_sum=3,
+            steps_to_sum=len(config["leads_obs"]),
             lead_months=1,
         )

@@ -36,7 +36,9 @@ def get_obs(downloaddir, config):
     BASE_URL = "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/global/tifs/"
 
     starty = config["hcstarty"]
+    starty0 = starty
     endy = config["hcendy"]
+    endy0 = endy
 
     now = datetime.now()
 
@@ -51,6 +53,11 @@ def get_obs(downloaddir, config):
         )
         endy = now.year
 
+    if starty != starty0 or endy != endy0:
+        print(
+            f"Adjusted requested years from {starty0}-{endy0} to {starty}-{endy} based on available data."
+        )
+
     # set up a list of datetimes for the requested months and years
 
     mon_dt = [
@@ -60,6 +67,8 @@ def get_obs(downloaddir, config):
     ]
     nfail = 0
 
+    skipped = []
+    succeeded = []
     for dt in mon_dt:
         year = dt.year
         month = dt.month
@@ -72,7 +81,7 @@ def get_obs(downloaddir, config):
         if obs_fullpath.exists():
             message = f"File {obs_fullpath} already exists, skipping download."
             logger.warning(message)
-            print(message)
+            skipped.append(obs_filename)
             continue
 
         # now do the actual download (construct URL robustly to avoid double slashes)
@@ -87,7 +96,7 @@ def get_obs(downloaddir, config):
                         f.write(chunk)
             message = f"Successfully downloaded CHIRPS data for {year}-{month:02d} to {obs_fullpath}"
             logger.info(message)
-            print(message)
+            succeeded.append(obs_filename)
         except requests.exceptions.RequestException as e:
             # log the URL and status if available to help debugging 403/forbidden
             status = (
@@ -103,6 +112,12 @@ def get_obs(downloaddir, config):
         message = f"Finished downloading CHIRPS data with {nfail} failures."
         logger.error(message)
         raise RuntimeError(message)
+
+    print(
+        f"Finished downloading CHIRPS data. {len(succeeded)} files downloaded, {len(skipped)} files skipped."
+    )
+    print(f"Downloaded files: {', '.join(succeeded)}")
+    print(f"Skipped files: {', '.join(skipped)}")
 
 
 def parse_args():

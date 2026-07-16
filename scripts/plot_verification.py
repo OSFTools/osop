@@ -172,6 +172,7 @@ if __name__ == "__main__":
         origin=centre,
         area_str=area_str,
         leads_str=leads_str,
+        leads=leads,
         obs_str=obs_str,
         fname_var=fname_var,
         var=var,

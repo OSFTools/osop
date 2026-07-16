@@ -120,5 +120,11 @@ def test_plot_tercile_fc_mask(mme, mask):
     atitle = "Test plot"
     mme = mme.rename({"precipitation": "temperature"})
     fig = ens_plotting.plot_tercile_fc(
-        mme, atitle, mask=mask, var="temperature", map_setting="False"
+        mme,
+        atitle,
+        centre="mme",
+        mme_svc="meteo_france,bom",
+        mask=mask,
+        var="temperature",
+        map_setting="False",
     )

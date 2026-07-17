@@ -126,6 +126,22 @@ if __name__ == "__main__":
 
     valid_month = month + (leadtime_month[0] - 1)
 
+    # add arguments to config
+    config = dict(
+        border=border,
+        start_month=month,
+        valid_month=valid_month,
+        origin=centre,
+        area_str=area_str,
+        leads_str=leads_str,
+        leads=leads,
+        obs_str=obs_str,
+        fname_var=fname_var,
+        var=var,
+    )
+
+    logger.debug(config)
+
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
 
@@ -156,6 +172,7 @@ if __name__ == "__main__":
         origin=centre,
         area_str=area_str,
         leads_str=leads_str,
+        leads=leads,
         obs_str=obs_str,
         fname_var=fname_var,
         var=var,
@@ -172,7 +189,7 @@ if __name__ == "__main__":
         config["hcendy"] = 2016
 
     for score in scores:
-        for aggr in ["1m", "3m"]:
+        for aggr in ["1m", "nm"]:
             config["aggr"] = aggr
             config["score"] = score
 
@@ -181,18 +198,18 @@ if __name__ == "__main__":
                 # two models aka systems are live - call twice with each system number
                 config["system"] = Services["eccc_can"]
                 ## set titles
-                titles = prep_titles(config)
+                titles = prep_titles(config, scoresdir)
                 generate_plots(config, titles, scoresdir, plotdir, method)
 
                 ## repeat for second system
                 config["system"] = Services["eccc_gem5"]
                 ## set titles
-                titles = prep_titles(config)
+                titles = prep_titles(config, scoresdir)
                 generate_plots(config, titles, scoresdir, plotdir, method)
             else:
                 if centre not in Services.keys():
                     raise ValueError(f"Unknown system for C3S: {centre}")
                 config["system"] = Services[centre]
                 ## set titles
-                titles = prep_titles(config)
+                titles = prep_titles(config, scoresdir)
                 generate_plots(config, titles, scoresdir, plotdir, method)

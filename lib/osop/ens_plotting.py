@@ -93,14 +93,14 @@ def get_cmap(precip_cs=False, wmo_cs=True):
     return cmap_below, cmap_normal, cmap_above
 
 
-def fc_title(config, threem=False):
+def fc_title(config, multim=False):
     """Create a title string for the forecast plot based on the configuration.
 
     Parameters
     ----------
     config : dict
         Dictionary containing configuration parameters.
-    threem : bool
+    multim : bool
         True or False for grouped forecasts.
 
     Returns
@@ -125,8 +125,8 @@ def fc_title(config, threem=False):
     display_month = calendar.month_abbr[valid_month].upper()
 
     # temporarily handling 3 months like this until the lead times issue overall is resolved.
-    # Make a forecast start month using "i" to allow for a range in 3m.
-    if threem == True:
+    # Make a forecast start month using "i" to allow for a range in nm.
+    if multim == True:
         lead_0 = int(config["i"]) - 1
         valid_month_0 = lead_0 + int(config["start_month"])
 
@@ -360,10 +360,10 @@ def plot_forecasts(productdir, plotsdir, config):
     forecast_name_1m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.imonth_{i}".format(
         **config
     )
-    forecast_local_3m = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m.forecast_percentages.nc".format(
+    forecast_local_nm = "{fpath}/{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.nm.forecast_percentages.nc".format(
         fpath=productdir, **config
     )
-    forecast_name_3m = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.3m".format(
+    forecast_name_nm = "{origin}_{systemfc}_{fcstarty}-{fcendy}_monthly_mean_{start_month}_{leads_str}_{area_str}_{hc_var}.nm".format(
         **config
     )
 
@@ -380,16 +380,16 @@ def plot_forecasts(productdir, plotsdir, config):
 
     # Reformat dataset for plotting
     fcst_local_1m = xr.open_dataset(forecast_local_1m)
-    fcst_local_3m = xr.open_dataset(forecast_local_3m)
-    fcst_local_3m = fcst_local_3m.squeeze(dim="forecastMonth")
+    fcst_local_nm = xr.open_dataset(forecast_local_nm)
+    fcst_local_nm = fcst_local_nm.squeeze(dim="forecastMonth")
 
     plot_dataset_1m = reformatt(fcst_local_1m, variable)
-    plot_dataset_3m = reformatt(fcst_local_3m, variable)
+    plot_dataset_nm = reformatt(fcst_local_nm, variable)
 
     # Tercile Summary - 1month forecasts, per origin centre.
     map_setting = location(config)
     atitle_1m = fc_title(config)
-    atitle_3m = fc_title(config, threem=True)
+    atitle_nm = fc_title(config, multim=True)
 
     fig = plot_tercile_fc(
         plot_dataset_1m,
@@ -405,8 +405,8 @@ def plot_forecasts(productdir, plotsdir, config):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)
 
     fig = plot_tercile_fc(
-        plot_dataset_3m,
-        atitle_3m,
+        plot_dataset_nm,
+        atitle_nm,
         centre=config["origin"],
         mme_svc=config["mme_svcs"],
         var=variable,
@@ -414,5 +414,5 @@ def plot_forecasts(productdir, plotsdir, config):
         map_setting=map_setting,
     )
     # Save figure
-    figname = f"{plotsdir}/{forecast_name_3m}.png"
+    figname = f"{plotsdir}/{forecast_name_nm}.png"
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.01)

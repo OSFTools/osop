@@ -69,7 +69,7 @@ def location(config):
         )
 
 
-def prep_titles(config):
+def prep_titles(config, scoresdir):
     """Prepare titles for the plot based on the arguments in the config dictionary.
 
     Currently this replicates the titles here:
@@ -86,6 +86,8 @@ def prep_titles(config):
         Tuple containing the prepared titles for the plot:
         (first line, second line, third line).
     """
+    lead_list = [int(l) for l in config["leads"].split(",")]
+
     tit_line1 = "{origin} {system}".format(**config)
     tit_line2_base = (
         f"Nominal FC Start Month: {calendar.month_abbr[config['start_month']].upper()}"
@@ -98,10 +100,10 @@ def prep_titles(config):
             tit_line2_base
             + f" - Valid month: {calendar.month_abbr[validmonth].upper()}"
         )
-    elif config["aggr"] == "3m":
+    elif config["aggr"] == "nm":
         validmonths = [
             vm if vm <= 12 else vm - 12
-            for vm in [config["valid_month"] + shift for shift in range(3)]
+            for vm in [config["valid_month"] + shift for shift in range(len(lead_list))]
         ]
         validmonths = [calendar.month_abbr[vm][0] for vm in validmonths]
         tit_line2 = tit_line2_base + f" - Valid months: {''.join(validmonths)}"

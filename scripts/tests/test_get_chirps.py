@@ -71,8 +71,7 @@ def test_unpack_args_and_run_with_years(get_chirps_module, monkeypatch):
     """Test unpack_args_and_run branch when explicit years are provided."""
     captured = {}
 
-    def fake_get_obs(downloaddir, config):
-        captured["downloaddir"] = downloaddir
+    def fake_get_obs(config):
         captured["config"] = config
 
     monkeypatch.setattr(get_chirps_module, "get_obs", fake_get_obs)
@@ -91,7 +90,7 @@ def test_unpack_args_and_run_with_years(get_chirps_module, monkeypatch):
 
     get_chirps_module.unpack_args_and_run(args)
 
-    assert captured["downloaddir"] == "/tmp/downloads"
+    assert captured["config"]["downloaddir"] == "/tmp/downloads"
     assert captured["config"]["month"] == 3
     assert captured["config"]["leadtime_month"] == [0, 2, 5]
     assert captured["config"]["area"] == [10.0, -20.0, -10.0, 20.0]
@@ -103,8 +102,7 @@ def test_unpack_args_and_run_uses_default_years(get_chirps_module, monkeypatch):
     """Test unpack_args_and_run branch when years are not provided."""
     captured = {}
 
-    def fake_get_obs(downloaddir, config):
-        captured["downloaddir"] = downloaddir
+    def fake_get_obs(config):
         captured["config"] = config
 
     monkeypatch.setattr(get_chirps_module, "get_obs", fake_get_obs)
@@ -123,10 +121,11 @@ def test_unpack_args_and_run_uses_default_years(get_chirps_module, monkeypatch):
 
     get_chirps_module.unpack_args_and_run(args)
 
-    assert captured["downloaddir"] == "/tmp/downloads"
+    assert captured["config"]["downloaddir"] == "/tmp/downloads"
     assert captured["config"]["month"] == 11
     assert captured["config"]["leadtime_month"] == [1, 3]
     assert captured["config"]["area"] == [5.0, 6.0, 7.0, 8.0]
+    assert captured["config"]["area_str"] == "5:6:7:8"
     assert captured["config"]["hcstarty"] == 1993
     assert captured["config"]["hcendy"] == 2016
 
@@ -135,7 +134,7 @@ def test_unpack_args_and_run_raises_for_pycpt_true(get_chirps_module, monkeypatc
     """Test unpack_args_and_run raises NotImplementedError when pycpt is True."""
     state = {"calls": 0}
 
-    def fake_get_obs(downloaddir, config):
+    def fake_get_obs(config):
         state["calls"] += 1
 
     monkeypatch.setattr(get_chirps_module, "get_obs", fake_get_obs)
@@ -174,6 +173,8 @@ def test_get_obs_downloads_and_writes_chunks(get_chirps_module):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10:-20:-10:20",
+        "downloaddir": "/tmp/downloads",
     }
 
     with (
@@ -182,8 +183,9 @@ def test_get_obs_downloads_and_writes_chunks(get_chirps_module):
             get_chirps_module.requests, "get", return_value=response
         ) as get_mock,
         patch("builtins.open", mock_open()) as open_mock,
+        patch.object(get_chirps_module, "subset_chirps", return_value="subset.nc"),
     ):
-        get_chirps_module.get_obs("/tmp/chirps", config)
+        get_chirps_module.get_obs(config)
 
     assert get_mock.call_count == 2
     assert open_mock.call_count == 2
@@ -209,14 +211,17 @@ def test_get_obs_skips_when_file_exists(get_chirps_module):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10:-20:-10:20",
+        "downloaddir": "/tmp/downloads",
     }
 
     with (
         patch.object(get_chirps_module.Path, "exists", return_value=True),
         patch.object(get_chirps_module.requests, "get") as get_mock,
         patch("builtins.open", mock_open()) as open_mock,
+        patch.object(get_chirps_module, "subset_chirps", return_value="subset.nc"),
     ):
-        get_chirps_module.get_obs("/tmp/chirps", config)
+        get_chirps_module.get_obs(config)
 
     get_mock.assert_not_called()
     open_mock.assert_not_called()
@@ -237,6 +242,8 @@ def test_get_obs_does_not_write_on_request_error(get_chirps_module):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10:-20:-10:20",
+        "downloaddir": "/tmp/downloads",
     }
 
     with (
@@ -249,7 +256,7 @@ def test_get_obs_does_not_write_on_request_error(get_chirps_module):
             RuntimeError, match="Finished downloading CHIRPS data with 2 failures"
         ),
     ):
-        get_chirps_module.get_obs("/tmp/chirps", config)
+        get_chirps_module.get_obs(config)
 
     assert get_mock.call_count == 2
     open_mock.assert_not_called()
@@ -279,6 +286,8 @@ def test_get_obs_clamps_start_year_before_1981(get_chirps_module, caplog):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10:-20:-10:20",
+        "downloaddir": "/tmp/downloads",
     }
 
     with caplog.at_level(logging.WARNING):
@@ -290,8 +299,9 @@ def test_get_obs_clamps_start_year_before_1981(get_chirps_module, caplog):
                 return_value=response,
             ) as get_mock,
             patch("builtins.open", mock_open()) as open_mock,
+            patch.object(get_chirps_module, "subset_chirps", return_value="subset.nc"),
         ):
-            get_chirps_module.get_obs("/tmp/chirps", config)
+            get_chirps_module.get_obs(config)
 
     assert get_mock.call_count == 2
     assert open_mock.call_count == 2
@@ -324,6 +334,8 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10:-20:-10:20",
+        "downloaddir": "/tmp/downloads",
     }
 
     real_datetime = get_chirps_module.datetime
@@ -343,8 +355,9 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
                 return_value=response,
             ) as get_mock,
             patch("builtins.open", mock_open()) as open_mock,
+            patch.object(get_chirps_module, "subset_chirps", return_value="subset.nc"),
         ):
-            get_chirps_module.get_obs("/tmp/chirps", config)
+            get_chirps_module.get_obs(config)
 
     assert get_mock.call_count == 10
     assert open_mock.call_count == 10
@@ -368,3 +381,9 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
     for call in get_mock.call_args_list:
         assert call.kwargs["timeout"] == 30
         assert call.kwargs["stream"] is True
+
+
+# TO DO add tests for subset_chirps, including checking that the output file is created and has the expected dimensions and coordinates.
+# use mocked read of the tif file to avoid needing a real file, and check that the subsetted data has the expected shape and coordinates.
+# also check that the output file is written to the expected path and has the expected name based on the area_str and that if
+# the output file already exists, it is not overwritten and that the failed cases are handled correctly (wrong longitudes)

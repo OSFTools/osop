@@ -11,6 +11,7 @@ from pathlib import Path
 
 from dateutil.relativedelta import relativedelta
 import requests
+import rioxarray  # noqa: F401 - required to register rasterio engine with xarray
 import xarray as xr
 
 logger = logging.getLogger(__name__)
@@ -153,19 +154,21 @@ def subset_chirps(tif_file, area_bounds, area_str):
 
     # check longitude bounds and raise value error if they are not in the range
     # of the CHIRPS data
-    if not (ds.longitude.min() <= min_lon <= ds.longitude.max()) or not (
-        ds.longitude.min() <= max_lon <= ds.longitude.max()
+    if not (ds.x.min() <= min_lon <= ds.x.max()) or not (
+        ds.x.min() <= max_lon <= ds.x.max()
     ):
         raise ValueError("Longitude bounds are out of range of the CHIRPS data.")
-
     # Subset the data to the specified area
-    subset = ds.sel(latitude=slice(max_lat, min_lat), longitude=slice(min_lon, max_lon))
+    subset = ds.sel(y=slice(max_lat, min_lat), x=slice(min_lon, max_lon))
 
     # Save the subsetted data back to the new file
-    nc_output_file_path = tif_file.suffix
-    nc_output_file = nc_output_file_path / f"{tif_file.stem}_f{area_str}_subset.nc"
+    # TODO skip this if already there and non zero size
+    nc_output_file_path = tif_file.parent
+    nc_output_file = nc_output_file_path / f"{tif_file.stem}_f{area_str}.nc"
     subset.to_netcdf(nc_output_file)
     logger.info(f"Successfully opened and subsetted {tif_file} to {nc_output_file}")
+
+    # to do - delete the original tif file if needed, or keep it for reference
 
     return str(nc_output_file)
 

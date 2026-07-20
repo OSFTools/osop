@@ -11,11 +11,12 @@ from pathlib import Path
 
 from dateutil.relativedelta import relativedelta
 import requests
+import xarray as xr
 
 logger = logging.getLogger(__name__)
 
 
-def get_obs(downloaddir, config):
+def get_obs(config):
     """Download CHIRPS for the requested period and area.
 
     Retrieves monthly averaged CHIRPS data. No server side subsetting is available,
@@ -69,19 +70,22 @@ def get_obs(downloaddir, config):
 
     skipped = []
     succeeded = []
+    subset_chirps_files = []
     for dt in mon_dt:
+        # Download the data for the specified year and month.
         year = dt.year
         month = dt.month
         logger.info(f"Downloading CHIRPS for {dt}")
-        # Download the data for the specified year and month.
-        # (Actual HTTP download is performed below.)
         obs_filename = f"chirps-v3.0.{year}.{month:02d}.tif"
-        obs_fullpath = Path(downloaddir) / obs_filename
+        obs_fullpath = Path(config["downloaddir"]) / obs_filename
 
         if obs_fullpath.exists():
             message = f"File {obs_fullpath} already exists, skipping download."
             logger.warning(message)
             skipped.append(obs_filename)
+
+            sub_file = subset_chirps(obs_fullpath, config["area"], config["area_str"])
+            subset_chirps_files.append(sub_file)
             continue
 
         # now do the actual download (construct URL robustly to avoid double slashes)
@@ -97,6 +101,10 @@ def get_obs(downloaddir, config):
             message = f"Successfully downloaded CHIRPS data for {year}-{month:02d} to {obs_fullpath}"
             logger.info(message)
             succeeded.append(obs_filename)
+            # subset the downloaded file to the requested area
+            sub_file = subset_chirps(obs_fullpath, config["area"], config["area_str"])
+            subset_chirps_files.append(sub_file)
+
         except requests.exceptions.RequestException as e:
             # log the URL and status if available to help debugging 403/forbidden
             status = (
@@ -108,6 +116,7 @@ def get_obs(downloaddir, config):
             logger.error(message)
             print(message)
             nfail += 1
+
     if nfail > 0:
         message = f"Finished downloading CHIRPS data with {nfail} failures."
         logger.error(message)
@@ -118,6 +127,47 @@ def get_obs(downloaddir, config):
     )
     print(f"Downloaded files: {', '.join(succeeded)}")
     print(f"Skipped files: {', '.join(skipped)}")
+
+    print(f"Subsetted files: {', '.join(subset_chirps_files)}")
+
+
+def subset_chirps(tif_file, area_bounds, area_str):
+    """Subset the downloaded CHIRPS data to the specified area.
+
+    Parameters
+    ----------
+    tif_file : Path
+        Path to the downloaded CHIRPS file.
+    area_bounds : list
+        List containing the bounds of the area to subset (min_lat, max_lat, min_lon, max_lon).
+
+    Returns
+    -------
+    None
+        Subsets the downloaded files in place.
+    """
+    max_lat, min_lon, min_lat, max_lon = area_bounds
+
+    # Open the GeoTIFF file using xarray with rasterio engine
+    ds = xr.open_dataarray(str(tif_file), engine="rasterio")
+
+    # check longitude bounds and raise value error if they are not in the range
+    # of the CHIRPS data
+    if not (ds.longitude.min() <= min_lon <= ds.longitude.max()) or not (
+        ds.longitude.min() <= max_lon <= ds.longitude.max()
+    ):
+        raise ValueError("Longitude bounds are out of range of the CHIRPS data.")
+
+    # Subset the data to the specified area
+    subset = ds.sel(latitude=slice(max_lat, min_lat), longitude=slice(min_lon, max_lon))
+
+    # Save the subsetted data back to the new file
+    nc_output_file_path = tif_file.suffix
+    nc_output_file = nc_output_file_path / f"{tif_file.stem}_f{area_str}_subset.nc"
+    subset.to_netcdf(nc_output_file)
+    logger.info(f"Successfully opened and subsetted {tif_file} to {nc_output_file}")
+
+    return str(nc_output_file)
 
 
 def parse_args():
@@ -184,12 +234,15 @@ def unpack_args_and_run(args):
     leadtime_month = [int(l) - 1 for l in args.leads.split(",")]
     # for filename to keep consistent with hindcast filenames
     area_bounds = [float(pt) for pt in args.area.split(",")]
+    area_str = args.area.replace(",", ":")
 
     # add arguments to config dictionary used to pass parameters
     config = dict(
         month=month,
         area=area_bounds,
+        area_str=area_str,
         leadtime_month=leadtime_month,
+        downloaddir=downloaddir,
     )
 
     logger.debug(config)
@@ -201,7 +254,7 @@ def unpack_args_and_run(args):
     else:
         config["hcstarty"] = 1993
         config["hcendy"] = 2016
-    get_obs(downloaddir, config)
+    get_obs(config)
 
     if pycpt == "True":
         raise NotImplementedError(

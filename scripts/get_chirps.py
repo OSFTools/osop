@@ -188,7 +188,7 @@ def subset_chirps(tif_file, area_bounds, area_str, ldelete):
         try:
             tif_file.unlink()
             logger.info(f"Deleted original file {tif_file} after subsetting.")
-        except Exception as e:
+        except OSError as e:
             logger.error(f"Failed to delete original file {tif_file}: {e}")
 
     return str(nc_output_file)

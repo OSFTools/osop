@@ -157,25 +157,22 @@ def subset_chirps(tif_file, area_bounds, area_str, ldelete):
     """
     max_lat, min_lon, min_lat, max_lon = area_bounds
 
-    # Open the GeoTIFF file using xarray with rasterio engine
-    ds = xr.open_dataarray(str(tif_file), engine="rasterio")
-
-    # check longitude bounds and raise value error if they are not in the range
-    # of the CHIRPS data
-    if not (ds.x.min() <= min_lon <= ds.x.max()) or not (
-        ds.x.min() <= max_lon <= ds.x.max()
-    ):
-        raise ValueError("Longitude bounds are out of range of the CHIRPS data.")
-
-    # skip cut out if already there and non zero size
-    nc_output_file_path = tif_file.parent
-    nc_output_file = nc_output_file_path / f"{tif_file.stem}_f{area_str}.nc"
+    # Derive output file path early so we can skip work if it already exists.
+    nc_output_file = tif_file.parent / f"{tif_file.stem}_f{area_str}.nc"
     if nc_output_file.exists() and nc_output_file.stat().st_size > 0:
         logger.info(
             f"Subsetted file {nc_output_file} already exists, skipping subsetting."
         )
         return str(nc_output_file)
 
+    # Open the GeoTIFF file using xarray with rasterio engine
+    ds = xr.open_dataarray(str(tif_file), engine="rasterio")
+
+    # Check longitude bounds and raise ValueError if they are outside the CHIRPS extent.
+    x_min = ds.x.min().item()
+    x_max = ds.x.max().item()
+    if not (x_min <= min_lon <= x_max and x_min <= max_lon <= x_max):
+        raise ValueError("Longitude bounds are out of range of the CHIRPS data.")
     # Subset the data to the specified area
     subset = ds.sel(y=slice(max_lat, min_lat), x=slice(min_lon, max_lon))
 

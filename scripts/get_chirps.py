@@ -146,7 +146,7 @@ def subset_chirps(tif_file, area_bounds, area_str, ldelete):
     area_bounds : list[float]
         Bounds of the area to subset, in degrees (N, W, S, E).
     area_str : str
-        Bounds string used in the output filename (e.g. "10:-20:-10:20").
+        Bounds string used in the output filename (e.g. "10.-20.-10.20").
     ldelete : bool
         If True, delete the source GeoTIFF after successfully writing the NetCDF.
 
@@ -261,7 +261,7 @@ def unpack_args_and_run(args):
     leadtime_month = [int(l) - 1 for l in args.leads.split(",")]
     # for filename to keep consistent with hindcast filenames
     area_bounds = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area_str = args.area.replace(",", ".")
     if args.lkeep:
         ldelete = False
     else:

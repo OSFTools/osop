@@ -128,7 +128,7 @@ def test_unpack_args_and_run_uses_default_years(get_chirps_module, monkeypatch):
     assert captured["config"]["month"] == 11
     assert captured["config"]["leadtime_month"] == [1, 3]
     assert captured["config"]["area"] == [5.0, 6.0, 7.0, 8.0]
-    assert captured["config"]["area_str"] == "5:6:7:8"
+    assert captured["config"]["area_str"] == "5.6.7.8"
     assert captured["config"]["hcstarty"] == 1993
     assert captured["config"]["hcendy"] == 2016
 
@@ -177,7 +177,7 @@ def test_get_obs_downloads_and_writes_chunks(get_chirps_module):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
-        "area_str": "10:-20:-10:20",
+        "area_str": "10.-20.-10.20",
         "downloaddir": "/tmp/downloads",
         "ldelete": True,
     }
@@ -216,7 +216,7 @@ def test_get_obs_skips_when_file_exists(get_chirps_module):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
-        "area_str": "10:-20:-10:20",
+        "area_str": "10.-20.-10.20",
         "downloaddir": "/tmp/downloads",
         "ldelete": True,
     }
@@ -248,7 +248,7 @@ def test_get_obs_does_not_write_on_request_error(get_chirps_module):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
-        "area_str": "10:-20:-10:20",
+        "area_str": "10.-20.-10.20",
         "downloaddir": "/tmp/downloads",
         "ldelete": True,
     }
@@ -293,7 +293,7 @@ def test_get_obs_clamps_start_year_before_1981(get_chirps_module, caplog):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
-        "area_str": "10:-20:-10:20",
+        "area_str": "10.-20.-10.20",
         "downloaddir": "/tmp/downloads",
         "ldelete": True,
     }
@@ -342,7 +342,7 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
-        "area_str": "10:-20:-10:20",
+        "area_str": "10.-20.-10.20",
         "downloaddir": "/tmp/downloads",
         "ldelete": True,
     }
@@ -418,8 +418,8 @@ def test_subset_chirps_creates_expected_output_and_subset_coords(
         captured["output_path"] = Path(output_path)
 
     area_bounds = [10.0, -10.0, -10.0, 10.0]
-    area_str = "10:-10:-10:10"
-    expected_output = tmp_path / "chirps-v3.0.2020.01_f10:-10:-10:10.nc"
+    area_str = "10.-10.-10.10"
+    expected_output = tmp_path / "chirps-v3.0.2020.01_f10.-10.-10.10.nc"
 
     with (
         patch.object(get_chirps_module.xr, "open_dataarray", return_value=ds),
@@ -442,8 +442,8 @@ def test_subset_chirps_skips_when_output_exists(get_chirps_module, tmp_path):
     tif_file.write_bytes(b"fake-tif")
 
     area_bounds = [10.0, -10.0, -10.0, 10.0]
-    area_str = "10:-10:-10:10"
-    expected_output = tmp_path / "chirps-v3.0.2020.01_f10:-10:-10:10.nc"
+    area_str = "10.-10.-10.10"
+    expected_output = tmp_path / "chirps-v3.0.2020.01_f10.-10.-10.10.nc"
     expected_output.write_bytes(b"existing-data")
 
     ds = MagicMock()
@@ -486,8 +486,8 @@ def test_subset_chirps_deletes_tif_when_requested(get_chirps_module, tmp_path):
     tif_file.write_bytes(b"fake-tif")
 
     area_bounds = [10.0, -10.0, -10.0, 10.0]
-    area_str = "10:-10:-10:10"
-    expected_output = tmp_path / "chirps-v3.0.2020.01_f10:-10:-10:10.nc"
+    area_str = "10.-10.-10.10"
+    expected_output = tmp_path / "chirps-v3.0.2020.01_f10.-10.-10.10.nc"
 
     ds = MagicMock()
     ds.x.min.return_value = -20.0
@@ -512,8 +512,8 @@ def test_subset_chirps_logs_when_delete_fails(get_chirps_module, tmp_path, caplo
     tif_file.write_bytes(b"fake-tif")
 
     area_bounds = [10.0, -10.0, -10.0, 10.0]
-    area_str = "10:-10:-10:10"
-    expected_output = tmp_path / "chirps-v3.0.2020.01_f10:-10:-10:10.nc"
+    area_str = "10.-10.-10.10"
+    expected_output = tmp_path / "chirps-v3.0.2020.01_f10.-10.-10.10.nc"
 
     ds = MagicMock()
     ds.x.min.return_value = -20.0

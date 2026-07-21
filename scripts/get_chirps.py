@@ -85,7 +85,9 @@ def get_obs(config):
             logger.warning(message)
             skipped.append(obs_filename)
 
-            sub_file = subset_chirps(obs_fullpath, config["area"], config["area_str"])
+            sub_file = subset_chirps(
+                obs_fullpath, config["area"], config["area_str"], config["ldelete"]
+            )
             subset_chirps_files.append(sub_file)
             continue
 
@@ -103,7 +105,9 @@ def get_obs(config):
             logger.info(message)
             succeeded.append(obs_filename)
             # subset the downloaded file to the requested area
-            sub_file = subset_chirps(obs_fullpath, config["area"], config["area_str"])
+            sub_file = subset_chirps(
+                obs_fullpath, config["area"], config["area_str"], config["ldelete"]
+            )
             subset_chirps_files.append(sub_file)
 
         except requests.exceptions.RequestException as e:
@@ -132,7 +136,7 @@ def get_obs(config):
     print(f"Subsetted files: {', '.join(subset_chirps_files)}")
 
 
-def subset_chirps(tif_file, area_bounds, area_str):
+def subset_chirps(tif_file, area_bounds, area_str, ldelete):
     """Subset the downloaded CHIRPS data to the specified area.
 
     Parameters
@@ -158,17 +162,30 @@ def subset_chirps(tif_file, area_bounds, area_str):
         ds.x.min() <= max_lon <= ds.x.max()
     ):
         raise ValueError("Longitude bounds are out of range of the CHIRPS data.")
+
+    # skip cut out if already there and non zero size
+    nc_output_file_path = tif_file.parent
+    nc_output_file = nc_output_file_path / f"{tif_file.stem}_f{area_str}.nc"
+    if nc_output_file.exists() and nc_output_file.stat().st_size > 0:
+        logger.info(
+            f"Subsetted file {nc_output_file} already exists, skipping subsetting."
+        )
+        return str(nc_output_file)
+
     # Subset the data to the specified area
     subset = ds.sel(y=slice(max_lat, min_lat), x=slice(min_lon, max_lon))
 
     # Save the subsetted data back to the new file
-    # TODO skip this if already there and non zero size
-    nc_output_file_path = tif_file.parent
-    nc_output_file = nc_output_file_path / f"{tif_file.stem}_f{area_str}.nc"
     subset.to_netcdf(nc_output_file)
     logger.info(f"Successfully opened and subsetted {tif_file} to {nc_output_file}")
 
-    # to do - delete the original tif file if needed, or keep it for reference
+    # delete the original tif file if needed, or keep it for reference
+    if ldelete:
+        try:
+            tif_file.unlink()
+            logger.info(f"Deleted original file {tif_file} after subsetting.")
+        except Exception as e:
+            logger.error(f"Failed to delete original file {tif_file}: {e}")
 
     return str(nc_output_file)
 
@@ -205,6 +222,12 @@ def parse_args():
         help="Start and end years to retrieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
 
+    parser.add_argument(
+        "--lkeep",
+        action="store_true",
+        required=False,
+        help="Keep original tif files after subsetting",
+    )
     args = parser.parse_args()
     return args
 
@@ -238,6 +261,10 @@ def unpack_args_and_run(args):
     # for filename to keep consistent with hindcast filenames
     area_bounds = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ":")
+    if args.lkeep:
+        ldelete = False
+    else:
+        ldelete = True
 
     # add arguments to config dictionary used to pass parameters
     config = dict(
@@ -246,6 +273,7 @@ def unpack_args_and_run(args):
         area_str=area_str,
         leadtime_month=leadtime_month,
         downloaddir=downloaddir,
+        ldelete=ldelete,
     )
 
     logger.debug(config)

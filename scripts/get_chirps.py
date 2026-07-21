@@ -169,8 +169,8 @@ def subset_chirps(tif_file, area_bounds, area_str, ldelete):
     ds = xr.open_dataarray(str(tif_file), engine="rasterio")
 
     # Check longitude bounds and raise ValueError if they are outside the CHIRPS extent.
-    x_min = ds.x.min().item()
-    x_max = ds.x.max().item()
+    x_min = ds.x.min()
+    x_max = ds.x.max()
     if not (x_min <= min_lon <= x_max and x_min <= max_lon <= x_max):
         raise ValueError("Longitude bounds are out of range of the CHIRPS data.")
     # Subset the data to the specified area

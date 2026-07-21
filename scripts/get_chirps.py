@@ -173,8 +173,13 @@ def subset_chirps(tif_file, area_bounds, area_str, ldelete):
     x_max = ds.x.max()
     if not (x_min <= min_lon <= x_max and x_min <= max_lon <= x_max):
         raise ValueError("Longitude bounds are out of range of the CHIRPS data.")
-    # Subset the data to the specified area
-    subset = ds.sel(y=slice(max_lat, min_lat), x=slice(min_lon, max_lon))
+    # Subset the data to the specified area with a 1 point buffer to avoid data loss at the edges.
+    # The buffer is applied by extending the slice by 1 index in each direction.
+    dx = abs(ds.x[1] - ds.x[0])
+    dy = abs(ds.y[1] - ds.y[0])
+    subset = ds.sel(
+        y=slice(max_lat + dy, min_lat - dy), x=slice(min_lon - dx, max_lon + dx)
+    )
 
     # Save the subsetted data back to the new file
     subset.to_netcdf(nc_output_file)

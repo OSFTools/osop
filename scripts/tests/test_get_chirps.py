@@ -404,9 +404,14 @@ def test_subset_chirps_creates_expected_output_and_subset_coords(
             [1.0, 2.0, 3.0, 4.0, 5.0],
             [6.0, 7.0, 8.0, 9.0, 10.0],
             [11.0, 12.0, 13.0, 14.0, 15.0],
+            [16.0, 17.0, 18.0, 19.0, 20.0],
+            [21.0, 22.0, 23.0, 24.0, 25.0],
         ],
         dims=("y", "x"),
-        coords={"y": [10.0, 0.0, -10.0], "x": [-20.0, -10.0, 0.0, 10.0, 20.0]},
+        coords={
+            "y": [20.0, 10.0, 0.0, -10.0, -20.0],
+            "x": [-20.0, -10.0, 0.0, 10.0, 20.0],
+        },
     )
 
     captured = {}
@@ -415,11 +420,12 @@ def test_subset_chirps_creates_expected_output_and_subset_coords(
         captured["shape"] = dict(self.sizes)
         captured["x_coords"] = self.x.values.tolist()
         captured["y_coords"] = self.y.values.tolist()
+        captured["data"] = self.values.tolist()
         captured["output_path"] = Path(output_path)
 
-    area_bounds = [10.0, -10.0, -10.0, 10.0]
-    area_str = "10.-10.-10.10"
-    expected_output = tmp_path / "chirps-v3.0.2020.01_f10.-10.-10.10.nc"
+    area_bounds = [8.0, -8.0, -8.0, 8.0]
+    area_str = "8.-8.-8.8"
+    expected_output = tmp_path / "chirps-v3.0.2020.01_f8.-8.-8.8.nc"
 
     with (
         patch.object(get_chirps_module.xr, "open_dataarray", return_value=ds),
@@ -434,6 +440,11 @@ def test_subset_chirps_creates_expected_output_and_subset_coords(
     assert captured["shape"] == {"y": 3, "x": 3}
     assert captured["x_coords"] == [-10.0, 0.0, 10.0]
     assert captured["y_coords"] == [10.0, 0.0, -10.0]
+    assert captured["data"] == [
+        [7.0, 8.0, 9.0],
+        [12.0, 13.0, 14.0],
+        [17.0, 18.0, 19.0],
+    ]
 
 
 def test_subset_chirps_skips_when_output_exists(get_chirps_module, tmp_path):

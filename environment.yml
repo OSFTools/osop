@@ -4,7 +4,19 @@ channels:
   - conda-forge
 dependencies:
   - pycpt
+  - cptdl
   - xarray-regrid
+  - xarray
+  - numpy
+  - pandas
+  - matplotlib
+  - cartopy
+  - requests
+  - packaging
+  - python-dateutil
+  - pyyaml
+  - python-eccodes
+  - rioxarray 
   - cfgrib
   - cdsapi
   - xskillscore

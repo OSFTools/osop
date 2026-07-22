@@ -45,7 +45,7 @@ jobs:
           CACHE_WEEKS: 2
         run: |
           echo "CACHE_PERIOD=$(date +%Y).$(expr $(date +%U) / ${CACHE_WEEKS})" >> ${GITHUB_ENV}
-          echo "CONDA_FILE=./osop-spec-file.txt" >> ${GITHUB_ENV}
+          echo "CONDA_FILE=./osop-spec-file-linux.txt" >> ${GITHUB_ENV}
 
       - name: "conda package cache"
         uses: ./.github/workflows/composite/conda-pkg-cache
@@ -60,7 +60,7 @@ jobs:
           miniforge-version: latest
           channels: conda-forge
           activate-environment: ${{ env.ENV_NAME }}
-          environment-file: osop-spec-file.yml
+          environment-file: osop-spec-file-linux.yml
           auto-update-conda: false
           conda-remove-defaults: true
 

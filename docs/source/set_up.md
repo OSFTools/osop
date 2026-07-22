@@ -152,9 +152,10 @@ previous section. This
 is usually a case of `cd osop-main` within the directory that holds
 this. If following the download zip section then this will be in
 downloads. Typing `ls` will bring up a list of the files contained
-here. One of which should be the file `osop-spec-file.yml`.
-This contains a detailed list of the packages and the versions 
-needed to run the code.
+here. One of which should be the file `osop-spec-file-<platform>.yml`.
+This contains a detailed list of the packages and the versions
+needed to run the code. There will be a linux and a windows version
+of these files - pick the correct one for your computer.
 
 Guidance for installing and activating an environment from a yaml file
 can be found here: [Managing environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file)

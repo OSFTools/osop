@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     logfile = os.path.join(
         args.logdir,
-        f"plots_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+        f"plots_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y.%m.%d_%H.%M.%S')}.txt",
     )
 
     loglev = logging.INFO  # can be an argument later if needed
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         filemode="w",
         format="{asctime} - {levelname} - {message}",
         style="{",
-        datefmt="%Y-%m-%d %H:%M",
+        datefmt="%Y.%m.%d %H.%M",
     )
 
     logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     obs_month = [int(l) - 1 for l in args.leads.split(",")]
     obs_str = "".join([str(mon) for mon in obs_month])
     area = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area_str = args.area.replace(",", ".")
     hc_var = args.variable
     i = list(map(int, leadtime_month))
     i = [x - 2 for x in i]

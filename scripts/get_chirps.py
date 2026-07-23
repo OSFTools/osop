@@ -166,7 +166,7 @@ def unpack_args_and_run(args):
     # start logging - need to know logdir location before we can set it up
     logfile = (
         Path(args.logdir)
-        / f"chirps_log_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt"
+        / f"chirps_log_{datetime.today().strftime('%Y.%m.%d_%H.%M.%S')}.txt"
     )
 
     loglev = logging.INFO  # can be an argument later if needed
@@ -177,7 +177,7 @@ def unpack_args_and_run(args):
         filemode="w",
         format="{asctime} - {levelname} - {message}",
         style="{",
-        datefmt="%Y-%m-%d %H:%M",
+        datefmt="%Y.%m.%d %H.%M",
     )
 
     month = int(args.month)

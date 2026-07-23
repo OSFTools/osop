@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     logfile = os.path.join(
         args.logdir,
-        f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+        f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y.%m.%d_%H.%M.%S')}.txt",
     )
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         filemode="w",
         format="{asctime} - {levelname} - {message}",
         style="{",
-        datefmt="%Y-%m-%d %H:%M",
+        datefmt="%Y.%m.%d %H.%M",
     )
 
     # unpack args and reformat if needed
@@ -138,14 +138,14 @@ if __name__ == "__main__":
         predict_bounds = [
             float(pt) for pt in args.predictor_area.split(",")
         ]  # GCM - If pycpt = True
-        predict_str = args.predictor_area.replace(",", ":")  # GCM
+        predict_str = args.predictor_area.replace(",", ".")  # GCM
 
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
     obs_month = [int(l) - 1 for l in args.leads.split(",")]
     obs_str = "".join([str(mon) for mon in obs_month])
     area = [float(pt) for pt in args.area.split(",")]  # OBS - If pycpt = True
-    area_str = args.area.replace(",", ":")  # OBS
+    area_str = args.area.replace(",", ".")  # OBS
     hc_var = args.variable
 
     if hc_var == "2m_temperature":

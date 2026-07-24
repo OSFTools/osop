@@ -18,8 +18,16 @@ concurrency:
   
 jobs:
   test:
-    name: Run pytest and coverage
-    runs-on: ubuntu-latest
+    name: Run pytest and coverage (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            conda_file: osop-spec-file-linux.yml
+          - os: windows-latest
+            conda_file: envs/osop-win-spec-file.yml
 
     defaults:
       run:
@@ -45,7 +53,7 @@ jobs:
           CACHE_WEEKS: 2
         run: |
           echo "CACHE_PERIOD=$(date +%Y).$(expr $(date +%U) / ${CACHE_WEEKS})" >> ${GITHUB_ENV}
-          echo "CONDA_FILE=./osop-spec-file-linux.txt" >> ${GITHUB_ENV}
+          echo "CONDA_FILE=${{ matrix.conda_file }}" >> ${GITHUB_ENV}
 
       - name: "conda package cache"
         uses: ./.github/workflows/composite/conda-pkg-cache
@@ -60,7 +68,7 @@ jobs:
           miniforge-version: latest
           channels: conda-forge
           activate-environment: ${{ env.ENV_NAME }}
-          environment-file: osop-spec-file-linux.yml
+          environment-file: ${{ env.CONDA_FILE }}
           auto-update-conda: false
           conda-remove-defaults: true
 
@@ -81,6 +89,7 @@ jobs:
         run: pytest -vv -s --maxfail=1 -m "not integration" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
+        if: runner.os == 'Linux'
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-coverage-path: ./pytest-coverage.txt

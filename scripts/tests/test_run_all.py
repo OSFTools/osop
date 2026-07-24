@@ -78,25 +78,6 @@ def _minimal_config(tmp_path: Path) -> dict:
     }
 
 
-def _make_args(**kwargs):
-    defaults = dict(
-        hindcast_only=False,
-        forecast_only=False,
-        test_mode=False,
-        month=None,
-        leads=None,
-        area=None,
-        variable=None,
-        location=None,
-        method=None,
-        pycpt=None,
-        predictor_area=None,
-        forecast_year=None,
-    )
-    defaults.update(kwargs)
-    return argparse.Namespace(**defaults)
-
-
 # ---------------------------------------------------------------------------
 # _parse_bool
 # ---------------------------------------------------------------------------
@@ -217,87 +198,6 @@ def test_load_config_non_mapping_raises(tmp_path):
         run_all.ConfigError, match="Top-level config must be a YAML mapping"
     ):
         run_all.load_config(cfg_file)
-
-
-# ---------------------------------------------------------------------------
-# apply_cli_overrides
-# ---------------------------------------------------------------------------
-
-
-def test_apply_cli_overrides_no_overrides():
-    """With no CLI flags set, the original config values are preserved."""
-    run_all = _get_run_all()
-    config = {"workflow": {"hindcast": True}, "parameters": {"month": 3}}
-    result = run_all.apply_cli_overrides(config, _make_args())
-    assert result["workflow"]["hindcast"] is True
-    assert result["parameters"]["month"] == 3
-
-
-def test_apply_cli_overrides_hindcast_only():
-    """--hindcast-only enables hindcast and disables forecast."""
-    run_all = _get_run_all()
-    result = run_all.apply_cli_overrides(
-        {"workflow": {}, "parameters": {}}, _make_args(hindcast_only=True)
-    )
-    assert result["workflow"]["hindcast"] is True
-    assert result["workflow"]["forecast"] is False
-
-
-def test_apply_cli_overrides_forecast_only():
-    """--forecast-only enables forecast and disables hindcast."""
-    run_all = _get_run_all()
-    result = run_all.apply_cli_overrides(
-        {"workflow": {}, "parameters": {}}, _make_args(forecast_only=True)
-    )
-    assert result["workflow"]["hindcast"] is False
-    assert result["workflow"]["forecast"] is True
-
-
-def test_apply_cli_overrides_both_only_flags_raises():
-    """Setting both --hindcast-only and --forecast-only raises ConfigError."""
-    run_all = _get_run_all()
-    with pytest.raises(run_all.ConfigError, match="Choose only one"):
-        run_all.apply_cli_overrides(
-            {"workflow": {}, "parameters": {}},
-            _make_args(hindcast_only=True, forecast_only=True),
-        )
-
-
-def test_apply_cli_overrides_test_mode_flag():
-    """--test-mode sets workflow.test_mode to True."""
-    run_all = _get_run_all()
-    result = run_all.apply_cli_overrides(
-        {"workflow": {}, "parameters": {}}, _make_args(test_mode=True)
-    )
-    assert result["workflow"]["test_mode"] is True
-
-
-def test_apply_cli_overrides_parameter_overrides():
-    """All parameter CLI flags are applied to the config."""
-    run_all = _get_run_all()
-    result = run_all.apply_cli_overrides(
-        {"workflow": {}, "parameters": {"month": 1}},
-        _make_args(
-            month=7,
-            leads="1,2",
-            area="10,20,-10,30",
-            variable="2m_temperature",
-            location="London",
-            method="cca",
-            pycpt=False,
-            predictor_area="10,0,-10,30",
-            forecast_year=2026,
-        ),
-    )
-    assert result["parameters"]["month"] == 7
-    assert result["parameters"]["leads"] == "1,2"
-    assert result["parameters"]["area"] == "10,20,-10,30"
-    assert result["parameters"]["variable"] == "2m_temperature"
-    assert result["parameters"]["location"] == "London"
-    assert result["parameters"]["method"] == "cca"
-    assert result["parameters"]["pycpt"] is False
-    assert result["parameters"]["predictor_area"] == "10,0,-10,30"
-    assert result["parameters"]["forecast_year"] == 2026
 
 
 # ---------------------------------------------------------------------------
@@ -823,51 +723,18 @@ def test_dry_run_writes_services_and_returns_success(tmp_path):
 
 
 def test_build_parser_defaults():
-    """Parser default values match the expected no-op configuration."""
+    """Parser defaults expose only YAML path and dry-run switch."""
     run_all = _get_run_all()
     args = run_all.build_parser().parse_args([])
     assert args.dry_run is False
-    assert args.test_mode is False
-    assert args.hindcast_only is False
-    assert args.forecast_only is False
-    assert args.month is None
-    assert args.leads is None
+    assert args.config
 
 
-def test_build_parser_with_flags():
-    """Boolean flags and typed arguments are parsed correctly."""
+def test_build_parser_with_dry_run_flag():
+    """--dry-run is parsed correctly."""
     run_all = _get_run_all()
-    args = run_all.build_parser().parse_args(
-        [
-            "--dry-run",
-            "--test-mode",
-            "--hindcast-only",
-            "--month",
-            "6",
-            "--leads",
-            "1,2,3",
-        ]
-    )
+    args = run_all.build_parser().parse_args(["--dry-run"])
     assert args.dry_run is True
-    assert args.test_mode is True
-    assert args.hindcast_only is True
-    assert args.month == 6
-    assert args.leads == "1,2,3"
-
-
-def test_build_parser_variable_choices():
-    """Recognised variable names are accepted by the parser."""
-    run_all = _get_run_all()
-    assert (
-        run_all.build_parser().parse_args(["--variable", "2m_temperature"]).variable
-        == "2m_temperature"
-    )
-
-
-def test_build_parser_pycpt_bool():
-    """--pycpt uses _parse_bool to convert the string argument to a bool."""
-    run_all = _get_run_all()
-    assert run_all.build_parser().parse_args(["--pycpt", "false"]).pycpt is False
 
 
 # ---------------------------------------------------------------------------
@@ -896,25 +763,3 @@ def test_main_missing_config(tmp_path):
     """A missing config file causes main() to return 2."""
     run_all = _get_run_all()
     assert run_all.main(["--config", str(tmp_path / "nonexistent.yml")]) == 2
-
-
-def test_main_hindcast_only(tmp_path):
-    """--hindcast-only flag is forwarded through main() correctly."""
-    run_all = _get_run_all()
-    cfg_path = tmp_path / "config.yml"
-    with cfg_path.open("w", encoding="utf-8") as f:
-        yaml.safe_dump(_minimal_config(tmp_path), f)
-    assert (
-        run_all.main(["--config", str(cfg_path), "--dry-run", "--hindcast-only"]) == 0
-    )
-
-
-def test_main_forecast_only(tmp_path):
-    """--forecast-only flag is forwarded through main() correctly."""
-    run_all = _get_run_all()
-    cfg_path = tmp_path / "config.yml"
-    with cfg_path.open("w", encoding="utf-8") as f:
-        yaml.safe_dump(_minimal_config(tmp_path), f)
-    assert (
-        run_all.main(["--config", str(cfg_path), "--dry-run", "--forecast-only"]) == 0
-    )

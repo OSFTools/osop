@@ -108,61 +108,6 @@ def load_config(config_path: Path) -> dict[str, Any]:
     return loaded
 
 
-def apply_cli_overrides(
-    config: dict[str, Any], args: argparse.Namespace
-) -> dict[str, Any]:
-    """Apply command-line overrides to the loaded configuration.
-
-    Parameters
-    ----------
-    config : dict of str to Any
-        Base configuration loaded from YAML.
-    args : argparse.Namespace
-        Parsed command-line arguments.
-
-    Returns
-    -------
-    dict of str to Any
-        Configuration mapping with CLI overrides applied.
-    """
-    result = dict(config)
-    result["workflow"] = dict(config.get("workflow", {}))
-    result["parameters"] = dict(config.get("parameters", {}))
-
-    if args.hindcast_only and args.forecast_only:
-        raise ConfigError("Choose only one of --hindcast-only or --forecast-only")
-
-    if args.hindcast_only:
-        result["workflow"]["hindcast"] = True
-        result["workflow"]["forecast"] = False
-    if args.forecast_only:
-        result["workflow"]["hindcast"] = False
-        result["workflow"]["forecast"] = True
-    if args.test_mode:
-        result["workflow"]["test_mode"] = True
-
-    if args.month is not None:
-        result["parameters"]["month"] = args.month
-    if args.leads is not None:
-        result["parameters"]["leads"] = args.leads
-    if args.area is not None:
-        result["parameters"]["area"] = args.area
-    if args.variable is not None:
-        result["parameters"]["variable"] = args.variable
-    if args.location is not None:
-        result["parameters"]["location"] = args.location
-    if args.method is not None:
-        result["parameters"]["method"] = args.method
-    if args.pycpt is not None:
-        result["parameters"]["pycpt"] = args.pycpt
-    if args.predictor_area is not None:
-        result["parameters"]["predictor_area"] = args.predictor_area
-    if args.forecast_year is not None:
-        result["parameters"]["forecast_year"] = args.forecast_year
-
-    return result
-
-
 def _resolve_paths(paths_cfg: dict[str, Any]) -> dict[str, str]:
     if "base" not in paths_cfg:
         raise ConfigError("paths.base is required")
@@ -577,19 +522,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to YAML configuration file",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print commands only")
-    parser.add_argument("--test-mode", action="store_true", help="Use test centres")
-    parser.add_argument("--hindcast-only", action="store_true")
-    parser.add_argument("--forecast-only", action="store_true")
-
-    parser.add_argument("--month", type=int)
-    parser.add_argument("--leads")
-    parser.add_argument("--area")
-    parser.add_argument("--variable", choices=sorted(ALLOWED_VARIABLES))
-    parser.add_argument("--location")
-    parser.add_argument("--method")
-    parser.add_argument("--pycpt", type=_parse_bool)
-    parser.add_argument("--predictor-area")
-    parser.add_argument("--forecast-year", type=int)
 
     return parser
 
@@ -613,8 +545,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         config_path = Path(args.config).expanduser().resolve()
         loaded = load_config(config_path)
-        overridden = apply_cli_overrides(loaded, args)
-        validated = validate_config(overridden)
+        validated = validate_config(loaded)
 
         script_dir = Path(__file__).resolve().parent
         return run_pipeline(validated, script_dir, dry_run=args.dry_run)

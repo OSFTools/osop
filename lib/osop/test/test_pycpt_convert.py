@@ -245,7 +245,7 @@ def grib_test_file():
         Path(__file__).parent
         / "test_data"
         / "test_pycptf"
-        / "pycpt_ecmwf_51_1993-2016_monthly_mean_5_234_40:10:10:40_total_precipitation.grib"
+        / "pycpt_ecmwf_51_1993-2016_monthly_mean_5_234_40.10.10.40_total_precipitation.grib"
     )
 
     assert grib.is_file(), f"Test GRIB not found: {grib}"

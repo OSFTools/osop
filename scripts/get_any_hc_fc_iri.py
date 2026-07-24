@@ -294,7 +294,7 @@ def main():
     leadtime_month = [int(l) for l in args.leads.split(",")]
     area = [float(pt) for pt in args.area.split(",")]
     # create a string of the area to use in filenames
-    area_str = args.area.replace(",", ":")
+    area_str = args.area.replace(",", ".")
     month = int(args.month)
 
     if len(area) != 4:

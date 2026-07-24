@@ -17,7 +17,7 @@ set -eu
 
 # set parameters
 do_hc=1 # 1 to run hindcast, 0 to skip. Need to have run at least once to calculate terciles for forecast to work
-do_fc=0 # 1 to run forecast, 0 to skip. 
+do_fc=1 # 1 to run forecast, 0 to skip. 
 month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="39,60,-11,141" # sub-area in degrees for area of interest (comma separated N,W,S,E) 
@@ -28,7 +28,7 @@ pycpt="True" #True or False --> True you want pycpt, auto sets to off
 predictor_area="40,0,-40,359" #gcm area for predictor - if pycpt set to off, ignores (N,W,S,E)
 fc_year=2025 #year to run forecast for
 
-exp_name=single_script
+exp_name=Windows
 # pick download location
 base_path=$SCRATCH/osop/${exp_name}
 logdir=${base_path}/logfiles
@@ -63,6 +63,19 @@ done
 set +u
 conda activate osop
 set -u
+
+#CPT windows location differs regardless of Windows lock file
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+        echo "Windows OS detected"
+        export CPT_BIN_DIR="$CONDA_PREFIX/Library/cpt"
+        ;;
+    *)
+        #linux fine
+        ;;
+esac
+
+
 
 mkdir -p "$logdir"
 

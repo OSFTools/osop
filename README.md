@@ -42,6 +42,8 @@ Then, set-up a conda environment. The conda environment contains all the package
 
 **Now dive into the [User Guide](docs/source/user_guide.md) to learn more about downloading data and creating forecast products.**
 
+Published documentation is available on GitHub Pages: [OSOP docs](https://osftools.github.io/osop/).
+
 ## 🌱 Contributing
 > \[!TIP]
 > If you are new to using GitHub we recommend reading the [GitHub getting started](https://docs.github.com/en/github/getting-started-with-github).

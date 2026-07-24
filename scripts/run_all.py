@@ -38,7 +38,18 @@ def _parse_bool(value: str) -> bool:
 
 
 def parse_leads(leads: str) -> list[int]:
-    """Parse comma-separated lead months into a list of positive integers."""
+    """Parse comma-separated lead months into positive integers.
+
+    Parameters
+    ----------
+    leads : str
+        Comma-separated lead month values.
+
+    Returns
+    -------
+    list of int
+        Parsed lead month values as positive integers.
+    """
     try:
         parsed = [int(item.strip()) for item in leads.split(",") if item.strip()]
     except ValueError as exc:
@@ -50,7 +61,20 @@ def parse_leads(leads: str) -> list[int]:
 
 
 def parse_bbox(bbox: str, name: str) -> list[float]:
-    """Parse an N,W,S,E string into four floats."""
+    """Parse a bounding-box string into four numeric values.
+
+    Parameters
+    ----------
+    bbox : str
+        Bounding-box string in ``N,W,S,E`` order.
+    name : str
+        Configuration field name used in validation error messages.
+
+    Returns
+    -------
+    list of float
+        Bounding-box values as ``[north, west, south, east]``.
+    """
     parts = [item.strip() for item in bbox.split(",") if item.strip()]
     if len(parts) != 4:
         raise ConfigError(f"{name} must contain 4 comma-separated numbers, got: {bbox}")
@@ -70,7 +94,18 @@ def _deep_update(base: dict[str, Any], update: dict[str, Any]) -> dict[str, Any]
 
 
 def load_config(config_path: Path) -> dict[str, Any]:
-    """Load YAML config from disk."""
+    """Load a YAML configuration mapping from disk.
+
+    Parameters
+    ----------
+    config_path : pathlib.Path
+        Path to the YAML configuration file.
+
+    Returns
+    -------
+    dict of str to Any
+        Parsed top-level configuration mapping.
+    """
     if not config_path.exists():
         raise ConfigError(f"Config file not found: {config_path}")
 
@@ -85,7 +120,20 @@ def load_config(config_path: Path) -> dict[str, Any]:
 def apply_cli_overrides(
     config: dict[str, Any], args: argparse.Namespace
 ) -> dict[str, Any]:
-    """Apply optional command-line overrides onto YAML config."""
+    """Apply command-line overrides to the loaded configuration.
+
+    Parameters
+    ----------
+    config : dict of str to Any
+        Base configuration loaded from YAML.
+    args : argparse.Namespace
+        Parsed command-line arguments.
+
+    Returns
+    -------
+    dict of str to Any
+        Configuration mapping with CLI overrides applied.
+    """
     result = dict(config)
     result["workflow"] = dict(config.get("workflow", {}))
     result["parameters"] = dict(config.get("parameters", {}))
@@ -145,7 +193,18 @@ def _resolve_paths(paths_cfg: dict[str, Any]) -> dict[str, str]:
 
 
 def validate_config(config: dict[str, Any]) -> dict[str, Any]:
-    """Validate config and return normalized values."""
+    """Validate and normalize orchestrator configuration values.
+
+    Parameters
+    ----------
+    config : dict of str to Any
+        Raw configuration mapping.
+
+    Returns
+    -------
+    dict of str to Any
+        Normalized configuration mapping ready for execution.
+    """
     required_sections = ["workflow", "parameters", "paths", "centres", "services"]
     for section in required_sections:
         if section not in config:
@@ -224,7 +283,20 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
 
 
 def write_services_yaml(services: dict[str, Any], destination: Path) -> None:
-    """Write the parseyml.yml file expected by downstream scripts."""
+    """Write the ``parseyml.yml`` file consumed by downstream scripts.
+
+    Parameters
+    ----------
+    services : dict of str to Any
+        Service configuration payload.
+    destination : pathlib.Path
+        Output location for the YAML file.
+
+    Returns
+    -------
+    None
+        This function writes a file as a side effect.
+    """
     destination.parent.mkdir(parents=True, exist_ok=True)
     payload = {"Services": services}
     with destination.open("w", encoding="utf-8") as handle:
@@ -232,7 +304,18 @@ def write_services_yaml(services: dict[str, Any], destination: Path) -> None:
 
 
 def ensure_directories(paths: dict[str, Any]) -> None:
-    """Create all configured output directories."""
+    """Create all configured output directories.
+
+    Parameters
+    ----------
+    paths : dict of str to Any
+        Resolved paths mapping containing workflow output directories.
+
+    Returns
+    -------
+    None
+        This function creates directories as a side effect.
+    """
     directory_targets = [
         paths["logdir"],
         paths["hindcast"]["downloads"],
@@ -294,7 +377,22 @@ def _bool_str(value: bool) -> str:
 
 
 def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int:
-    """Execute configured hindcast/forecast workflows."""
+    """Execute configured hindcast and forecast workflows.
+
+    Parameters
+    ----------
+    config : dict of str to Any
+        Validated configuration mapping.
+    script_dir : pathlib.Path
+        Directory containing the workflow scripts to execute.
+    dry_run : bool
+        If ``True``, print commands without running subprocesses.
+
+    Returns
+    -------
+    int
+        Process-style status code: ``0`` for success, ``1`` if any step fails.
+    """
     paths = config["paths"]
     params = config["parameters"]
     centres = _select_centres(config)
@@ -472,7 +570,13 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the command-line parser."""
+    """Create the command-line argument parser.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        Parser configured for the orchestration CLI.
+    """
     parser = argparse.ArgumentParser(description="Run OSOP workflow from YAML config")
     parser.add_argument(
         "--config",
@@ -498,7 +602,18 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Program entrypoint."""
+    """Run the orchestration CLI entrypoint.
+
+    Parameters
+    ----------
+    argv : list of str or None, optional
+        Optional argument vector passed to ``argparse``.
+
+    Returns
+    -------
+    int
+        Exit status code returned by validation and pipeline execution.
+    """
     parser = build_parser()
     args = parser.parse_args(argv)
 

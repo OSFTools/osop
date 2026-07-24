@@ -84,15 +84,6 @@ def parse_bbox(bbox: str, name: str) -> list[float]:
         raise ConfigError(f"{name} must contain only numbers, got: {bbox}") from exc
 
 
-def _deep_update(base: dict[str, Any], update: dict[str, Any]) -> dict[str, Any]:
-    for key, value in update.items():
-        if isinstance(value, dict) and isinstance(base.get(key), dict):
-            base[key] = _deep_update(base[key], value)
-        else:
-            base[key] = value
-    return base
-
-
 def load_config(config_path: Path) -> dict[str, Any]:
     """Load a YAML configuration mapping from disk.
 
@@ -194,6 +185,8 @@ def _resolve_paths(paths_cfg: dict[str, Any]) -> dict[str, str]:
 
 def validate_config(config: dict[str, Any]) -> dict[str, Any]:
     """Validate and normalize orchestrator configuration values.
+
+    Raises ``ConfigError`` if any required fields are missing or invalid.
 
     Parameters
     ----------

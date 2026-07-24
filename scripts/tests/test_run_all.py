@@ -189,35 +189,6 @@ def test_parse_bbox_non_numeric_raises():
 
 
 # ---------------------------------------------------------------------------
-# _deep_update
-# ---------------------------------------------------------------------------
-
-
-def test_deep_update_shallow_merge():
-    """Non-nested keys in the update dict overwrite base values."""
-    run_all = _get_run_all()
-    assert run_all._deep_update({"a": 1, "b": 2}, {"b": 3, "c": 4}) == {
-        "a": 1,
-        "b": 3,
-        "c": 4,
-    }
-
-
-def test_deep_update_nested_dict_merge():
-    """Nested dicts are merged recursively."""
-    run_all = _get_run_all()
-    result = run_all._deep_update({"a": {"x": 1, "y": 2}}, {"a": {"y": 99, "z": 3}})
-    assert result == {"a": {"x": 1, "y": 99, "z": 3}}
-
-
-def test_deep_update_non_dict_override():
-    """A non-dict update value replaces a nested dict entirely."""
-    run_all = _get_run_all()
-    result = run_all._deep_update({"a": {"x": 1}}, {"a": "replaced"})
-    assert result["a"] == "replaced"
-
-
-# ---------------------------------------------------------------------------
 # load_config
 # ---------------------------------------------------------------------------
 

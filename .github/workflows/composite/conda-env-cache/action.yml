@@ -30,6 +30,6 @@ runs:
         key: ${{ runner.os }}-conda-env-${{ inputs.env_name }}-p${{ inputs.cache_period }}-b${{ inputs.cache_build }}
 
     - if: steps.conda-env-cache.outputs.cache-hit != 'true'
-      shell: bash
+      shell: bash -el {0}
       run: |
         conda install --quiet --name ${{ inputs.env_name }} ${{ inputs.install_packages }}

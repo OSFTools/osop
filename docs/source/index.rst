@@ -26,5 +26,5 @@ The documentation includes a user guide and API reference.
    :maxdepth: 2
    :caption: API Reference
 
-   api_reference.rst
+   api_reference.md
 

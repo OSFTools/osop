@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 import requests
+import xarray as xr
 
 
 @pytest.fixture(scope="module")
@@ -71,8 +72,7 @@ def test_unpack_args_and_run_with_years(get_chirps_module, monkeypatch):
     """Test unpack_args_and_run branch when explicit years are provided."""
     captured = {}
 
-    def fake_get_obs(downloaddir, config):
-        captured["downloaddir"] = downloaddir
+    def fake_get_obs(config):
         captured["config"] = config
 
     monkeypatch.setattr(get_chirps_module, "get_obs", fake_get_obs)
@@ -87,11 +87,12 @@ def test_unpack_args_and_run_with_years(get_chirps_module, monkeypatch):
         pycptdir="/tmp/pycpt",
         pycpt="False",
         years="1990,1995",
+        lkeep=False,
     )
 
     get_chirps_module.unpack_args_and_run(args)
 
-    assert captured["downloaddir"] == "/tmp/downloads"
+    assert captured["config"]["downloaddir"] == "/tmp/downloads"
     assert captured["config"]["month"] == 3
     assert captured["config"]["leadtime_month"] == [0, 2, 5]
     assert captured["config"]["area"] == [10.0, -20.0, -10.0, 20.0]
@@ -103,8 +104,7 @@ def test_unpack_args_and_run_uses_default_years(get_chirps_module, monkeypatch):
     """Test unpack_args_and_run branch when years are not provided."""
     captured = {}
 
-    def fake_get_obs(downloaddir, config):
-        captured["downloaddir"] = downloaddir
+    def fake_get_obs(config):
         captured["config"] = config
 
     monkeypatch.setattr(get_chirps_module, "get_obs", fake_get_obs)
@@ -119,14 +119,16 @@ def test_unpack_args_and_run_uses_default_years(get_chirps_module, monkeypatch):
         pycptdir="/tmp/pycpt",
         pycpt="False",
         years=None,
+        lkeep=False,
     )
 
     get_chirps_module.unpack_args_and_run(args)
 
-    assert captured["downloaddir"] == "/tmp/downloads"
+    assert captured["config"]["downloaddir"] == "/tmp/downloads"
     assert captured["config"]["month"] == 11
     assert captured["config"]["leadtime_month"] == [1, 3]
     assert captured["config"]["area"] == [5.0, 6.0, 7.0, 8.0]
+    assert captured["config"]["area_str"] == "5.6.7.8"
     assert captured["config"]["hcstarty"] == 1993
     assert captured["config"]["hcendy"] == 2016
 
@@ -135,7 +137,7 @@ def test_unpack_args_and_run_raises_for_pycpt_true(get_chirps_module, monkeypatc
     """Test unpack_args_and_run raises NotImplementedError when pycpt is True."""
     state = {"calls": 0}
 
-    def fake_get_obs(downloaddir, config):
+    def fake_get_obs(config):
         state["calls"] += 1
 
     monkeypatch.setattr(get_chirps_module, "get_obs", fake_get_obs)
@@ -150,6 +152,7 @@ def test_unpack_args_and_run_raises_for_pycpt_true(get_chirps_module, monkeypatc
         pycptdir="/tmp/pycpt",
         pycpt="True",
         years=None,
+        lkeep=False,
     )
 
     with pytest.raises(
@@ -174,6 +177,9 @@ def test_get_obs_downloads_and_writes_chunks(get_chirps_module):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10.-20.-10.20",
+        "downloaddir": "/tmp/downloads",
+        "ldelete": True,
     }
 
     with (
@@ -182,8 +188,9 @@ def test_get_obs_downloads_and_writes_chunks(get_chirps_module):
             get_chirps_module.requests, "get", return_value=response
         ) as get_mock,
         patch("builtins.open", mock_open()) as open_mock,
+        patch.object(get_chirps_module, "subset_chirps", return_value="subset.nc"),
     ):
-        get_chirps_module.get_obs("/tmp/chirps", config)
+        get_chirps_module.get_obs(config)
 
     assert get_mock.call_count == 2
     assert open_mock.call_count == 2
@@ -209,14 +216,18 @@ def test_get_obs_skips_when_file_exists(get_chirps_module):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10.-20.-10.20",
+        "downloaddir": "/tmp/downloads",
+        "ldelete": True,
     }
 
     with (
         patch.object(get_chirps_module.Path, "exists", return_value=True),
         patch.object(get_chirps_module.requests, "get") as get_mock,
         patch("builtins.open", mock_open()) as open_mock,
+        patch.object(get_chirps_module, "subset_chirps", return_value="subset.nc"),
     ):
-        get_chirps_module.get_obs("/tmp/chirps", config)
+        get_chirps_module.get_obs(config)
 
     get_mock.assert_not_called()
     open_mock.assert_not_called()
@@ -237,6 +248,9 @@ def test_get_obs_does_not_write_on_request_error(get_chirps_module):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10.-20.-10.20",
+        "downloaddir": "/tmp/downloads",
+        "ldelete": True,
     }
 
     with (
@@ -249,7 +263,7 @@ def test_get_obs_does_not_write_on_request_error(get_chirps_module):
             RuntimeError, match="Finished downloading CHIRPS data with 2 failures"
         ),
     ):
-        get_chirps_module.get_obs("/tmp/chirps", config)
+        get_chirps_module.get_obs(config)
 
     assert get_mock.call_count == 2
     open_mock.assert_not_called()
@@ -279,6 +293,9 @@ def test_get_obs_clamps_start_year_before_1981(get_chirps_module, caplog):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10.-20.-10.20",
+        "downloaddir": "/tmp/downloads",
+        "ldelete": True,
     }
 
     with caplog.at_level(logging.WARNING):
@@ -290,8 +307,9 @@ def test_get_obs_clamps_start_year_before_1981(get_chirps_module, caplog):
                 return_value=response,
             ) as get_mock,
             patch("builtins.open", mock_open()) as open_mock,
+            patch.object(get_chirps_module, "subset_chirps", return_value="subset.nc"),
         ):
-            get_chirps_module.get_obs("/tmp/chirps", config)
+            get_chirps_module.get_obs(config)
 
     assert get_mock.call_count == 2
     assert open_mock.call_count == 2
@@ -324,6 +342,9 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
         "month": 1,
         "leadtime_month": [0, 1],
         "area": [10.0, -20.0, -10.0, 20.0],
+        "area_str": "10.-20.-10.20",
+        "downloaddir": "/tmp/downloads",
+        "ldelete": True,
     }
 
     real_datetime = get_chirps_module.datetime
@@ -343,8 +364,9 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
                 return_value=response,
             ) as get_mock,
             patch("builtins.open", mock_open()) as open_mock,
+            patch.object(get_chirps_module, "subset_chirps", return_value="subset.nc"),
         ):
-            get_chirps_module.get_obs("/tmp/chirps", config)
+            get_chirps_module.get_obs(config)
 
     assert get_mock.call_count == 10
     assert open_mock.call_count == 10
@@ -368,3 +390,163 @@ def test_get_obs_clamps_end_year_after_current_year(get_chirps_module, caplog):
     for call in get_mock.call_args_list:
         assert call.kwargs["timeout"] == 30
         assert call.kwargs["stream"] is True
+
+
+def test_subset_chirps_creates_expected_output_and_subset_coords(
+    get_chirps_module, tmp_path
+):
+    """Test subset_chirps writes expected output and subsets to expected coords."""
+    tif_file = tmp_path / "chirps-v3.0.2020.01.tif"
+    tif_file.write_bytes(b"fake-tif")
+
+    ds = xr.DataArray(
+        [
+            [1.0, 2.0, 3.0, 4.0, 5.0],
+            [6.0, 7.0, 8.0, 9.0, 10.0],
+            [11.0, 12.0, 13.0, 14.0, 15.0],
+            [16.0, 17.0, 18.0, 19.0, 20.0],
+            [21.0, 22.0, 23.0, 24.0, 25.0],
+        ],
+        dims=("y", "x"),
+        coords={
+            "y": [20.0, 10.0, 0.0, -10.0, -20.0],
+            "x": [-20.0, -10.0, 0.0, 10.0, 20.0],
+        },
+    )
+
+    captured = {}
+
+    def fake_to_netcdf(self, output_path):
+        captured["shape"] = dict(self.sizes)
+        captured["x_coords"] = self.x.values.tolist()
+        captured["y_coords"] = self.y.values.tolist()
+        captured["data"] = self.values.tolist()
+        captured["output_path"] = Path(output_path)
+
+    area_bounds = [8.0, -8.0, -8.0, 8.0]
+    area_str = "8.-8.-8.8"
+    expected_output = tmp_path / "chirps-v3.0.2020.01_f8.-8.-8.8.nc"
+
+    with (
+        patch.object(get_chirps_module.xr, "open_dataarray", return_value=ds),
+        patch.object(
+            xr.DataArray, "to_netcdf", autospec=True, side_effect=fake_to_netcdf
+        ),
+    ):
+        output = get_chirps_module.subset_chirps(tif_file, area_bounds, area_str, False)
+
+    assert output == str(expected_output)
+    assert captured["output_path"] == expected_output
+    assert captured["shape"] == {"y": 3, "x": 3}
+    assert captured["x_coords"] == [-10.0, 0.0, 10.0]
+    assert captured["y_coords"] == [10.0, 0.0, -10.0]
+    assert captured["data"] == [
+        [7.0, 8.0, 9.0],
+        [12.0, 13.0, 14.0],
+        [17.0, 18.0, 19.0],
+    ]
+
+
+def test_subset_chirps_skips_when_output_exists(get_chirps_module, tmp_path):
+    """Test subset_chirps returns existing output path without re-subsetting."""
+    tif_file = tmp_path / "chirps-v3.0.2020.01.tif"
+    tif_file.write_bytes(b"fake-tif")
+
+    area_bounds = [10.0, -10.0, -10.0, 10.0]
+    area_str = "10.-10.-10.10"
+    expected_output = tmp_path / "chirps-v3.0.2020.01_f10.-10.-10.10.nc"
+    expected_output.write_bytes(b"existing-data")
+
+    ds = MagicMock()
+    ds.x.min.return_value = -20.0
+    ds.x.max.return_value = 20.0
+
+    with patch.object(get_chirps_module.xr, "open_dataarray", return_value=ds):
+        output = get_chirps_module.subset_chirps(tif_file, area_bounds, area_str, False)
+
+    assert output == str(expected_output)
+    ds.sel.assert_not_called()
+
+
+def test_subset_chirps_raises_for_out_of_range_longitude(get_chirps_module, tmp_path):
+    """Test subset_chirps raises ValueError when longitude bounds are out of range."""
+    tif_file = tmp_path / "chirps-v3.0.2020.01.tif"
+    tif_file.write_bytes(b"fake-tif")
+
+    ds = MagicMock()
+    ds.x.min.return_value = -20.0
+    ds.x.max.return_value = 20.0
+
+    with patch.object(get_chirps_module.xr, "open_dataarray", return_value=ds):
+        with pytest.raises(
+            ValueError, match="Longitude bounds are out of range of the CHIRPS data"
+        ):
+            get_chirps_module.subset_chirps(
+                tif_file,
+                [10.0, -30.0, -10.0, 10.0],
+                "10:-30:-10:10",
+                False,
+            )
+
+    ds.sel.assert_not_called()
+
+
+def test_subset_chirps_deletes_tif_when_requested(get_chirps_module, tmp_path):
+    """Test subset_chirps unlinks the source tif when ldelete is True."""
+    tif_file = tmp_path / "chirps-v3.0.2020.01.tif"
+    tif_file.write_bytes(b"fake-tif")
+
+    area_bounds = [10.0, -10.0, -10.0, 10.0]
+    area_str = "10.-10.-10.10"
+    expected_output = tmp_path / "chirps-v3.0.2020.01_f10.-10.-10.10.nc"
+
+    ds = MagicMock()
+    ds.x.min.return_value = -20.0
+    ds.x.max.return_value = 20.0
+    subset = MagicMock()
+    ds.sel.return_value = subset
+
+    with (
+        patch.object(get_chirps_module.xr, "open_dataarray", return_value=ds),
+        patch.object(get_chirps_module.Path, "unlink", autospec=True) as unlink_mock,
+    ):
+        output = get_chirps_module.subset_chirps(tif_file, area_bounds, area_str, True)
+
+    assert output == str(expected_output)
+    subset.to_netcdf.assert_called_once_with(expected_output)
+    unlink_mock.assert_called_once_with(tif_file)
+
+
+def test_subset_chirps_logs_when_delete_fails(get_chirps_module, tmp_path, caplog):
+    """Test subset_chirps handles unlink errors without raising."""
+    tif_file = tmp_path / "chirps-v3.0.2020.01.tif"
+    tif_file.write_bytes(b"fake-tif")
+
+    area_bounds = [10.0, -10.0, -10.0, 10.0]
+    area_str = "10.-10.-10.10"
+    expected_output = tmp_path / "chirps-v3.0.2020.01_f10.-10.-10.10.nc"
+
+    ds = MagicMock()
+    ds.x.min.return_value = -20.0
+    ds.x.max.return_value = 20.0
+    subset = MagicMock()
+    ds.sel.return_value = subset
+
+    with caplog.at_level(logging.ERROR):
+        with (
+            patch.object(get_chirps_module.xr, "open_dataarray", return_value=ds),
+            patch.object(
+                get_chirps_module.Path,
+                "unlink",
+                autospec=True,
+                side_effect=OSError("permission denied"),
+            ) as unlink_mock,
+        ):
+            output = get_chirps_module.subset_chirps(
+                tif_file, area_bounds, area_str, True
+            )
+
+    assert output == str(expected_output)
+    subset.to_netcdf.assert_called_once_with(expected_output)
+    unlink_mock.assert_called_once_with(tif_file)
+    assert "Failed to delete original file" in caplog.text

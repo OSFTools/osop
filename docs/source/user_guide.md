@@ -1,19 +1,11 @@
-# Introduction
-
-```{eval-rst}
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-```
-
 This document provides guidance on using the Objective Seasonal
 Outlook Package (OSOP) toolkit for producing seasonal based
 forecasting and verification.
 
 This user guide includes three main sections:
 
-* [Initial set_up](docs/source/set_up.md)
-* [Running the toolkit](docs/source/run.md)
+* [Initial set_up](set_up)
+* [Running the toolkit](run.md)
 * [Developing the toolkit](docs/source/devel.md)
 
 This user guide contains instructions on how to get started with

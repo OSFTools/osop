@@ -4,9 +4,9 @@ forecasting and verification.
 
 This user guide includes three main sections:
 
-* [Initial set_up](set_up)
+* [Initial set_up](set_up.md)
 * [Running the toolkit](run.md)
-* [Developing the toolkit](docs/source/devel.md)
+* [Developing the toolkit](devel.md)
 
 This user guide contains instructions on how to get started with
 the package using the currently available functions. The code is
@@ -32,7 +32,7 @@ The goal is that the user does not need to be experienced in coding to
 use the OSOP toolkit at a basic level. Users more advanced in coding
 may find that they can edit further down in the software to get more
 highly specific use cases. As outlined in the section
-[development](docs/source/devel.md), we encourage you to share your results with the
+[development](devel.md), we encourage you to share your results with the
 community by submitting a pull request on the main repository so that
 others can benefit from the same changes. Similarly, if a user feels
 they have identified a need that is not available within the product
@@ -45,4 +45,4 @@ future changes to the toolkit by the producers may affect this
 guidance document. It is recommended to regularly update the toolkit
 locally to ensure that it is in sync with the main remote branch and
 includes all recent changes. Guidance on how to do this can be found
-in the section [Development](docs/source/devel.md).
+in the section [Development](devel.md).

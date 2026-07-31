@@ -13,6 +13,7 @@ legacy shell runner while avoiding shell-specific behavior.
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -108,12 +109,12 @@ def load_config(config_path: Path) -> dict[str, Any]:
     return loaded
 
 
-def _resolve_paths(paths_cfg: dict[str, Any]) -> dict[str, str]:
+def _resolve_paths(paths_cfg: dict[str, Any]) -> dict[str, Any]:
     if "base" not in paths_cfg:
         raise ConfigError("paths.base is required")
 
     base = Path(str(paths_cfg["base"]))
-    formatted: dict[str, str] = {"base": str(base)}
+    formatted: dict[str, Any] = {"base": str(base)}
 
     for key, raw in paths_cfg.items():
         if key == "base":
@@ -271,14 +272,42 @@ def ensure_directories(paths: dict[str, Any]) -> None:
         Path(target).mkdir(parents=True, exist_ok=True)
 
 
-def _run_step(command: list[str], dry_run: bool) -> int:
+def _run_step(
+    command: list[str], dry_run: bool, env: dict[str, str] | None = None
+) -> int:
     cmd_display = " ".join(command)
     print(f"[RUN] {cmd_display}")
     if dry_run:
         return 0
 
-    completed = subprocess.run(command, check=False)
+    completed = subprocess.run(command, check=False, env=env)
     return completed.returncode
+
+
+def _build_subprocess_env(script_dir: Path) -> dict[str, str]:
+    """Build environment for subprocesses with repo lib path on PYTHONPATH.
+
+    Parameters
+    ----------
+    script_dir : pathlib.Path
+        Directory containing the orchestration scripts.
+
+    Returns
+    -------
+    dict of str to str
+        Environment mapping for subprocess execution.
+    """
+    repo_root = script_dir.parent
+    lib_path = str((repo_root / "lib").resolve())
+
+    env = os.environ.copy()
+    existing = env.get("PYTHONPATH", "")
+    if existing:
+        env["PYTHONPATH"] = os.pathsep.join([lib_path, existing])
+    else:
+        env["PYTHONPATH"] = lib_path
+
+    return env
 
 
 def _build_common_args(config: dict[str, Any], downloaddir: str) -> list[str]:
@@ -335,6 +364,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
     params = config["parameters"]
     centres = _select_centres(config)
     pycpt_arg = _bool_str(params["pycpt"])
+    subprocess_env = _build_subprocess_env(script_dir)
 
     ensure_directories(paths)
 
@@ -355,7 +385,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
             "--pycptdir",
             paths["hindcast"]["pycpt"],
         ]
-        if _run_step(era5_cmd, dry_run) != 0:
+        if _run_step(era5_cmd, dry_run, env=subprocess_env) != 0:
             failures.append("era5")
 
         for centre in centres:
@@ -373,7 +403,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                     "--pycptdir",
                     paths["hindcast"]["pycpt"],
                 ]
-                if _run_step(download_cmd, dry_run) != 0:
+                if _run_step(download_cmd, dry_run, env=subprocess_env) != 0:
                     failures.append(f"hindcast-download:{centre}")
                     continue
 
@@ -392,7 +422,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                 "--pycptdir",
                 paths["hindcast"]["pycpt"],
             ]
-            if _run_step(products_cmd, dry_run) != 0:
+            if _run_step(products_cmd, dry_run, env=subprocess_env) != 0:
                 failures.append(f"hindcast-products:{centre}")
                 continue
 
@@ -407,7 +437,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                 "--productsdir",
                 paths["hindcast"]["products"],
             ]
-            if _run_step(scores_cmd, dry_run) != 0:
+            if _run_step(scores_cmd, dry_run, env=subprocess_env) != 0:
                 failures.append(f"hindcast-scores:{centre}")
                 continue
 
@@ -427,7 +457,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
             if params["method"] is not None:
                 plots_cmd.extend(["--method", params["method"]])
 
-            if _run_step(plots_cmd, dry_run) != 0:
+            if _run_step(plots_cmd, dry_run, env=subprocess_env) != 0:
                 failures.append(f"hindcast-plots:{centre}")
 
     if config["workflow"]["forecast"]:
@@ -448,7 +478,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                     "--pycptdir",
                     paths["forecast"]["pycpt"],
                 ]
-                if _run_step(forecast_download_cmd, dry_run) != 0:
+                if _run_step(forecast_download_cmd, dry_run, env=subprocess_env) != 0:
                     failures.append(f"forecast-download:{centre}")
                     continue
 
@@ -475,7 +505,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                 "--hindcast_pycptdir",
                 paths["hindcast"]["pycpt"],
             ]
-            if _run_step(forecast_products_cmd, dry_run) != 0:
+            if _run_step(forecast_products_cmd, dry_run, env=subprocess_env) != 0:
                 failures.append(f"forecast-products:{centre}")
                 continue
 
@@ -494,7 +524,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                 "--yearsfc",
                 str(params["forecast_year"]),
             ]
-            if _run_step(forecast_plots_cmd, dry_run) != 0:
+            if _run_step(forecast_plots_cmd, dry_run, env=subprocess_env) != 0:
                 failures.append(f"forecast-plots:{centre}")
 
     if failures:

@@ -203,6 +203,20 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
 
     resolved_paths = _resolve_paths(config["paths"])
 
+    required_top = {"logdir", "hindcast", "forecast"}
+    missing_top = required_top - set(resolved_paths)
+    if missing_top:
+        raise ConfigError(f"Missing required paths entries: {sorted(missing_top)}")
+
+    required_nested = {"downloads", "products", "scores", "plots", "pycpt"}
+    for section in ("hindcast", "forecast"):
+        if not isinstance(resolved_paths.get(section), dict):
+            raise ConfigError(f"paths.{section} must be a mapping")
+        missing = required_nested - set(resolved_paths[section])
+        if missing:
+            raise ConfigError(
+                f"Missing required paths.{section} entries: {sorted(missing)}"
+            )
     return {
         "workflow": {
             "hindcast": bool(workflow.get("hindcast", True)),

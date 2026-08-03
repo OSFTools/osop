@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import functools
 import importlib.util
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -414,6 +415,72 @@ def test_run_step_real_run_failure():
 
 
 # ---------------------------------------------------------------------------
+# _build_subprocess_env
+# ---------------------------------------------------------------------------
+
+
+def test_build_subprocess_env_windows_uses_library_cpt(tmp_path):
+    """Prepend CONDA_PREFIX/Library/cpt to PATH on Windows platforms."""
+    run_all = _get_run_all()
+    script_dir = tmp_path / "scripts"
+    script_dir.mkdir()
+    conda_prefix = str(tmp_path / "conda")
+
+    with patch.dict(
+        run_all.os.environ,
+        {"CONDA_PREFIX": conda_prefix, "PATH": "orig-path", "PYTHONPATH": "base-py"},
+        clear=True,
+    ):
+        with patch.object(run_all.sys, "platform", "win32"):
+            env = run_all._build_subprocess_env(script_dir)
+
+    assert env["PATH"] == os.pathsep.join(
+        [str(Path(conda_prefix) / "Library" / "cpt"), "orig-path"]
+    )
+    assert env["PYTHONPATH"].startswith(str((script_dir.parent / "lib").resolve()))
+
+
+def test_build_subprocess_env_non_windows_uses_bin(tmp_path):
+    """Prepend CONDA_PREFIX/bin to PATH on non-Windows platforms."""
+    run_all = _get_run_all()
+    script_dir = tmp_path / "scripts"
+    script_dir.mkdir()
+    conda_prefix = str(tmp_path / "conda")
+
+    with patch.dict(
+        run_all.os.environ,
+        {"CONDA_PREFIX": conda_prefix, "PATH": "orig-path", "PYTHONPATH": "base-py"},
+        clear=True,
+    ):
+        with patch.object(run_all.sys, "platform", "linux"):
+            env = run_all._build_subprocess_env(script_dir)
+
+    assert env["PATH"] == os.pathsep.join(
+        [str(Path(conda_prefix) / "bin"), "orig-path"]
+    )
+    assert env["PYTHONPATH"].startswith(str((script_dir.parent / "lib").resolve()))
+
+
+def test_build_subprocess_env_without_conda_prefix_keeps_path(tmp_path):
+    """If CONDA_PREFIX is missing, PATH is unchanged while PYTHONPATH is set."""
+    run_all = _get_run_all()
+    script_dir = tmp_path / "scripts"
+    script_dir.mkdir()
+
+    with patch.dict(
+        run_all.os.environ,
+        {"PATH": "orig-path", "PYTHONPATH": "base-py"},
+        clear=True,
+    ):
+        env = run_all._build_subprocess_env(script_dir)
+
+    assert env["PATH"] == "orig-path"
+    assert env["PYTHONPATH"] == os.pathsep.join(
+        [str((script_dir.parent / "lib").resolve()), "base-py"]
+    )
+
+
+# ---------------------------------------------------------------------------
 # _select_centres
 # ---------------------------------------------------------------------------
 
@@ -516,7 +583,9 @@ def test_hindcast_mme_skips_download(tmp_path):
 
     calls = []
     with patch.object(
-        run_all, "_run_step", side_effect=lambda cmd, dry_run: calls.append(cmd) or 0
+        run_all,
+        "_run_step",
+        side_effect=lambda cmd, dry_run, env=None: calls.append(cmd) or 0,
     ):
         run_all.run_pipeline(
             validated, Path(__file__).resolve().parents[1], dry_run=False
@@ -535,7 +604,7 @@ def test_hindcast_products_failure_skips_scores_plots(tmp_path):
     config["centres"]["full"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run):
+    def selective_fail(command, dry_run, env=None):
         return 1 if Path(command[1]).name == "compute_products.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):
@@ -555,7 +624,7 @@ def test_hindcast_scores_failure_skips_plots(tmp_path):
     config["centres"]["full"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run):
+    def selective_fail(command, dry_run, env=None):
         return 1 if Path(command[1]).name == "compute_scores.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):
@@ -575,7 +644,7 @@ def test_hindcast_plots_failure_recorded(tmp_path):
     config["centres"]["full"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run):
+    def selective_fail(command, dry_run, env=None):
         return 1 if Path(command[1]).name == "plot_verification.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):
@@ -634,7 +703,9 @@ def test_forecast_mme_skips_download(tmp_path):
 
     calls = []
     with patch.object(
-        run_all, "_run_step", side_effect=lambda cmd, dry_run: calls.append(cmd) or 0
+        run_all,
+        "_run_step",
+        side_effect=lambda cmd, dry_run, env=None: calls.append(cmd) or 0,
     ):
         run_all.run_pipeline(
             validated, Path(__file__).resolve().parents[1], dry_run=False
@@ -655,7 +726,7 @@ def test_forecast_products_failure_skips_plots(tmp_path):
     config["centres"]["full"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run):
+    def selective_fail(command, dry_run, env=None):
         return 1 if Path(command[1]).name == "forecast_products.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):
@@ -676,7 +747,7 @@ def test_forecast_plots_failure_recorded(tmp_path):
     config["centres"]["full"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run):
+    def selective_fail(command, dry_run, env=None):
         return 1 if Path(command[1]).name == "forecast_plots.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):

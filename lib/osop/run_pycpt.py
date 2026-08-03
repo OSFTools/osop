@@ -46,7 +46,7 @@ def process_pycpt(
     output_case_dir = Path(hindcast_pycptdir)
 
     # Set up bounds (obs_area stored "N:W:S:E")
-    north, west, south, east = map(float, predict_config["obs_area_str"].split(":"))
+    north, west, south, east = map(float, predict_config["obs_area_str"].split("."))
     predictand_extent = {
         "west": west,
         "east": east,
@@ -56,7 +56,7 @@ def process_pycpt(
 
     # Set up bounds for predictor
     north_M, west_M, south_M, east_M = map(
-        float, predict_config["gcm_area_str"].split(":")
+        float, predict_config["gcm_area_str"].split(".")
     )
     predictor_extent = {
         "west": west_M,

@@ -307,6 +307,19 @@ def _build_subprocess_env(script_dir: Path) -> dict[str, str]:
     else:
         env["PYTHONPATH"] = lib_path
 
+    conda_prefix = env.get("CONDA_PREFIX")
+    if conda_prefix:
+        cpt_bin_dir = (
+            Path(conda_prefix) / "Library" / "cpt"
+            if sys.platform.startswith("win") or os.name == "nt"
+            else Path(conda_prefix) / "bin"
+        )
+        path_entries = [str(cpt_bin_dir)]
+        existing_path = env.get("PATH", "")
+        if existing_path:
+            path_entries.append(existing_path)
+        env["PATH"] = os.pathsep.join(path_entries)
+
     return env
 
 

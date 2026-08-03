@@ -202,7 +202,7 @@ def main():
     # start logging - need to know logdir location before we can set it up
     logfile = os.path.join(
         args.logdir,
-        f"download_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+        f"download_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y.%m.%d_%H.%M.%S')}.txt",
     )
 
     loglev = logging.INFO  # can be an argument later if needed
@@ -213,7 +213,7 @@ def main():
         filemode="w",
         format="{asctime} - {levelname} - {message}",
         style="{",
-        datefmt="%Y-%m-%d %H:%M",
+        datefmt="%Y.%m.%d %H.%M",
     )
 
     # unpack args and reformat if needed
@@ -221,7 +221,7 @@ def main():
     downloaddir = args.downloaddir
     leadtime_month = [int(l) for l in args.leads.split(",")]
     area = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area_str = args.area.replace(",", ".")
     month = int(args.month)
     variable = str(args.variable)
     pycptdir = args.pycptdir
@@ -235,7 +235,7 @@ def main():
             )
 
         predict_bounds = [float(pt) for pt in args.predictor_area.split(",")]
-        predict_str = args.predictor_area.replace(",", ":")
+        predict_str = args.predictor_area.replace(",", ".")
 
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")

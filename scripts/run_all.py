@@ -119,12 +119,16 @@ def _resolve_paths(paths_cfg: dict[str, Any]) -> dict[str, Any]:
     for key, raw in paths_cfg.items():
         if key == "base":
             continue
-        if isinstance(raw, dict):
-            formatted[key] = {}
-            for inner_key, inner_value in raw.items():
-                formatted[key][inner_key] = str(inner_value).format(base=str(base))
-        else:
-            formatted[key] = str(raw).format(base=str(base))
+        try:
+            if isinstance(raw, dict):
+                formatted[key] = {
+                    inner_key: str(inner_value).format(base=str(base))
+                    for inner_key, inner_value in raw.items()
+                }
+            else:
+                formatted[key] = str(raw).format(base=str(base))
+        except (KeyError, ValueError) as exc:
+            raise ConfigError(f"Invalid placeholder in paths.{key}: {exc}") from exc
 
     return formatted
 

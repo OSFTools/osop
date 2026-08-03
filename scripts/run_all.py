@@ -156,23 +156,29 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
     workflow = config["workflow"]
     parameters = config["parameters"]
 
-    month = int(parameters["month"])
+    try:
+        month = int(parameters["month"])
+        leads = str(parameters["leads"])
+        area = str(parameters["area"])
+        variable = str(parameters["variable"])
+        pycpt_value = parameters["pycpt"]
+    except KeyError as exc:
+        raise ConfigError(f"Missing required parameters field: {exc.args[0]}") from exc
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(f"Invalid parameters value: {exc}") from exc
+
     if month < 1 or month > 12:
         raise ConfigError(f"Month must be 1-12, got: {month}")
 
-    leads = str(parameters["leads"])
     parse_leads(leads)
 
-    area = str(parameters["area"])
     parse_bbox(area, "parameters.area")
 
-    variable = str(parameters["variable"])
     if variable not in ALLOWED_VARIABLES:
         raise ConfigError(
             f"Unsupported variable: {variable}. Allowed: {sorted(ALLOWED_VARIABLES)}"
         )
 
-    pycpt_value = parameters["pycpt"]
     if isinstance(pycpt_value, str):
         pycpt_enabled = _parse_bool(pycpt_value)
     else:

@@ -1,4 +1,4 @@
-name: osop
+name: osop-cpu-win
 channels:
   - conda-forge
   - iri-nextgen

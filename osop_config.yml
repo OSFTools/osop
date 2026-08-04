@@ -2,7 +2,6 @@ workflow:
   hindcast: true
   forecast: false
   test_mode: false
-  continue_on_error: true
 
 parameters:
   month: 5

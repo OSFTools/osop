@@ -35,7 +35,6 @@ def _minimal_config(tmp_path: Path) -> dict:
             "hindcast": False,
             "forecast": False,
             "test_mode": False,
-            "continue_on_error": True,
         },
         "parameters": {
             "month": 5,

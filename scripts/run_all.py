@@ -222,7 +222,6 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
             "hindcast": bool(workflow.get("hindcast", True)),
             "forecast": forecast_enabled,
             "test_mode": bool(workflow.get("test_mode", False)),
-            "continue_on_error": bool(workflow.get("continue_on_error", True)),
         },
         "parameters": {
             "month": month,

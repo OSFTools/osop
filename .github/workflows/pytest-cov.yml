@@ -25,9 +25,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            conda_file: osop-spec-file-linux.yml
+            conda_file: envs/osop-spec-file-linux.yml
           - os: windows-latest
-            conda_file: envs/osop-win-spec-file.yml
+            conda_file: envs/osop-cpu-win.yml
 
     defaults:
       run:
@@ -68,7 +68,7 @@ jobs:
           miniforge-version: latest
           channels: conda-forge
           activate-environment: ${{ env.ENV_NAME }}
-          environment-file: ${{ env.CONDA_FILE }}
+          environment-file: envs/osop-linux-spec-file.yml
           auto-update-conda: false
           conda-remove-defaults: true
 

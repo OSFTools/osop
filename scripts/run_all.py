@@ -13,6 +13,7 @@ legacy shell runner while avoiding shell-specific behavior.
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 from pathlib import Path
 import shutil
@@ -21,6 +22,8 @@ import sys
 from typing import Any
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_VARIABLES = {"2m_temperature", "total_precipitation"}
 
@@ -298,7 +301,7 @@ def _run_step(
     command: list[str], dry_run: bool, env: dict[str, str] | None = None
 ) -> int:
     cmd_display = " ".join(command)
-    print(f"[RUN] {cmd_display}")
+    logger.info("[RUN] %s", cmd_display)
     if dry_run:
         return 0
 

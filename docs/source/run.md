@@ -11,12 +11,6 @@ From the repository root:
 python scripts/run_all.py --config osop_config.yml
 ```
 
-For a safe command preview that does not download or process data:
-
-```bash
-python scripts/run_all.py --config osop_config.yml --dry-run
-```
-
 ## Configuration file
 
 All user options are in `osop_config.yml`:

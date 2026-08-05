@@ -164,4 +164,4 @@ result_images/
 .vscode/
 
 # default location for file output
-output/
+output

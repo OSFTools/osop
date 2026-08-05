@@ -34,7 +34,6 @@ def _minimal_config(tmp_path: Path) -> dict:
         "workflow": {
             "hindcast": False,
             "forecast": False,
-            "test_mode": False,
         },
         "parameters": {
             "month": 5,
@@ -65,10 +64,7 @@ def _minimal_config(tmp_path: Path) -> dict:
                 "pycpt": "{base}/forecast/pycpt",
             },
         },
-        "centres": {
-            "test": ["meteo_france", "ukmo", "mme"],
-            "full": ["meteo_france", "ukmo", "mme"],
-        },
+        "centres": ["meteo_france", "ukmo", "mme"],
         "services": {
             "meteo_france": [9, 1],
             "ukmo": [604, 1],
@@ -277,14 +273,12 @@ def test_validate_config_forecast_requires_year(tmp_path):
         run_all.validate_config(config)
 
 
-def test_validate_config_rejects_missing_centres_keys(tmp_path):
-    """Ensure centres dict missing 'test' or 'full' raises ConfigError."""
+def test_validate_config_rejects_invalid_centres(tmp_path):
+    """Ensure centres must be a non-empty list."""
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
-    del config["centres"]["test"]
-    with pytest.raises(
-        run_all.ConfigError, match="centres.test and centres.full are required"
-    ):
+    config["centres"] = {}
+    with pytest.raises(run_all.ConfigError, match="centres must be a non-empty list"):
         run_all.validate_config(config)
 
 
@@ -484,29 +478,20 @@ def test_build_subprocess_env_without_conda_prefix_keeps_path(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_select_centres_test_mode(tmp_path):
-    """When test_mode is True, the 'test' centres list is used."""
-    run_all = _get_run_all()
-    config = _minimal_config(tmp_path)
-    config["workflow"]["test_mode"] = True
-    validated = run_all.validate_config(config)
-    assert run_all._select_centres(validated) == ["meteo_france", "ukmo", "mme"]
-
-
-def test_select_centres_full_mode(tmp_path):
-    """When test_mode is False, the 'full' centres list is used."""
+def test_select_centres_uses_centres_list(tmp_path):
+    """The centres list is used directly."""
     run_all = _get_run_all()
     validated = run_all.validate_config(_minimal_config(tmp_path))
     assert run_all._select_centres(validated) == ["meteo_france", "ukmo", "mme"]
 
 
 def test_select_centres_empty_raises(tmp_path):
-    """An empty centres list raises ConfigError."""
+    """An empty centres list is rejected during validation."""
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
-    config["centres"]["full"] = []
-    with pytest.raises(run_all.ConfigError, match="Selected centres list is empty"):
-        run_all._select_centres(run_all.validate_config(config))
+    config["centres"] = []
+    with pytest.raises(run_all.ConfigError, match="centres must be a non-empty list"):
+        run_all.validate_config(config)
 
 
 # ---------------------------------------------------------------------------
@@ -520,20 +505,6 @@ def test_hindcast_dry_run(tmp_path):
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = True
     config["workflow"]["forecast"] = False
-    rc = run_all.run_pipeline(
-        run_all.validate_config(config),
-        script_dir=Path(__file__).resolve().parents[1],
-        dry_run=True,
-    )
-    assert rc == 0
-
-
-def test_hindcast_dry_run_test_mode(tmp_path):
-    """Hindcast pipeline with test_mode uses the test centres list."""
-    run_all = _get_run_all()
-    config = _minimal_config(tmp_path)
-    config["workflow"]["hindcast"] = True
-    config["workflow"]["test_mode"] = True
     rc = run_all.run_pipeline(
         run_all.validate_config(config),
         script_dir=Path(__file__).resolve().parents[1],
@@ -561,7 +532,7 @@ def test_hindcast_step_failure_returns_nonzero(tmp_path):
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = True
-    config["centres"]["full"] = ["ukmo"]
+    config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
     with patch.object(run_all, "_run_step", return_value=1):
         assert (
@@ -577,7 +548,7 @@ def test_hindcast_mme_skips_download(tmp_path):
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = True
-    config["centres"]["full"] = ["mme"]
+    config["centres"] = ["mme"]
     validated = run_all.validate_config(config)
 
     calls = []
@@ -600,7 +571,7 @@ def test_hindcast_products_failure_skips_scores_plots(tmp_path):
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = True
-    config["centres"]["full"] = ["ukmo"]
+    config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
     def selective_fail(command, dry_run, env=None):
@@ -620,7 +591,7 @@ def test_hindcast_scores_failure_skips_plots(tmp_path):
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = True
-    config["centres"]["full"] = ["ukmo"]
+    config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
     def selective_fail(command, dry_run, env=None):
@@ -640,7 +611,7 @@ def test_hindcast_plots_failure_recorded(tmp_path):
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = True
-    config["centres"]["full"] = ["ukmo"]
+    config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
     def selective_fail(command, dry_run, env=None):
@@ -680,7 +651,7 @@ def test_forecast_step_failure_returns_nonzero(tmp_path):
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = False
     config["workflow"]["forecast"] = True
-    config["centres"]["full"] = ["ukmo"]
+    config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
     with patch.object(run_all, "_run_step", return_value=1):
         assert (
@@ -697,7 +668,7 @@ def test_forecast_mme_skips_download(tmp_path):
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = False
     config["workflow"]["forecast"] = True
-    config["centres"]["full"] = ["mme"]
+    config["centres"] = ["mme"]
     validated = run_all.validate_config(config)
 
     calls = []
@@ -722,7 +693,7 @@ def test_forecast_products_failure_skips_plots(tmp_path):
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = False
     config["workflow"]["forecast"] = True
-    config["centres"]["full"] = ["ukmo"]
+    config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
     def selective_fail(command, dry_run, env=None):
@@ -743,7 +714,7 @@ def test_forecast_plots_failure_recorded(tmp_path):
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = False
     config["workflow"]["forecast"] = True
-    config["centres"]["full"] = ["ukmo"]
+    config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
     def selective_fail(command, dry_run, env=None):

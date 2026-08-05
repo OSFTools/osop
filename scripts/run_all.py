@@ -195,8 +195,8 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
         )
 
     centres_cfg = config["centres"]
-    if "test" not in centres_cfg or "full" not in centres_cfg:
-        raise ConfigError("centres.test and centres.full are required")
+    if not isinstance(centres_cfg, list) or not centres_cfg:
+        raise ConfigError("centres must be a non-empty list")
 
     if not isinstance(config["services"], dict) or not config["services"]:
         raise ConfigError("services must be a non-empty mapping")
@@ -221,7 +221,6 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
         "workflow": {
             "hindcast": bool(workflow.get("hindcast", True)),
             "forecast": forecast_enabled,
-            "test_mode": bool(workflow.get("test_mode", False)),
         },
         "parameters": {
             "month": month,
@@ -365,11 +364,7 @@ def _build_common_args(config: dict[str, Any], downloaddir: str) -> list[str]:
 
 
 def _select_centres(config: dict[str, Any]) -> list[str]:
-    selected = (
-        config["centres"]["test"]
-        if config["workflow"]["test_mode"]
-        else config["centres"]["full"]
-    )
+    selected = config["centres"]
     if not isinstance(selected, list) or not selected:
         raise ConfigError("Selected centres list is empty")
     return [str(item) for item in selected]

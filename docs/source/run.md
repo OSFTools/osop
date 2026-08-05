@@ -21,7 +21,7 @@ python scripts/run_all.py --config osop_config.yml --dry-run
 
 All user options are in `osop_config.yml`:
 
-- workflow switches (`hindcast`, `forecast`, `test_mode`)
+- workflow switches (`hindcast`, `forecast`)
 - core parameters (`month`, `leads`, `area`, `variable`, `location`)
 - pycpt options (`pycpt`, `predictor_area`)
 - forecast year (`forecast_year`)

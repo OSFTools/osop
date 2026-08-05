@@ -1,7 +1,6 @@
 workflow:
   hindcast: true
   forecast: false
-  test_mode: false
 
 parameters:
   month: 5
@@ -31,21 +30,16 @@ paths:
     pycpt: "{base}/forecast/pycpt"
 
 centres:
-  test:
-    - meteo_france
-    - ukmo
-    - mme
-  full:
-    - meteo_france
-    - dwd
-    - cmcc
-    - ncep
-    - ukmo
-    - ecmwf
-    - jma
-    - eccc
-    - bom
-    - mme
+  - meteo_france
+  - dwd
+  - cmcc
+  - ncep
+  - ukmo
+  - ecmwf
+  - jma
+  - eccc
+  - bom
+  - mme
 
 services:
   ecmwf: [51, 1]

@@ -178,7 +178,7 @@ showwarning = warnings.showwarning
 def log_warning(message, category, filename, lineno, file=None, line=None):
     msg = str(message)
 
-    if "FigureCanvasAgg is non-interactive" in msg:
+    if "warning" in msg:
         logger.warning(msg)
     else:
         showwarning(message, category, filename, lineno, file=file, line=line)

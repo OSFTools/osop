@@ -34,6 +34,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Check tool version drift (pre-commit vs overlay)
+        uses: ./.github/workflows/composite/dev-tool-sync-check
+
       - name: Install conda environment
         uses: conda-incubator/setup-miniconda@v4
         with:

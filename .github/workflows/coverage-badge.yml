@@ -15,6 +15,9 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Check tool version drift (pre-commit vs overlay)
+        uses: ./.github/workflows/composite/dev-tool-sync-check
+
       - name: Run tests
         run: |
           pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/ | tee pytest-coverage.txt

@@ -45,7 +45,6 @@ jobs:
           CACHE_WEEKS: 2
         run: |
           echo "CACHE_PERIOD=$(date +%Y).$(expr $(date +%U) / ${CACHE_WEEKS})" >> ${GITHUB_ENV}
-          echo "CONDA_FILE=./osop-spec-file-linux.txt" >> ${GITHUB_ENV}
 
       - name: "conda package cache"
         uses: ./.github/workflows/composite/conda-pkg-cache
@@ -71,6 +70,14 @@ jobs:
           cache_period: ${{ env.CACHE_PERIOD }}
           env_name: ${{ env.ENV_NAME }}
           install_packages: "pip"
+
+      - name: Check tool version drift (pre-commit vs overlay)
+        uses: ./.github/workflows/composite/dev-tool-sync-check
+
+      - name: Apply dev tools overlay
+        run: |
+          conda env update --name "${ENV_NAME}" --file envs/dev-tools-overlay.yml --quiet
+          conda list "ruff|codespell|blacken-docs|numpydoc"
 
       - name: "conda info"
         run: |

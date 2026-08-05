@@ -1,0 +1,56 @@
+name: "dev-tool-sync-check"
+description: "Validate that pre-commit hook revs match dev tool overlay pins"
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+
+        check_tool_sync() {
+          local tool_name="$1"
+          local repo_url="$2"
+
+          precommit_ver="$({
+            awk -v repo="${repo_url}" '
+              $1=="-" && $2=="repo:" && $3==repo {found=1}
+              found && $1=="rev:" {
+                gsub(/"/, "", $2)
+                sub(/^v/, "", $2)
+                print $2
+                exit
+              }
+            ' .pre-commit-config.yaml
+          } || true)"
+
+          overlay_ver="$({
+            awk -v tool="${tool_name}" -F= '
+              $0 ~ "^[[:space:]]*-[[:space:]]*" tool "=" {
+                gsub(/[[:space:]]/, "", $2)
+                print $2
+                exit
+              }
+            ' envs/dev-tools-overlay.yml
+          } || true)"
+
+          if [[ -z "${precommit_ver}" || -z "${overlay_ver}" ]]; then
+            echo "Could not read ${tool_name} versions from .pre-commit-config.yaml or envs/dev-tools-overlay.yml"
+            exit 1
+          fi
+
+          if [[ "${precommit_ver}" != "${overlay_ver}" ]]; then
+            echo "${tool_name} version drift detected:"
+            echo "  pre-commit rev: ${precommit_ver}"
+            echo "  overlay pin:    ${overlay_ver}"
+            echo "Update envs/dev-tools-overlay.yml to match .pre-commit-config.yaml."
+            exit 1
+          fi
+
+          echo "${tool_name} versions are in sync (${precommit_ver})."
+        }
+
+        check_tool_sync "ruff" "https://github.com/astral-sh/ruff-pre-commit"
+        check_tool_sync "codespell" "https://github.com/codespell-project/codespell"
+        check_tool_sync "blacken-docs" "https://github.com/asottile/blacken-docs"
+        check_tool_sync "numpydoc" "https://github.com/numpy/numpydoc"

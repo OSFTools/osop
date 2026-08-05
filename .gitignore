@@ -162,3 +162,6 @@ result_images/
 #.idea/
 
 .vscode/
+
+# default location for file output
+output

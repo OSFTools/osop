@@ -15,34 +15,9 @@ This software is supported by the Weather and Climate Information Services (WISE
 <!-- Pytest Coverage Comment:End -->
 
 ## 🚀 Getting Started
-To get started with OSOP, start by cloning this github repo:
-<details> <summary>Clone this repo</summary>
- 
-```bash
-   git clone https://github.com/OSFTools/osop.git
-   cd osop
-```
-
-</details>
-
-Then, set-up a conda environment. The conda environment contains all the packages you will need to run this library.
-<details> <summary>Create conda environment</summary>
- 
-```bash
-   conda env create --file environment.yml
-```
-
- You will need to activate your conda environment every time you want to use this library
- 
- ```bash
-    conda activate osop
- ```
-
-</details>
-
-**Now dive into the [User Guide](docs/source/user_guide.md) to learn more about downloading data and creating forecast products.**
-
 Published documentation is available on GitHub Pages: [OSOP docs](https://osftools.github.io/osop/).
+
+To get started with OSOP, see "Initial Set up" in the documentation: [Initial Set up](https://osftools.github.io/osop/set_up.html)
 
 ## 🌱 Contributing
 > \[!TIP]
@@ -55,7 +30,8 @@ OSOP is an Open Source project hosted on Github.  Anyone with a GitHub account m
 - documentation improvements
 
 > \[!IMPORTANT]
-> To contribute to this project as a developer, please read the [Contributing](CONTRIBUTING.md) guidelines.
+> To contribute to this project as a developer, please read the [Contributing](CONTRIBUTING.md) guidelines. \
+> As well as OSOP specific documentation at: [Development](https://osftools.github.io/osop/devel.html)
 
 
 <h6 align="center">

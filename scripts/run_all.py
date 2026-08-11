@@ -396,7 +396,39 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
     centres = _select_centres(config)
     pycpt_arg = _bool_str(params["pycpt"])
     subprocess_env = _build_subprocess_env(script_dir)
+    # ---------------------------------------------------------
+    # Co-pilot made:
+    # In-memory pyCPT monkeypatch (no file creation)
+    # ---------------------------------------------------------
+    try:
+        from pathlib import Path
 
+        import cptcore
+
+        conda_prefix = subprocess_env.get(
+            "CONDA_PREFIX", os.environ.get("CONDA_PREFIX")
+        )
+
+        if sys.platform.startswith("win") or os.name == "nt":
+            cpt_bin_dir = Path(conda_prefix) / "Library" / "cpt"
+            cpt_exe = cpt_bin_dir / "CPT.exe"
+        else:
+            cpt_bin_dir = Path(conda_prefix) / "bin"
+            cpt_exe = cpt_bin_dir / "CPT"
+
+        subprocess_env["CPT_BIN_DIR"] = str(cpt_bin_dir)
+
+        orig_init = cptcore.CPT.__init__
+
+        def patched_init(self, *args, **kwargs):
+            kwargs["cpt_executable"] = str(cpt_exe)
+            return orig_init(self, *args, **kwargs)
+
+        cptcore.CPT.__init__ = patched_init
+        print("pyCPT monkeypatch applied in memory")
+
+    except Exception as exc:
+        print("WARNING: pyCPT monkeypatch failed:", exc)
     ensure_directories(paths)
 
     parseyml_path = Path(paths["hindcast"]["downloads"]) / "parseyml.yml"

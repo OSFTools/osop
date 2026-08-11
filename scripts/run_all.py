@@ -554,6 +554,10 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
             if _run_step(forecast_products_cmd, env=subprocess_env) != 0:
                 failures.append(f"forecast-products:{centre}")
                 continue
+            else:
+                print(
+                    f"Forecast products computation for {centre} completed successfully"
+                )
 
             forecast_plots_cmd = [
                 sys.executable,
@@ -572,6 +576,8 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
             ]
             if _run_step(forecast_plots_cmd, env=subprocess_env) != 0:
                 failures.append(f"forecast-plots:{centre}")
+            else:
+                print(f"Forecast plots generation for {centre} completed successfully")
 
     if failures:
         print("Run completed with failures:")

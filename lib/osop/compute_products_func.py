@@ -140,10 +140,9 @@ def mme_products_hindcast(services, config, productsdir):
     -----
     Saves array (xarray.DataArray) - The multi-model ensemble forecast percentages.
     """
-    # remove mme from the list that's' worked on
-    del services["{origin}".format(**config)]
-    # Remove when jma regridded
-    del services["jma"]
+    # Remove the MME entry and JMA
+    services.pop("{origin}".format(**config), None)
+    services.pop("jma", None)
 
     mme_combined = {}
     mme_combined_mean = {}

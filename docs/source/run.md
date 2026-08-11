@@ -121,12 +121,13 @@ services:
 - **`month`**: Integer. Month used for initialisation time of the forecast (example: `5`).
 - **`leads`**: Comma-separated lead times as a string (example: `"2,3,4"`). With an initialisation 
 month of 5 leads 2,3,4 gives a forecast/hindcast averaged across the months of June, July and August. Note that the code follows the C3S conventions and so 0 is not a valid lead time. To use the data from the same month as the forecast initialisation time use a lead of 1.
-- **`area`**: Bounding box to be forecast as a string `latN,latS,lonW,lonE` (example: `"39,60,-11,141"`). 
+- **`area`**: Bounding box for hindcast/forecast area as a string `latN,latW,lonS,lonE` (example: `"39,60,-11,141"`).
 - **`variable`**: Forecast variable. Valid values are  `total_precipitation` and `2m_temperature`.  
 - **`location`**: Optional named location (string) or `None`.
 - **`method`**: Plotting method. `pmesh` gives colormesh plots, any other value gives contour plots.
 - **`pycpt`**: Boolean toggle to enable pycpt processing.
-- **`predictor_area`**: Predictor bbox string used by pycpt (example: `"40,0,-40,359"`). 
+- **`predictor_area`**: Predictor bbox string used by pycpt (example:
+  `"40,0,-40,359"`).  string `latN,latW,lonS,lonE`
 - **`forecast_year`**: Year used for forecast (integer).
 
 ### Paths

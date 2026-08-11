@@ -414,6 +414,8 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
         ]
         if _run_step(era5_cmd, env=subprocess_env) != 0:
             failures.append("era5")
+        else:
+            print("ERA5 download completed successfully")
 
         for centre in centres:
             if centre != "mme":
@@ -433,6 +435,8 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
                 if _run_step(download_cmd, env=subprocess_env) != 0:
                     failures.append(f"hindcast-download:{centre}")
                     continue
+                else:
+                    print(f"Hindcast download for {centre} completed successfully")
 
             products_cmd = [
                 sys.executable,
@@ -452,6 +456,10 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
             if _run_step(products_cmd, env=subprocess_env) != 0:
                 failures.append(f"hindcast-products:{centre}")
                 continue
+            else:
+                print(
+                    f"Hindcast products computation for {centre} completed successfully"
+                )
 
             scores_cmd = [
                 sys.executable,
@@ -467,6 +475,10 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
             if _run_step(scores_cmd, env=subprocess_env) != 0:
                 failures.append(f"hindcast-scores:{centre}")
                 continue
+            else:
+                print(
+                    f"Hindcast scores computation for {centre} completed successfully"
+                )
 
             plots_cmd = [
                 sys.executable,
@@ -483,6 +495,11 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
             ]
             if params["method"] is not None:
                 plots_cmd.extend(["--method", params["method"]])
+            if _run_step(plots_cmd, env=subprocess_env) != 0:
+                failures.append(f"hindcast-plots:{centre}")
+                continue
+            else:
+                print(f"Hindcast plots generation for {centre} completed successfully")
 
             if _run_step(plots_cmd, env=subprocess_env) != 0:
                 failures.append(f"hindcast-plots:{centre}")
@@ -508,6 +525,8 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
                 if _run_step(forecast_download_cmd, env=subprocess_env) != 0:
                     failures.append(f"forecast-download:{centre}")
                     continue
+                else:
+                    print(f"Forecast download for {centre} completed successfully")
 
             forecast_products_cmd = [
                 sys.executable,

@@ -46,9 +46,16 @@ end
 > [!WARNING]
 > Remember to checkout your new branch **before** your start committing code.
 
+## Writing Tests
+Tests are written using [pytest](https://docs.pytest.org/en/stable/).  
+
+Code coverage statistics are calculated for each push to your new branch.  
+
+Pull requests that do _not_ contain tests for added code will be rejected.
+
 ## Submitting changes
 
-1. Make your changes and remember to add appropriate documentation and tests to supplement any new or changed functionality.
+1. Make your changes and remember to add appropriate documentation and tests to supplement any new or changed functionality and update documentation if needed.
 2. <details><summary>Run pre-commit checks and tests</summary>
    
    ```shell
@@ -56,6 +63,12 @@ end
    # Optionally re-add and re-commit changes made by pre-commit hooks 
    $ pytest .
    ```
+3. If you changed or added documentation, the docs can be built locally
+by activating the osop conda environment and typing `cd docs/`, then
+`make html`. The built HTML docs will be found at
+`docs/build/html/index.html`. Open this in a browser and check your
+changes work as intended. When your Pull Request is merged the
+GitHub pages version will be automatically updated.
    
 4. If you're not already on it (and would like to be), please add yourself to the [contributors list](CONTRIBUTORS.md)
 5. Mark your pull request as ready for review and request a code review.
@@ -64,8 +77,8 @@ end
 > Note that you will automatically be asked to sign the [Contributor Licence Agreement](https://cla-assistant.io/OSFTools/osop/)
 > (CLA), if you have not already done so.
    
-4. We will review your code and request changes if necessary.
-5. Once your changes pass code review, an admin will merge changes in the `master` branch.
+6. We will review your code and request changes if necessary.
+7. Once your changes pass code review, an admin will merge changes in the `master` branch.
 > \[!WARNING]
 > By default, contributors _will not_ be able to merge their own changes in the `master` branch.
 
@@ -74,9 +87,3 @@ end
 1. Close your pull request, and...
 2. Optionally, if your changes relate to a Issue, close the related Issue with comments detailing the related PR.
 
-# Writing Tests
-Tests are written using [pytest](https://docs.pytest.org/en/stable/).  
-
-Code coverage statistics are calculated for each push to your new branch.  
-
-Pull requests that do _not_ contain test for added code will be rejected.

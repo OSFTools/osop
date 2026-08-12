@@ -51,7 +51,7 @@ Tests are written using [pytest](https://docs.pytest.org/en/stable/).
 
 Code coverage statistics are calculated for each push to your new branch.  
 
-Pull requests that do _not_ contain test for added code will be rejected.
+Pull requests that do _not_ contain tests for added code will be rejected.
 
 ## Submitting changes
 
@@ -63,9 +63,9 @@ Pull requests that do _not_ contain test for added code will be rejected.
    # Optionally re-add and re-commit changes made by pre-commit hooks 
    $ pytest .
    ```
-3. If you changed or added documentation, the docs can built locally
-by activating the osop conda environment and  typing `cd docs/` then
-`make html`. The built html docs will be found at
+3. If you changed or added documentation, the docs can be built locally
+by activating the osop conda environment and typing `cd docs/`, then
+`make html`. The built HTML docs will be found at
 `docs/build/html/index.html`. Open this in a browser and check your
 changes work as intended. When your Pull Request is merged the
 GitHub pages version will be automatically updated.

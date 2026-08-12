@@ -15,8 +15,8 @@ python scripts/run_all.py --config osop_config.yml
 ```
 
 This runs the python code using the options selected in the
-`osop_config.yml` file. If the `---config` option is not provided the
-code defaults to osop_config.yml. You can create additional config
+`osop_config.yml` file. If the `--config` option is not provided, the
+code defaults to `osop_config.yml`. You can create additional config
 files as required.
 
 Summary of run options:

@@ -106,7 +106,7 @@ A ~/.bash_profile that loads ~/.bashrc will be created for you.
 
 This can be ignored and will not be seen when opening another time.
 
-If `conda.sh` is not found at the above path, open the minforge prompt
+If `conda.sh` is not found at the above path, open the Miniforge prompt
 and type `where conda`. This gives the path to the conda executable,
 use the part up to and including `miniforge3` instead of
 `/c/Users/\<username\>/miniforge3`
@@ -165,10 +165,10 @@ the previous section. This is usually a case of `cd osop-main` and
 then `cd envs` within the directory that holds this. If following the
 download zip section then this will be in downloads. Typing `ls` will
 bring up a list of the files contained here. One of which should be
-the file `osop-spec-file-<platform>.yml`. This contains a detailed
-list of the packages and the versions needed to run the code. There
-will be a linux and a windows version of these files - pick the
-correct one for your computer. Note at the current time we do not
+the file `osop-linux-spec-file.yml` (Linux) or `osop-win-spec-file.yml`
+(Windows). These contain a detailed list of the packages and versions
+needed to run the code.
+Pick the correct one for your computer. Note at the current time we do not
 support Macs.
 
 To install the conda environment type:

@@ -108,10 +108,9 @@ def mme_products(Services, config, productsfcdir):
     -----
     Saves array (xarray.DataArray) - The multi-model ensemble forecast percentages.
     """
-    # remove mme from the list that's worked on
-    del Services["{origin}".format(**config)]
-    # Remove when happy
-    del Services["jma"]
+    # Remove the MME entry and any optional providers that may be absent.
+    Services.pop("{origin}".format(**config), None)
+    Services.pop("jma", None)
 
     services_values = {
         origin: val[0] if isinstance(val, (list, tuple)) else val

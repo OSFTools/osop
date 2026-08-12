@@ -385,18 +385,12 @@ def test_ensure_directories_creates_all_dirs(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_run_step_dry_run_returns_zero():
-    """In dry-run mode no subprocess is spawned and 0 is returned."""
-    run_all = _get_run_all()
-    assert run_all._run_step(["echo", "hello"], dry_run=True) == 0
-
-
 def test_run_step_real_run_success():
     """A subprocess returning 0 causes _run_step to return 0."""
     run_all = _get_run_all()
     with patch("subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0)
-        assert run_all._run_step(["echo", "hello"], dry_run=False) == 0
+        assert run_all._run_step(["echo", "hello"]) == 0
 
 
 def test_run_step_real_run_failure():
@@ -404,7 +398,7 @@ def test_run_step_real_run_failure():
     run_all = _get_run_all()
     with patch("subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=1)
-        assert run_all._run_step(["false"], dry_run=False) == 1
+        assert run_all._run_step(["false"]) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -499,31 +493,31 @@ def test_select_centres_empty_raises(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_hindcast_dry_run(tmp_path):
-    """Hindcast pipeline in dry-run mode returns 0 without spawning subprocesses."""
+def test_hindcast_returns_zero(tmp_path):
+    """Hindcast pipeline returns 0 when all steps succeed."""
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = True
     config["workflow"]["forecast"] = False
-    rc = run_all.run_pipeline(
-        run_all.validate_config(config),
-        script_dir=Path(__file__).resolve().parents[1],
-        dry_run=True,
-    )
+    with patch.object(run_all, "_run_step", return_value=0):
+        rc = run_all.run_pipeline(
+            run_all.validate_config(config),
+            script_dir=Path(__file__).resolve().parents[1],
+        )
     assert rc == 0
 
 
-def test_hindcast_no_method_dry_run(tmp_path):
+def test_hindcast_no_method_omits_flag(tmp_path):
     """Hindcast pipeline without a plot method omits --method from the plots command."""
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = True
     config["parameters"]["method"] = None
-    rc = run_all.run_pipeline(
-        run_all.validate_config(config),
-        script_dir=Path(__file__).resolve().parents[1],
-        dry_run=True,
-    )
+    with patch.object(run_all, "_run_step", return_value=0):
+        rc = run_all.run_pipeline(
+            run_all.validate_config(config),
+            script_dir=Path(__file__).resolve().parents[1],
+        )
     assert rc == 0
 
 
@@ -535,12 +529,7 @@ def test_hindcast_step_failure_returns_nonzero(tmp_path):
     config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
     with patch.object(run_all, "_run_step", return_value=1):
-        assert (
-            run_all.run_pipeline(
-                validated, Path(__file__).resolve().parents[1], dry_run=False
-            )
-            == 1
-        )
+        assert run_all.run_pipeline(validated, Path(__file__).resolve().parents[1]) == 1
 
 
 def test_hindcast_mme_skips_download(tmp_path):
@@ -555,11 +544,9 @@ def test_hindcast_mme_skips_download(tmp_path):
     with patch.object(
         run_all,
         "_run_step",
-        side_effect=lambda cmd, dry_run, env=None: calls.append(cmd) or 0,
+        side_effect=lambda cmd, env=None: calls.append(cmd) or 0,
     ):
-        run_all.run_pipeline(
-            validated, Path(__file__).resolve().parents[1], dry_run=False
-        )
+        run_all.run_pipeline(validated, Path(__file__).resolve().parents[1])
 
     script_names = [Path(cmd[1]).name for cmd in calls if len(cmd) > 1]
     assert "get_any_hindcast.py" not in script_names
@@ -574,16 +561,11 @@ def test_hindcast_products_failure_skips_scores_plots(tmp_path):
     config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run, env=None):
+    def selective_fail(command, env=None):
         return 1 if Path(command[1]).name == "compute_products.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):
-        assert (
-            run_all.run_pipeline(
-                validated, Path(__file__).resolve().parents[1], dry_run=False
-            )
-            == 1
-        )
+        assert run_all.run_pipeline(validated, Path(__file__).resolve().parents[1]) == 1
 
 
 def test_hindcast_scores_failure_skips_plots(tmp_path):
@@ -594,16 +576,11 @@ def test_hindcast_scores_failure_skips_plots(tmp_path):
     config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run, env=None):
+    def selective_fail(command, env=None):
         return 1 if Path(command[1]).name == "compute_scores.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):
-        assert (
-            run_all.run_pipeline(
-                validated, Path(__file__).resolve().parents[1], dry_run=False
-            )
-            == 1
-        )
+        assert run_all.run_pipeline(validated, Path(__file__).resolve().parents[1]) == 1
 
 
 def test_hindcast_plots_failure_recorded(tmp_path):
@@ -614,16 +591,11 @@ def test_hindcast_plots_failure_recorded(tmp_path):
     config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run, env=None):
+    def selective_fail(command, env=None):
         return 1 if Path(command[1]).name == "plot_verification.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):
-        assert (
-            run_all.run_pipeline(
-                validated, Path(__file__).resolve().parents[1], dry_run=False
-            )
-            == 1
-        )
+        assert run_all.run_pipeline(validated, Path(__file__).resolve().parents[1]) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -631,17 +603,17 @@ def test_hindcast_plots_failure_recorded(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_forecast_dry_run(tmp_path):
-    """Forecast pipeline in dry-run mode returns 0 without spawning subprocesses."""
+def test_forecast_returns_zero(tmp_path):
+    """Forecast pipeline returns 0 when all steps succeed."""
     run_all = _get_run_all()
     config = _minimal_config(tmp_path)
     config["workflow"]["hindcast"] = False
     config["workflow"]["forecast"] = True
-    rc = run_all.run_pipeline(
-        run_all.validate_config(config),
-        script_dir=Path(__file__).resolve().parents[1],
-        dry_run=True,
-    )
+    with patch.object(run_all, "_run_step", return_value=0):
+        rc = run_all.run_pipeline(
+            run_all.validate_config(config),
+            script_dir=Path(__file__).resolve().parents[1],
+        )
     assert rc == 0
 
 
@@ -654,12 +626,7 @@ def test_forecast_step_failure_returns_nonzero(tmp_path):
     config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
     with patch.object(run_all, "_run_step", return_value=1):
-        assert (
-            run_all.run_pipeline(
-                validated, Path(__file__).resolve().parents[1], dry_run=False
-            )
-            == 1
-        )
+        assert run_all.run_pipeline(validated, Path(__file__).resolve().parents[1]) == 1
 
 
 def test_forecast_mme_skips_download(tmp_path):
@@ -675,11 +642,9 @@ def test_forecast_mme_skips_download(tmp_path):
     with patch.object(
         run_all,
         "_run_step",
-        side_effect=lambda cmd, dry_run, env=None: calls.append(cmd) or 0,
+        side_effect=lambda cmd, env=None: calls.append(cmd) or 0,
     ):
-        run_all.run_pipeline(
-            validated, Path(__file__).resolve().parents[1], dry_run=False
-        )
+        run_all.run_pipeline(validated, Path(__file__).resolve().parents[1])
 
     script_names = [Path(cmd[1]).name for cmd in calls if len(cmd) > 1]
     assert "get_any_hindcast.py" not in script_names
@@ -696,16 +661,11 @@ def test_forecast_products_failure_skips_plots(tmp_path):
     config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run, env=None):
+    def selective_fail(command, env=None):
         return 1 if Path(command[1]).name == "forecast_products.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):
-        assert (
-            run_all.run_pipeline(
-                validated, Path(__file__).resolve().parents[1], dry_run=False
-            )
-            == 1
-        )
+        assert run_all.run_pipeline(validated, Path(__file__).resolve().parents[1]) == 1
 
 
 def test_forecast_plots_failure_recorded(tmp_path):
@@ -717,16 +677,11 @@ def test_forecast_plots_failure_recorded(tmp_path):
     config["centres"] = ["ukmo"]
     validated = run_all.validate_config(config)
 
-    def selective_fail(command, dry_run, env=None):
+    def selective_fail(command, env=None):
         return 1 if Path(command[1]).name == "forecast_plots.py" else 0
 
     with patch.object(run_all, "_run_step", side_effect=selective_fail):
-        assert (
-            run_all.run_pipeline(
-                validated, Path(__file__).resolve().parents[1], dry_run=False
-            )
-            == 1
-        )
+        assert run_all.run_pipeline(validated, Path(__file__).resolve().parents[1]) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -734,17 +689,17 @@ def test_forecast_plots_failure_recorded(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_dry_run_writes_services_and_returns_success(tmp_path):
+def test_run_pipeline_writes_services(tmp_path):
     """Ensure run_pipeline writes parseyml.yml into both hindcast and forecast download dirs."""
     run_all = _load_run_all_module()
     config = _minimal_config(tmp_path)
     validated = run_all.validate_config(config)
 
-    rc = run_all.run_pipeline(
-        validated,
-        script_dir=Path(__file__).resolve().parents[1],
-        dry_run=True,
-    )
+    with patch.object(run_all, "_run_step", return_value=0):
+        rc = run_all.run_pipeline(
+            validated,
+            script_dir=Path(__file__).resolve().parents[1],
+        )
 
     assert rc == 0
     parseyml_hc = Path(validated["paths"]["hindcast"]["downloads"]) / "parseyml.yml"
@@ -764,18 +719,10 @@ def test_dry_run_writes_services_and_returns_success(tmp_path):
 
 
 def test_build_parser_defaults():
-    """Parser defaults expose only YAML path and dry-run switch."""
+    """Parser exposes only the YAML config path."""
     run_all = _get_run_all()
     args = run_all.build_parser().parse_args([])
-    assert args.dry_run is False
     assert args.config
-
-
-def test_build_parser_with_dry_run_flag():
-    """--dry-run is parsed correctly."""
-    run_all = _get_run_all()
-    args = run_all.build_parser().parse_args(["--dry-run"])
-    assert args.dry_run is True
 
 
 # ---------------------------------------------------------------------------
@@ -783,13 +730,14 @@ def test_build_parser_with_dry_run_flag():
 # ---------------------------------------------------------------------------
 
 
-def test_main_dry_run(tmp_path):
-    """Ensure main() loads config, validates it, and runs the pipeline in dry-run mode."""
+def test_main_runs_pipeline(tmp_path):
+    """Ensure main() loads config, validates it, and runs the pipeline."""
     run_all = _get_run_all()
     cfg_path = tmp_path / "config.yml"
     with cfg_path.open("w", encoding="utf-8") as f:
         yaml.safe_dump(_minimal_config(tmp_path), f)
-    assert run_all.main(["--config", str(cfg_path), "--dry-run"]) == 0
+    with patch.object(run_all, "_run_step", return_value=0):
+        assert run_all.main(["--config", str(cfg_path)]) == 0
 
 
 def test_main_config_error(tmp_path):

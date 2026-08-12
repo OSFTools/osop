@@ -114,6 +114,8 @@ if __name__ == "__main__":
         style="{",
         datefmt="%Y.%m.%d %H.%M",
     )
+    # Route warnings.warn(...) messages into the configured logging handlers.
+    logging.captureWarnings(True)
 
     # unpack args and reformat if needed
     centre = args.centre

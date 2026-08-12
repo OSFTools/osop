@@ -60,7 +60,6 @@ user's discretion.
 Download of Git can be found here: [Git -
 Downloads](https://git-scm.com/downloads)
 
-
 Git is the main system for later downloading and mirroring the
 repository that contains the OSOP toolkit. It is also the "missing
 piece" in allowing for full functionality of the product, issues with
@@ -97,6 +96,20 @@ conda activate base
 From here press ctrl + x, followed by y and then the enter key. Exit
 Gitbash, open it again and type `conda --version`, this should now
 work and return  `conda 25.3.1` or similar.
+
+When first opening Gitbash you may get the following warning:
+```
+WARNING: Found ~/.bashrc but no ~/.bash_profile, ~/.bash_login or ~/.profile.
+This looks like an incorrect setup.
+A ~/.bash_profile that loads ~/.bashrc will be created for you.
+```
+
+This can be ignored and will not be seen when opening another time.
+
+If `conda.sh` is not found at the above path, open the minforge prompt
+and type `where conda`. This gives the path to the conda executable,
+use the part up to and including `miniforge3` instead of
+`/c/Users/\<username\>/miniforge3`
 
 This is the final step in software downloads that will underpin the
 OSOP toolkit. Most of what is outlined here is necessary to run
@@ -145,20 +158,27 @@ Seasonal Outlooks Package](https://github.com/OSFTools/osop/)
 ## Installing the environment
 
 The final step in running the OSOP toolkit is to set up the Python 
-code to run the package. This makes available the modules that allow the Python code to function. 
+code to run the package. This makes available the modules that allow the Python code to function.
 
-The first step will be navigating to the osop-main folder discussed in the
-previous section. This
-is usually a case of `cd osop-main` within the directory that holds
-this. If following the download zip section then this will be in
-downloads. Typing `ls` will bring up a list of the files contained
-here. One of which should be the file `osop-spec-file-<platform>.yml`.
-This contains a detailed list of the packages and the versions
-needed to run the code. There will be a linux and a windows version
-of these files - pick the correct one for your computer.
+The first step will be navigating to the osop-main folder discussed in
+the previous section. This is usually a case of `cd osop-main` and
+then `cd envs` within the directory that holds this. If following the
+download zip section then this will be in downloads. Typing `ls` will
+bring up a list of the files contained here. One of which should be
+the file `osop-spec-file-<platform>.yml`. This contains a detailed
+list of the packages and the versions needed to run the code. There
+will be a linux and a windows version of these files - pick the
+correct one for your computer. Note at the current time we do not
+support Macs.
 
-Guidance for installing and activating an environment from a yaml file
-can be found here: [Managing environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file)
+To install the conda environment type:
+`conda create --file  osop-spec-file-<platform>.yml --name osop`
+If this works correctly you will then be able to load the
+environment by typing `conda activate osop`. 
+
+Further guidance on installing and activating an environment from
+a yaml file can be found here: [Managing
+environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file)
 under the "*Creating an environment from an environment.yml file*"
 subheading.
 
@@ -170,7 +190,7 @@ how to get the best use out of it for your specific needs.
 
 To be able to download data you will need to first sign up for
 an ECMWF account if you do not have one already. Start by creating
-an account from 
+an account from
 [Climate Data Store](https://cds.climate.copernicus.eu/#!/home). 
 Click "Login-Register" on the top right and "Register New User".
 

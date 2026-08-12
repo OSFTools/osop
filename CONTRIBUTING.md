@@ -46,6 +46,13 @@ end
 > [!WARNING]
 > Remember to checkout your new branch **before** your start committing code.
 
+## Writing Tests
+Tests are written using [pytest](https://docs.pytest.org/en/stable/).  
+
+Code coverage statistics are calculated for each push to your new branch.  
+
+Pull requests that do _not_ contain test for added code will be rejected.
+
 ## Submitting changes
 
 1. Make your changes and remember to add appropriate documentation and tests to supplement any new or changed functionality.
@@ -59,6 +66,12 @@ end
    
 4. If you're not already on it (and would like to be), please add yourself to the [contributors list](CONTRIBUTORS.md)
 5. Mark your pull request as ready for review and request a code review.
+6. If you changed or added documentation, the docs can built locally
+by activating the osop conda environment and  typing `cd docs/` then
+`make html`. The built html docs will be found at
+`docs/build/html/index.html`. Open this in a browser and check your
+changes work as intended. When your Pull Request is accepted the
+GitHub pages version will be automatically updated.
 
 > \[!NOTE]
 > Note that you will automatically be asked to sign the [Contributor Licence Agreement](https://cla-assistant.io/OSFTools/osop/)
@@ -74,9 +87,3 @@ end
 1. Close your pull request, and...
 2. Optionally, if your changes relate to a Issue, close the related Issue with comments detailing the related PR.
 
-# Writing Tests
-Tests are written using [pytest](https://docs.pytest.org/en/stable/).  
-
-Code coverage statistics are calculated for each push to your new branch.  
-
-Pull requests that do _not_ contain test for added code will be rejected.

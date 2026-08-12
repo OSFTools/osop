@@ -13,6 +13,7 @@ legacy shell runner while avoiding shell-specific behavior.
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 from pathlib import Path
 import shutil
@@ -21,6 +22,8 @@ import sys
 from typing import Any
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_VARIABLES = {"2m_temperature", "total_precipitation"}
 
@@ -294,14 +297,9 @@ def ensure_directories(paths: dict[str, Any]) -> None:
         Path(target).mkdir(parents=True, exist_ok=True)
 
 
-def _run_step(
-    command: list[str], dry_run: bool, env: dict[str, str] | None = None
-) -> int:
+def _run_step(command: list[str], env: dict[str, str] | None = None) -> int:
     cmd_display = " ".join(command)
-    print(f"[RUN] {cmd_display}")
-    if dry_run:
-        return 0
-
+    logger.info("[RUN] %s", cmd_display)
     completed = subprocess.run(command, check=False, env=env)
     return completed.returncode
 
@@ -374,7 +372,7 @@ def _bool_str(value: bool) -> str:
     return "True" if value else "False"
 
 
-def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int:
+def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
     """Execute configured hindcast and forecast workflows.
 
     Parameters
@@ -383,8 +381,6 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
         Validated configuration mapping.
     script_dir : pathlib.Path
         Directory containing the workflow scripts to execute.
-    dry_run : bool
-        If ``True``, print commands without running subprocesses.
 
     Returns
     -------
@@ -449,8 +445,10 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
             "--pycptdir",
             paths["hindcast"]["pycpt"],
         ]
-        if _run_step(era5_cmd, dry_run, env=subprocess_env) != 0:
+        if _run_step(era5_cmd, env=subprocess_env) != 0:
             failures.append("era5")
+        else:
+            print("ERA5 download completed successfully")
 
         for centre in centres:
             if centre != "mme":
@@ -467,9 +465,11 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                     "--pycptdir",
                     paths["hindcast"]["pycpt"],
                 ]
-                if _run_step(download_cmd, dry_run, env=subprocess_env) != 0:
+                if _run_step(download_cmd, env=subprocess_env) != 0:
                     failures.append(f"hindcast-download:{centre}")
                     continue
+                else:
+                    print(f"Hindcast download for {centre} completed successfully")
 
             products_cmd = [
                 sys.executable,
@@ -486,9 +486,13 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                 "--pycptdir",
                 paths["hindcast"]["pycpt"],
             ]
-            if _run_step(products_cmd, dry_run, env=subprocess_env) != 0:
+            if _run_step(products_cmd, env=subprocess_env) != 0:
                 failures.append(f"hindcast-products:{centre}")
                 continue
+            else:
+                print(
+                    f"Hindcast products computation for {centre} completed successfully"
+                )
 
             scores_cmd = [
                 sys.executable,
@@ -501,9 +505,13 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                 "--productsdir",
                 paths["hindcast"]["products"],
             ]
-            if _run_step(scores_cmd, dry_run, env=subprocess_env) != 0:
+            if _run_step(scores_cmd, env=subprocess_env) != 0:
                 failures.append(f"hindcast-scores:{centre}")
                 continue
+            else:
+                print(
+                    f"Hindcast scores computation for {centre} completed successfully"
+                )
 
             plots_cmd = [
                 sys.executable,
@@ -520,8 +528,13 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
             ]
             if params["method"] is not None:
                 plots_cmd.extend(["--method", params["method"]])
+            if _run_step(plots_cmd, env=subprocess_env) != 0:
+                failures.append(f"hindcast-plots:{centre}")
+                continue
+            else:
+                print(f"Hindcast plots generation for {centre} completed successfully")
 
-            if _run_step(plots_cmd, dry_run, env=subprocess_env) != 0:
+            if _run_step(plots_cmd, env=subprocess_env) != 0:
                 failures.append(f"hindcast-plots:{centre}")
 
     if config["workflow"]["forecast"]:
@@ -542,9 +555,11 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                     "--pycptdir",
                     paths["forecast"]["pycpt"],
                 ]
-                if _run_step(forecast_download_cmd, dry_run, env=subprocess_env) != 0:
+                if _run_step(forecast_download_cmd, env=subprocess_env) != 0:
                     failures.append(f"forecast-download:{centre}")
                     continue
+                else:
+                    print(f"Forecast download for {centre} completed successfully")
 
             forecast_products_cmd = [
                 sys.executable,
@@ -569,9 +584,13 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                 "--hindcast_pycptdir",
                 paths["hindcast"]["pycpt"],
             ]
-            if _run_step(forecast_products_cmd, dry_run, env=subprocess_env) != 0:
+            if _run_step(forecast_products_cmd, env=subprocess_env) != 0:
                 failures.append(f"forecast-products:{centre}")
                 continue
+            else:
+                print(
+                    f"Forecast products computation for {centre} completed successfully"
+                )
 
             forecast_plots_cmd = [
                 sys.executable,
@@ -588,8 +607,10 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
                 "--yearsfc",
                 str(params["forecast_year"]),
             ]
-            if _run_step(forecast_plots_cmd, dry_run, env=subprocess_env) != 0:
+            if _run_step(forecast_plots_cmd, env=subprocess_env) != 0:
                 failures.append(f"forecast-plots:{centre}")
+            else:
+                print(f"Forecast plots generation for {centre} completed successfully")
 
     if failures:
         print("Run completed with failures:")
@@ -615,8 +636,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=str(Path(__file__).resolve().parents[1] / "osop_config.yml"),
         help="Path to YAML configuration file",
     )
-    parser.add_argument("--dry-run", action="store_true", help="Print commands only")
-
     return parser
 
 
@@ -642,7 +661,7 @@ def main(argv: list[str] | None = None) -> int:
         validated = validate_config(loaded)
 
         script_dir = Path(__file__).resolve().parent
-        return run_pipeline(validated, script_dir, dry_run=args.dry_run)
+        return run_pipeline(validated, script_dir)
     except ConfigError as exc:
         print(f"Configuration error: {exc}", file=sys.stderr)
         return 2

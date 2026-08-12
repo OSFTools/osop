@@ -1,0 +1,40 @@
+workflow:
+  hindcast: true
+  forecast: true
+
+parameters:
+  month: 5
+  leads: "2,3,4"
+  area: "39,60,-11,141"
+  variable: "total_precipitation"
+  location: "None"
+  method: "pmesh"
+  pycpt: true
+  predictor_area: "40,0,-40,359"
+  forecast_year: 2025
+
+paths:
+  base: "./output/test"
+  logdir: "{base}/logfiles"
+  hindcast:
+    downloads: "{base}/hindcast/downloads"
+    products: "{base}/hindcast/products"
+    scores: "{base}/hindcast/scores"
+    plots: "{base}/hindcast/plots"
+    pycpt: "{base}/hindcast/pycpt"
+  forecast:
+    downloads: "{base}/forecast/downloads"
+    products: "{base}/forecast/products"
+    scores: "{base}/forecast/scores"
+    plots: "{base}/forecast/plots"
+    pycpt: "{base}/forecast/pycpt"
+
+centres:
+  - meteo_france
+  - ecmwf
+  - mme
+
+services:
+  ecmwf: [51, 1]
+  meteo_france: [9, 1]
+  mme: [1, 0]

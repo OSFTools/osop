@@ -74,7 +74,52 @@ end
 1. Close your pull request, and...
 2. Optionally, if your changes relate to a Issue, close the related Issue with comments detailing the related PR.
 
+# Release Process
+
+Only maintainers with write access to the repository can create releases.
+
+1. **Create a release branch** from an up-to-date `main`:
+   ```shell
+   git checkout main && git pull --ff-only origin main
+   git checkout -b release/vX.Y.Z
+   ```
+
+2. **Bump the version** in [`docs/source/conf.py`](docs/source/conf.py):
+   ```python
+   release = "X.Y.Z"
+   ```
+
+3. **Commit, push, and open a PR** targeting `main`:
+   ```shell
+   git add docs/source/conf.py
+   git commit -m "Bump version to X.Y.Z"
+   git push origin release/vX.Y.Z
+   gh pr create --base main --title "Release vX.Y.Z" --body "Bump version string for release."
+   ```
+
+4. **After the PR is reviewed and merged**, tag the merge commit on `main`:
+
+   ```shell
+   git checkout main && git pull --ff-only origin main
+   git tag -a vX.Y.Z -m "OSOP vX.Y.Z"
+   git push origin vX.Y.Z
+   ```
+
+   Pushing the tag triggers the CI test workflow (`ci-test-coverage`).
+
+5. **Create the GitHub Release** from the tag:
+
+   ```shell
+   gh release create vX.Y.Z --title "vX.Y.Z" --generate-notes
+   ```
+
+   Or use the GitHub UI: **Releases → Draft a new release → choose tag `vX.Y.Z`**.
+
+> [!NOTE]
+> Tags must match the pattern `vX.Y.Z` (e.g. `v0.2.0`). Direct pushes to `main` are not permitted; all version changes must go through a pull request.
+
 # Writing Tests
+
 Tests are written using [pytest](https://docs.pytest.org/en/stable/).  
 
 Code coverage statistics are calculated for each push to your new branch.  

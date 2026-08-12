@@ -91,7 +91,7 @@ the following lines:
 conda activate base
 ```
 
-**note replace \<username\> with the user of the OS.**
+**note replace \<username\> with your username.**
 
 From here press ctrl + x, followed by y and then the enter key. Exit
 Gitbash, open it again and type `conda --version`, this should now
@@ -172,7 +172,7 @@ Pick the correct one for your computer. Note at the current time we do not
 support Macs.
 
 To install the conda environment type:
-`conda create --file  osop-spec-file-<platform>.yml --name osop`
+`conda create --file  osop-<platform>-spec-file.yml --name osop`
 If this works correctly you will then be able to load the
 environment by typing `conda activate osop`. 
 

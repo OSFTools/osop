@@ -412,23 +412,24 @@ def run_pipeline(config: dict[str, Any], script_dir: Path, dry_run: bool) -> int
         if sys.platform.startswith("win") or os.name == "nt":
             cpt_bin_dir = Path(conda_prefix) / "Library" / "cpt"
             cpt_exe = cpt_bin_dir / "CPT.exe"
+
+            subprocess_env["CPT_BIN_DIR"] = str(cpt_bin_dir)
+
+            orig_init = cptcore.CPT.__init__
+
+            def patched_init(self, *args, **kwargs):
+                kwargs["cpt_executable"] = str(cpt_exe)
+                return orig_init(self, *args, **kwargs)
+
+            cptcore.CPT.__init__ = patched_init
+            print("pyCPT monkeypatch applied in memory")
         else:
             cpt_bin_dir = Path(conda_prefix) / "bin"
             cpt_exe = cpt_bin_dir / "CPT"
 
-        subprocess_env["CPT_BIN_DIR"] = str(cpt_bin_dir)
-
-        orig_init = cptcore.CPT.__init__
-
-        def patched_init(self, *args, **kwargs):
-            kwargs["cpt_executable"] = str(cpt_exe)
-            return orig_init(self, *args, **kwargs)
-
-        cptcore.CPT.__init__ = patched_init
-        print("pyCPT monkeypatch applied in memory")
-
     except Exception as exc:
         print("WARNING: pyCPT monkeypatch failed:", exc)
+
     ensure_directories(paths)
 
     parseyml_path = Path(paths["hindcast"]["downloads"]) / "parseyml.yml"

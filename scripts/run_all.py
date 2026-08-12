@@ -21,6 +21,7 @@ import subprocess
 import sys
 from typing import Any
 
+import cptcore
 import yaml
 
 logger = logging.getLogger(__name__)
@@ -329,18 +330,54 @@ def _build_subprocess_env(script_dir: Path) -> dict[str, str]:
 
     conda_prefix = env.get("CONDA_PREFIX")
     if conda_prefix:
-        cpt_bin_dir = (
-            Path(conda_prefix) / "Library" / "cpt"
-            if sys.platform.startswith("win") or os.name == "nt"
-            else Path(conda_prefix) / "bin"
-        )
-        path_entries = [str(cpt_bin_dir)]
+        if sys.platform.startswith("win") or os.name == "nt":
+            cpt_bin_dir = Path(conda_prefix) / "Library" / "cpt"
+            env["CPT_BIN_DIR"] = str(cpt_bin_dir)
+        else:
+            cpt_bin_dir = Path(conda_prefix) / "bin"
+
         existing_path = env.get("PATH", "")
+        path_entries = [str(cpt_bin_dir)]
         if existing_path:
             path_entries.append(existing_path)
         env["PATH"] = os.pathsep.join(path_entries)
 
     return env
+
+
+def configure_pycpt(subprocess_env: dict[str, str]) -> None:
+    """Apply Windows-specific pyCPT configuration.
+
+    Parameters
+    ----------
+    subprocess_env : dict of str to str
+        Environment mapping used by workflow subprocesses.
+    """
+    if not (sys.platform.startswith("win") or os.name == "nt"):
+        return
+
+    try:
+        cpt_bin_dir = subprocess_env.get("CPT_BIN_DIR")
+
+        if not cpt_bin_dir:
+            return
+
+        cpt_exe = Path(cpt_bin_dir) / "CPT.exe"
+
+        if not cpt_exe.exists():
+            logger.info(f"WARNING: CPT executable not found: {cpt_exe}")
+            return
+
+        orig_init = cptcore.CPT.__init__
+
+        def patched_init(self, *args, **kwargs):
+            kwargs.setdefault("cpt_executable", str(cpt_exe))
+            return orig_init(self, *args, **kwargs)
+
+        cptcore.CPT.__init__ = patched_init
+        logger.info("pyCPT Windows only monkeypatch applied in memory")
+    except Exception as exc:
+        print("WARNING: Windows pyCPT monkeypatch failed:", exc)
 
 
 def _build_common_args(config: dict[str, Any], downloaddir: str) -> list[str]:
@@ -392,6 +429,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
     centres = _select_centres(config)
     pycpt_arg = _bool_str(params["pycpt"])
     subprocess_env = _build_subprocess_env(script_dir)
+    configure_pycpt(subprocess_env)
 
     ensure_directories(paths)
 

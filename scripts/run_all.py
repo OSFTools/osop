@@ -21,6 +21,7 @@ import subprocess
 import sys
 from typing import Any
 
+import cptcore
 import yaml
 
 logger = logging.getLogger(__name__)
@@ -397,10 +398,6 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
     # In-memory pyCPT monkeypatch (no file creation)
     # ---------------------------------------------------------
     try:
-        from pathlib import Path
-
-        import cptcore
-
         conda_prefix = subprocess_env.get(
             "CONDA_PREFIX", os.environ.get("CONDA_PREFIX")
         )
@@ -420,8 +417,9 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
             cptcore.CPT.__init__ = patched_init
             print("pyCPT monkeypatch applied in memory")
         else:
-            cpt_bin_dir = Path(conda_prefix) / "bin"
-            cpt_exe = cpt_bin_dir / "CPT"
+            print("none")
+            # cpt_bin_dir = Path(conda_prefix) / "bin"
+            # cpt_exe = cpt_bin_dir / "CPT"
 
     except Exception as exc:
         print("WARNING: pyCPT monkeypatch failed:", exc)

@@ -74,6 +74,14 @@ end
 1. Close your pull request, and...
 2. Optionally, if your changes relate to a Issue, close the related Issue with comments detailing the related PR.
 
+# Writing Tests
+
+Tests are written using [pytest](https://docs.pytest.org/en/stable/).  
+
+Code coverage statistics are calculated for each push to your new branch.  
+
+Pull requests that do _not_ contain test for added code will be rejected.
+
 # Release Process
 
 Only maintainers with write access to the repository can create releases.
@@ -117,11 +125,3 @@ Only maintainers with write access to the repository can create releases.
 
 > [!NOTE]
 > Tags must match the pattern `vX.Y.Z` (e.g. `v0.2.0`). Direct pushes to `main` are not permitted; all version changes must go through a pull request.
-
-# Writing Tests
-
-Tests are written using [pytest](https://docs.pytest.org/en/stable/).  
-
-Code coverage statistics are calculated for each push to your new branch.  
-
-Pull requests that do _not_ contain test for added code will be rejected.

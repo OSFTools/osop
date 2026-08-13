@@ -7,13 +7,104 @@ OSOP is an Open Source project hosted on Github.  Anyone with a GitHub account m
 - documentation improvements
 
 We encourage users to explore the functionality of the toolkit
-and further develop it. 
+and further develop it.
 
-From here users are welcome to interact and play around with the
-toolkit as much as desired. If significant changes are made, and a
-user feels they would be of use to the overall community, it is
-encouraged for these changes to be pushed up to the Git repo.
+Users are welcome to interact and modify the toolkit as much as
+desired. If significant changes are made, and a user feels they would
+be of use to the overall community, it is encouraged for these changes
+to be pushed up to the Git repo.
 
-> \[!TIP]
-> If you are new to using GitHub we recommend reading the [GitHub getting started](https://docs.github.com/en/github/getting-started-with-github).
+```{tip}
+If you are new to using GitHub we recommend reading the [GitHub getting started](https://docs.github.com/en/github/getting-started-with-github).
+```
+
+## Contributing guidelines
+
+### How to contribute
+
+OSOP welcomes contributions by users to help develop the toolkit in line with their user needs.
+
+This section lists the guidelines for contributors which will help ease the process of getting your hard work accepted back into
+the OSOP repository.
+
+The developer workflow should be as follows:
+
+```{mermaid}
+---
+config:
+  theme: default
+---
+flowchart LR
+subgraph gs [**Getting Started**]
+	direction TB
+	B(Create new branch ) --> |Checkout new branch| C(Open pull request)
+	click B href "https://github.com/OSFTools/osop/branches" "Click to create new branch"
+	click C href "https://github.com/OSFTools/osop/compare" "Click to create a PR"
+end
+gs --> sc
+subgraph sc [**Submitting Changes**]
+	direction TB
+	D(Make code edits) --> D2(Run pre-commits) --> D3(Run tests)
+	D3 --> E{Request code review}
+	E --> | ✔ Review passes| F@{shape: bang, label: Merge branch}
+	E --> | ✖ Review requests edits| D
+end
+	sc --> fu
+subgraph fu [**Finishing Up**]
+	direction TB
+	G(Close pull request) -.-> |If relevant | H(Close issue)
+
+end
+```
+
+### Getting started
+
+> [!TIP]
+> If you've not already got one, sign up for a [GitHub account](https://github.com/signup/free)
+
+1. Create a new fix/feature branch: we use a [Feature Branch Workflow](https://info201.github.io/git-collaboration.html).
+2. Open a draft pull request that will contain your changes.
+
+> [!WARNING]
+> Remember to checkout your new branch **before** your start committing code.
+
+### Writing Tests
+Tests are written using [pytest](https://docs.pytest.org/en/stable/).  
+
+Code coverage statistics are calculated for each push to your new branch.  
+
+Pull requests that do _not_ contain tests for added code will be rejected.
+
+### Submitting changes
+
+1. Make your changes and remember to add appropriate documentation and tests to supplement any new or changed functionality and update documentation if needed.
+2. <details><summary>Run pre-commit checks and tests</summary>
+   
+   ```shell
+   $ pre-commit
+   # Optionally re-add and re-commit changes made by pre-commit hooks 
+   $ pytest .
+   ```
+3. If you changed or added documentation, the docs can be built locally
+by activating the osop conda environment and typing `cd docs/`, then
+`make html`. The built HTML docs will be found at
+`docs/build/html/index.html`. Open this in a browser and check your
+changes work as intended. When your Pull Request is merged the
+GitHub pages version will be automatically updated.
+   
+4. If you're not already on it (and would like to be), please add yourself to the [contributors list](../../CONTRIBUTORS.md)
+5. Mark your pull request as ready for review and request a code review.
+
+```{note}
+Note that you will automatically be asked to sign the [Contributor Licence Agreement](https://cla-assistant.io/OSFTools/osop/) (CLA), if you have not already done so.
+```
+
+```{warning}
+By default, contributors _will not_ be able to merge their own changes into the `main` branch.
+```
+
+### Finishing Up
+
+1. Close your pull request, and...
+2. Optionally, if your changes relate to a Issue, close the related Issue with comments detailing the related PR.
 

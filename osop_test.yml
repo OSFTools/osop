@@ -1,15 +1,15 @@
 workflow:
   hindcast: true
-  forecast: true
+  forecast: false
 
 parameters:
   month: 5
   leads: "2,3,4"
   area: "39,60,-11,141"
   variable: "total_precipitation"
-  location: "None"
+  location: "Greece"
   method: "pmesh"
-  pycpt: true
+  pycpt: false
   predictor_area: "40,0,-40,359"
   forecast_year: 2025
 

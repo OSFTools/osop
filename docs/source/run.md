@@ -125,7 +125,14 @@ services:
 month of 5 leads 2,3,4 gives a forecast/hindcast averaged across the months of June, July and August. Note that the code follows the C3S conventions and so 0 is not a valid lead time. To use the data from the same month as the forecast initialisation time use a lead of 1.
 - **`area`**: Bounding box for hindcast/forecast area as a string `latN,latW,lonS,lonE` (example: `"39,60,-11,141"`).
 - **`variable`**: Forecast variable. Valid values are  `total_precipitation` and `2m_temperature`.  
-- **`location`**: Optional named location (string) or `None`.
+- **`location`**: Which countries POV to use when plotting borders on
+maps. These are based on Natural Earth country point of view files.
+`None` removes all borders from maps. Available countries are:
+Argentina, Bangladesh, Brazil, China, Germany, Egypt, Spain, France,
+United Kingdom (UK is a valid alternative), Greece, Indonesia, India,
+Israel, Italy, Japan, South Korea, Morocco, Nepal, Netherlands,
+Pakistan, Poland, Portugal, Palestine, Russia, Saudi Arabia, Sweden,
+Turkey, Taiwan, Ukraine, United States, Vietnam
 - **`method`**: Plotting method. `pmesh` gives colormesh plots, any other value gives contour plots.
 - **`pycpt`**: Boolean toggle to enable pycpt processing.
 - **`predictor_area`**: Predictor bbox string used by pycpt (example:

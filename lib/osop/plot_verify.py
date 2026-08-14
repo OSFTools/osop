@@ -25,9 +25,38 @@ import xarray as xr
 CATNAMES = ["lower tercile", "middle tercile", "upper tercile"]
 
 BORDER_OPT = {
-    "Morocco": "admin_0_countries_mar",
+    "Argentina": "admin_0_countries_arg",
+    "Bangladesh": "admin_0_countries_bgd",
+    "Brazil": "admin_0_countries_bra",
+    "China": "admin_0_countries_chn",
+    "Germany": "admin_0_countries_deu",
+    "Egypt": "admin_0_countries_egy",
+    "Spain": "admin_0_countries_esp",
+    "France": "admin_0_countries_fra",
+    "United Kingdom": "admin_0_countries_gbr",
     "UK": "admin_0_countries_gbr",
-    "SAU": "admin_0_countries_sau",
+    "Greece": "admin_0_countries_grc",
+    "Indonesia": "admin_0_countries_idn",
+    "India": "admin_0_countries_ind",
+    "Israel": "admin_0_countries_isr",
+    "Italy": "admin_0_countries_ita",
+    "Japan": "admin_0_countries_jpn",
+    "South Korea": "admin_0_countries_kor",
+    "Morocco": "admin_0_countries_mar",
+    "Nepal": "admin_0_countries_npl",
+    "Netherlands": "admin_0_countries_nld",
+    "Pakistan": "admin_0_countries_pak",
+    "Poland": "admin_0_countries_pol",
+    "Portugal": "admin_0_countries_prt",
+    "Palestine": "admin_0_countries_pse",
+    "Russia": "admin_0_countries_rus",
+    "Saudi Arabia": "admin_0_countries_sau",
+    "Sweden": "admin_0_countries_swe",
+    "Turkey": "admin_0_countries_tur",
+    "Taiwan": "admin_0_countries_twn",
+    "Ukraine": "admin_0_countries_ukr",
+    "United States": "admin_0_countries_usa",
+    "Vietnam": "admin_0_countries_vnm",
 }
 
 
@@ -48,24 +77,35 @@ def location(config):
 
     Notes
     -----
-    Natural Earth has a download issue that searches for a file that doesn't exist; a partial import is managed regardless.
+    Cartopy has a download issue that searches for a file that doesn't exist in the Natural Earth data set.
+    However this file is not needed.
     On second run - as this file is not used and download has already happened - the plot will work fine.
-    To avoid a second run each time a new data set is imported the try/except does the import for no reason and then the finally is used after
+    To avoid a second run each time a new data set is imported the try/except forces down and then the finally is used after
     to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed.
     Relevant to Cartopy issue #2319 , #2477 and #2534 - when resolved can be removed.
     """
     if config["border"] in BORDER_OPT:
         border_set = BORDER_OPT[config["border"]]
-        local = cfeature.NaturalEarthFeature(
-            category="cultural", name=border_set, scale="10m", facecolor="none"
-        )
-        return local
+        try:
+            shpfilename = shpreader.natural_earth(
+                resolution="10m", category="cultural", name=border_set
+            )
+        # key error is raised when the file is not found whemn unzipping
+        except KeyError:
+            shpfilename = shpreader.natural_earth(
+                resolution="10m", category="cultural", name=border_set
+            )
+        finally:
+            local = cfeature.NaturalEarthFeature(
+                category="cultural", name=border_set, scale="10m", facecolor="none"
+            )
+            return local
     elif config["border"] == "None":
         local = "False"
         return local
     else:
         raise KeyError(
-            "Location Name does not exist in dictionary. Please check spelling of location input or type None for no borders."
+            f"Location {config['border']} does not exist in dictionary. Please check spelling of location input or type None for no borders."
         )
 
 

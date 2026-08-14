@@ -80,8 +80,8 @@ def location(config):
     Cartopy has a download issue that searches for a file that doesn't exist in the Natural Earth data set.
     However this file is not needed.
     On second run - as this file is not used and download has already happened - the plot will work fine.
-    To avoid a second run each time a new data set is imported the try/except forces down and then the finally is used after
-    to generate the plot. - This is a Natural Earth Specific problem that can be removed when fixed.
+    To avoid a second run each time a new data set is imported the try/except forces the download and then the plot is generated.
+    This is a Natural Earth specific problem that can be removed when fixed.
     Relevant to Cartopy issue #2319 , #2477 and #2534 - when resolved can be removed.
     """
     if config["border"] in BORDER_OPT:

@@ -38,5 +38,9 @@ def test_location_invalid(config):
     """Test that a KeyError is raised when an invalid location is provided in the config."""
     config["border"] = "Spam"
 
-    with pytest.raises(KeyError, match="Location Name does not exist in dictionary"):
+    with pytest.raises(
+        KeyError,
+        match="Location Spam does not exist in dictionary. "
+        "Please check spelling of location input or type None for no borders.",
+    ):
         plot_verify.location(config)

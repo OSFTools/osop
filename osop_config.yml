@@ -3,18 +3,18 @@ workflow:
   forecast: false
 
 parameters:
-  month: 5
+  month: 11
   leads: "2,3,4"
-  area: "39,60,-11,141"
+  area: "34,22,21,38" # Target area for the forecast (north, west, south, east)
   variable: "total_precipitation"
-  location: "None"
+  location: "Egypt"
   method: "pmesh"
   pycpt: true
-  predictor_area: "40,0,-40,359"
+  predictor_area: "40,0,-40,359" # Predictor area if using PyCPT (north, west, south, east)
   forecast_year: 2025
 
 paths:
-  base: "./output/single_script"
+  base: "./output/egypt_demo"
   logdir: "{base}/logfiles"
   hindcast:
     downloads: "{base}/hindcast/downloads"
@@ -29,25 +29,24 @@ paths:
     plots: "{base}/forecast/plots"
     pycpt: "{base}/forecast/pycpt"
 
-centres:
-  - meteo_france
+# available centres as of 2026-09-02: 
+#   - meteo_france
+#  - dwd
+#  - cmcc
+#  - ncep
+#  - ukmo
+#  - ecmwf
+#  - eccc
+#  - bom
+#  - mme - multi model ensemble (combination of all centres included in the config file)
+centres: 
   - dwd
-  - cmcc
-  - ncep
   - ukmo
   - ecmwf
-  - eccc
-  - bom
   - mme
 
 services:
   ecmwf: [51, 1]
-  meteo_france: [9, 1]
   dwd: [22, 1]
-  cmcc: [35, 1]
-  ncep: [2, 1]
-  eccc_can: [4, 1]
-  eccc_gem5: [5, 1]
   ukmo: [604, 1]
-  bom: [2, 1]
   mme: [1, 0]

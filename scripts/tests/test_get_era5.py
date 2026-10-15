@@ -89,20 +89,20 @@ def test_get_obs_downloads_when_destination_missing_or_empty(
     assert request["variable"] == ["2m_temperature"]
 
 
-def test_get_obs_does_not_rename_when_retrieval_fails(
+def test_get_obs_does_not_replace_when_retrieval_fails(
     get_era5_module, tmp_path, monkeypatch
 ):
-    """Propagate retrieval errors without attempting to rename the part file."""
+    """Propagate retrieval errors without publishing the part file."""
     obs_fname = str(tmp_path / "observations.grib")
     client = MagicMock()
     client.retrieve.side_effect = RuntimeError("download failed")
     monkeypatch.setattr(
         get_era5_module.cdsapi, "Client", MagicMock(return_value=client)
     )
-    rename = MagicMock()
-    monkeypatch.setattr(get_era5_module.os, "rename", rename)
+    replace = MagicMock()
+    monkeypatch.setattr(get_era5_module.os, "replace", replace)
 
     with pytest.raises(RuntimeError, match="download failed"):
         get_era5_module.get_obs(obs_fname, _config())
 
-    rename.assert_not_called()
+    replace.assert_not_called()

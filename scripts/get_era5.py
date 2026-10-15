@@ -76,7 +76,7 @@ def get_obs(obs_fname, config):
         },
         temp_fname,
     )
-    os.rename(temp_fname, obs_fname)
+    os.replace(temp_fname, obs_fname)
     return obs_fname
 
 

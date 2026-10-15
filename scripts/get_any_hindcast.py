@@ -106,7 +106,7 @@ def do_cdsapi_call(
                 },
                 temp_fname,
             )
-            os.rename(temp_fname, fname)
+            os.replace(temp_fname, fname)
             logger.info(f"Downloaded {fname}")
 
     else:
@@ -132,7 +132,7 @@ def do_cdsapi_call(
                 },
                 temp_fname,
             )
-            os.rename(temp_fname, fname)
+            os.replace(temp_fname, fname)
             logger.info(f"Downloaded {fname}")
 
 

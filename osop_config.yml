@@ -1,6 +1,6 @@
 workflow:
   hindcast: true
-  forecast: false
+  forecast: true
 
 parameters:
   month: 11

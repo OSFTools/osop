@@ -39,9 +39,11 @@ def get_obs(obs_fname, config):
     str
         The filename where data is saved.
     """
-    if os.path.exists(obs_fname):
+    if os.path.exists(obs_fname) and os.path.getsize(obs_fname) > 0:
         logger.warning(f"File {obs_fname} already exists")
         return obs_fname
+
+    temp_fname = obs_fname + ".part"
 
     c = cdsapi.Client()
 
@@ -72,8 +74,9 @@ def get_obs(obs_fname, config):
             "area": config["area"],
             "format": "grib",
         },
-        obs_fname,
+        temp_fname,
     )
+    os.rename(temp_fname, obs_fname)
     return obs_fname
 
 

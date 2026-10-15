@@ -85,7 +85,8 @@ def do_cdsapi_call(
 
     if pycpt == "download_on":
         fname = f"{downloaddir}/pycpt_{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
-        if os.path.exists(fname):
+        temp_fname = fname + ".part"
+        if os.path.exists(fname) and os.path.getsize(fname) > 0:
             logger.warning(f"File {fname} already exists")
 
         else:
@@ -103,13 +104,15 @@ def do_cdsapi_call(
                     "leadtime_month": leadtime_month,
                     "area": area,
                 },
-                f"{downloaddir}/pycpt_{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
+                temp_fname,
             )
+            os.rename(temp_fname, fname)
             logger.info(f"Downloaded {fname}")
 
     else:
         fname = f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
-        if os.path.exists(fname):
+        temp_fname = fname + ".part"
+        if os.path.exists(fname) and os.path.getsize(fname) > 0:
             logger.warning(f"File {fname} already exists")
 
         else:
@@ -127,8 +130,9 @@ def do_cdsapi_call(
                     "leadtime_month": leadtime_month,
                     "area": area,
                 },
-                f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib",
+                temp_fname,
             )
+            os.rename(temp_fname, fname)
             logger.info(f"Downloaded {fname}")
 
 

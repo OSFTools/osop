@@ -31,6 +31,8 @@ import cdsapi
 import yaml
 from yaml.loader import SafeLoader
 
+from osop.util import download_and_rename_cds
+
 # Ensure the top level directory has been added to PYTHONPATH
 
 logger = logging.getLogger(__name__)
@@ -85,54 +87,46 @@ def do_cdsapi_call(
 
     if pycpt == "download_on":
         fname = f"{downloaddir}/pycpt_{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
-        temp_fname = fname + ".part"
         if os.path.exists(fname) and os.path.getsize(fname) > 0:
             logger.warning(f"File {fname} already exists")
-
         else:
             c = cdsapi.Client()
-            c.retrieve(
-                "seasonal-monthly-single-levels",
-                {
-                    "format": "grib",
-                    "originating_centre": f"{centre}",
-                    "system": system,
-                    "variable": [variable],
-                    "product_type": "monthly_mean",
-                    "year": years,
-                    "month": "{:02d}".format(month),
-                    "leadtime_month": leadtime_month,
-                    "area": area,
-                },
-                temp_fname,
-            )
-            os.replace(temp_fname, fname)
+
+            request = {
+                "format": "grib",
+                "originating_centre": f"{centre}",
+                "system": system,
+                "variable": [variable],
+                "product_type": "monthly_mean",
+                "year": years,
+                "month": "{:02d}".format(month),
+                "leadtime_month": leadtime_month,
+                "area": area,
+            }
+
+            download_and_rename_cds(c, "seasonal-monthly-single-levels", request, fname)
             logger.info(f"Downloaded {fname}")
 
     else:
         fname = f"{downloaddir}/{centre}_{system}_{years[0]}-{years[-1]}_monthly_mean_{month}_{leads_str}_{area_str}_{variable}.grib"
-        temp_fname = fname + ".part"
         if os.path.exists(fname) and os.path.getsize(fname) > 0:
             logger.warning(f"File {fname} already exists")
-
         else:
             c = cdsapi.Client()
-            c.retrieve(
-                "seasonal-monthly-single-levels",
-                {
-                    "format": "grib",
-                    "originating_centre": f"{centre}",
-                    "system": system,
-                    "variable": [variable],
-                    "product_type": "monthly_mean",
-                    "year": years,
-                    "month": "{:02d}".format(month),
-                    "leadtime_month": leadtime_month,
-                    "area": area,
-                },
-                temp_fname,
-            )
-            os.replace(temp_fname, fname)
+
+            request = {
+                "format": "grib",
+                "originating_centre": f"{centre}",
+                "system": system,
+                "variable": [variable],
+                "product_type": "monthly_mean",
+                "year": years,
+                "month": "{:02d}".format(month),
+                "leadtime_month": leadtime_month,
+                "area": area,
+            }
+
+            download_and_rename_cds(c, "seasonal-monthly-single-levels", request, fname)
             logger.info(f"Downloaded {fname}")
 
 

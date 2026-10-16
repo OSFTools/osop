@@ -4,12 +4,15 @@
 # See LICENSE in the root of the repository for full licensing details.
 """Tests for the util module."""
 
+import os
+
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
 
 import osop.util as util
+from osop.util import download_and_rename_cds
 
 
 def test_sel_season_time(dataset: xr.Dataset):
@@ -84,3 +87,47 @@ def dataset():
     )
 
     return dataset
+
+
+def make_mock_client_success(tmp_path):
+    class MockClient:
+        def retrieve(self, dataset, request, target_path):
+            with open(target_path, "wb") as f:
+                f.write(b"data")
+
+    return MockClient()
+
+
+def make_mock_client_failure(tmp_path):
+    class MockClient:
+        def retrieve(self, dataset, request, target_path):
+            with open(target_path, "wb") as f:
+                f.write(b"partial")
+            raise RuntimeError("cdsapi error")
+
+    return MockClient()
+
+
+def test_download_and_rename_cds_success(tmp_path):
+    client = make_mock_client_success(tmp_path)
+    final = tmp_path / "out.grib"
+
+    result = download_and_rename_cds(client, "dataset", {"a": 1}, str(final))
+
+    assert result == str(final)
+    assert final.exists()
+    assert not os.path.exists(str(final) + ".part")
+    with open(final, "rb") as f:
+        assert f.read() == b"data"
+
+
+def test_download_and_rename_cds_failure_cleans_partial(tmp_path):
+    client = make_mock_client_failure(tmp_path)
+    final = tmp_path / "out2.grib"
+
+    with pytest.raises(RuntimeError):
+        download_and_rename_cds(client, "dataset", {"a": 1}, str(final))
+
+    part = str(final) + ".part"
+    assert not os.path.exists(part)
+    assert not final.exists()

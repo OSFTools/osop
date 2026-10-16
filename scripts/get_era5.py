@@ -39,40 +39,42 @@ def get_obs(obs_fname, config):
     str
         The filename where data is saved.
     """
-    if os.path.exists(obs_fname):
+    if os.path.exists(obs_fname) and os.path.getsize(obs_fname) > 0:
         logger.warning(f"File {obs_fname} already exists")
         return obs_fname
 
     c = cdsapi.Client()
 
-    c.retrieve(
-        "reanalysis-era5-single-levels-monthly-means",
-        {
-            "product_type": "monthly_averaged_reanalysis",
-            "variable": [
-                config["var"],
-            ],
-            # NOTE from observations we need to go one year beyond so we have available all the right valid dates
-            # e.g. Nov.2016 start date forecast goes up to April 2017
-            "year": [
-                "{}".format(yy)
-                for yy in range(config["hcstarty"], config["hcendy"] + 2)
-            ],
-            "month": [
-                (
-                    "{:02d}".format((config["start_month"] + leadm) % 12)
-                    if config["start_month"] + leadm != 12
-                    else "12"
-                )
-                for leadm in config["leads_obs"]
-            ],
-            "time": "00:00",
-            # We can ask CDS to interpolate ERA5 to the same grid used by C3S seasonal forecasts
-            "grid": "1/1",
-            "area": config["area"],
-            "format": "grib",
-        },
-        obs_fname,
+    request = {
+        "product_type": "monthly_averaged_reanalysis",
+        "variable": [config["var"]],
+        # NOTE from observations we need to go one year beyond so we have available all the right valid dates
+        # e.g. Nov.2016 start date forecast goes up to April 2017
+        "year": [
+            "{}".format(yy) for yy in range(config["hcstarty"], config["hcendy"] + 2)
+        ],
+        "month": [
+            (
+                "{:02d}".format((config["start_month"] + leadm) % 12)
+                if config["start_month"] + leadm != 12
+                else "12"
+            )
+            for leadm in config["leads_obs"]
+        ],
+        "time": "00:00",
+        # We can ask CDS to interpolate ERA5 to the same grid used by C3S seasonal forecasts
+        "grid": "1/1",
+        "area": config["area"],
+        "format": "grib",
+    }
+
+    try:
+        from lib.osop.util import download_and_rename_cds
+    except Exception:
+        from osop.util import download_and_rename_cds
+
+    download_and_rename_cds(
+        c, "reanalysis-era5-single-levels-monthly-means", request, obs_fname
     )
     return obs_fname
 
@@ -119,10 +121,6 @@ if __name__ == "__main__":
     Called when this is run as a script.
 
     Gets the command line arguments using argparse and calls the main function to download ERA5.
-
-    Returns
-    -------
-    None
     """
     # get command line args
     args = parse_args()

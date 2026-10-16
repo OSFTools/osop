@@ -4,12 +4,16 @@
 # See LICENSE in the root of the repository for full licensing details.
 """Tests for the util module."""
 
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
+
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
 
 import osop.util as util
+from osop.util import download_and_rename_cds
 
 
 def test_sel_season_time(dataset: xr.Dataset):
@@ -84,3 +88,97 @@ def dataset():
     )
 
     return dataset
+
+
+def make_mock_client_success(tmp_path):
+    class MockClient:
+        def retrieve(self, dataset, request, target_path):
+            with open(target_path, "wb") as f:
+                f.write(b"data")
+
+    return MockClient()
+
+
+def make_mock_client_failure(tmp_path):
+    class MockClient:
+        def retrieve(self, dataset, request, target_path):
+            with open(target_path, "wb") as f:
+                f.write(b"partial")
+            raise RuntimeError("cdsapi error")
+
+    return MockClient()
+
+
+def test_download_and_rename_cds_success(tmp_path):
+    client = make_mock_client_success(tmp_path)
+    final = tmp_path / "out.grib"
+
+    result = download_and_rename_cds(client, "dataset", {"a": 1}, str(final))
+
+    assert result == str(final)
+    assert final.exists()
+    assert not list(tmp_path.glob("out.grib.*.part"))
+    with open(final, "rb") as f:
+        assert f.read() == b"data"
+
+
+def test_download_and_rename_cds_failure_cleans_partial(tmp_path):
+    client = make_mock_client_failure(tmp_path)
+    final = tmp_path / "out2.grib"
+
+    with pytest.raises(RuntimeError):
+        download_and_rename_cds(client, "dataset", {"a": 1}, str(final))
+
+    assert not list(tmp_path.glob("out2.grib.*.part"))
+    assert not final.exists()
+
+
+def test_download_and_rename_cds_overlapping_downloads_use_distinct_temp_files(
+    tmp_path,
+):
+    """Keep one failed download from publishing another call's partial data."""
+    final = tmp_path / "overlapping.grib"
+    first_started = Event()
+    allow_first_failure = Event()
+
+    class OverlappingClient:
+        def retrieve(self, dataset, request, target_path):
+            if request["download"] == "first":
+                with open(target_path, "wb") as file:
+                    file.write(b"partial data")
+                first_started.set()
+                if not allow_first_failure.wait(timeout=5):
+                    raise TimeoutError("first download was not released")
+                raise RuntimeError("first download failed")
+
+            if not first_started.wait(timeout=5):
+                raise TimeoutError("first download did not start")
+
+    client = OverlappingClient()
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first = executor.submit(
+            download_and_rename_cds,
+            client,
+            "dataset",
+            {"download": "first"},
+            str(final),
+        )
+        assert first_started.wait(timeout=5)
+        second = executor.submit(
+            download_and_rename_cds,
+            client,
+            "dataset",
+            {"download": "second"},
+            str(final),
+        )
+        try:
+            with pytest.raises(IOError, match="produced empty file"):
+                second.result(timeout=5)
+        finally:
+            allow_first_failure.set()
+
+        with pytest.raises(RuntimeError, match="first download failed"):
+            first.result(timeout=5)
+
+    assert not final.exists()
+    assert not list(tmp_path.glob("overlapping.grib.*.part"))

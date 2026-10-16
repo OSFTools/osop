@@ -1,33 +1,33 @@
 workflow:
-  hindcast: true
-  forecast: false
+  hindcast: true   # Run hindcast verification.
+  forecast: false  # Generate a forecast; forecast_year is used when enabled.
 
 parameters:
-  month: 11
-  leads: "2,3,4"
+  month: 11  # Forecast initialisation month, from 1 to 12.
+  leads: "2,3,4"  # Positive lead months; lead 1 is the initialisation month.
   area: "34,22,21,38" # Target area for the forecast (north, west, south, east)
-  variable: "total_precipitation"
-  location: "Egypt"
-  method: "pmesh"
-  pycpt: true
+  variable: "total_precipitation"  # Supported values: total_precipitation or 2m_temperature.
+  location: "Egypt"  # Map border point of view; use "None" to omit country borders.
+  method: "pmesh"  # Hindcast plot style: pmesh for pcolormesh; another value selects contours.
+  pycpt: true  # Enable PyCPT processing.
   predictor_area: "40,0,-40,359" # Predictor area if using PyCPT (north, west, south, east)
-  forecast_year: 2025
+  forecast_year: 2025  # Year to generate when workflow.forecast is true.
 
 paths:
-  base: "./output/egypt_demo"
-  logdir: "{base}/logfiles"
+  base: "./output/egypt_demo"  # Base output directory, relative to the directory used to run the script.
+  logdir: "{base}/logfiles"  # Run logs; {base} is replaced with paths.base.
   hindcast:
-    downloads: "{base}/hindcast/downloads"
-    products: "{base}/hindcast/products"
-    scores: "{base}/hindcast/scores"
-    plots: "{base}/hindcast/plots"
-    pycpt: "{base}/hindcast/pycpt"
+    downloads: "{base}/hindcast/downloads"  # Downloaded hindcast data and generated service configuration.
+    products: "{base}/hindcast/products"  # Processed hindcast products.
+    scores: "{base}/hindcast/scores"  # Hindcast verification scores.
+    plots: "{base}/hindcast/plots"  # Hindcast plots.
+    pycpt: "{base}/hindcast/pycpt"  # Hindcast PyCPT outputs.
   forecast:
-    downloads: "{base}/forecast/downloads"
-    products: "{base}/forecast/products"
-    scores: "{base}/forecast/scores"
-    plots: "{base}/forecast/plots"
-    pycpt: "{base}/forecast/pycpt"
+    downloads: "{base}/forecast/downloads"  # Downloaded forecast data.
+    products: "{base}/forecast/products"  # Processed forecast products.
+    scores: "{base}/forecast/scores"  # Forecast scores, if produced by the workflow.
+    plots: "{base}/forecast/plots"  # Forecast plots.
+    pycpt: "{base}/forecast/pycpt"  # Forecast PyCPT outputs.
 
 # available centres as of 2026-09-02: 
 #   - meteo_france
@@ -39,6 +39,8 @@ paths:
 #  - eccc
 #  - bom
 #  - mme - multi model ensemble (combination of all centres included in the config file)
+# Select the centres to process below. Add "mme" to calculate the ensemble;
+# each selected centre must have a matching entry under services.
 centres: 
   - dwd
   - ukmo
@@ -46,7 +48,9 @@ centres:
   - mme
 
 services:
-  ecmwf: [51, 1]
-  dwd: [22, 1]
-  ukmo: [604, 1]
-  mme: [1, 0]
+  # Each entry is [CDS service/system ID, relative MME weight]. Check CDS for
+  # the applicable system ID and data availability for the requested period.
+  ecmwf: [51, 1]  # ECMWF system ID; weight 1 in the MME.
+  dwd: [22, 1]    # DWD system ID; weight 1 in the MME.
+  ukmo: [604, 1]  # UKMO system ID; weight 1 in the MME.
+  mme: [1, 0]     # MME system ID; zero weight keeps this entry out of MME inputs.

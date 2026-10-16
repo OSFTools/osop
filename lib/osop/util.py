@@ -7,6 +7,7 @@
 
 import logging
 import os
+import tempfile
 import warnings
 
 import eccodes
@@ -194,15 +195,21 @@ def download_and_rename_cds(
     """Download a CDS dataset using a cdsapi.Client and atomically rename.
 
     This helper wraps `client.retrieve(dataset, request, target_path)` and
-    performs temp-file handling and basic exception cleanup so callers can
-    react to specific CDS API errors in one place.
+    performs unique temp-file handling and basic exception cleanup so callers
+    can react to specific CDS API errors in one place.
     """
-    temp_path = final_path + ".part"
-
     # Ensure directory exists
     dirpath = os.path.dirname(final_path)
     if dirpath and not os.path.exists(dirpath):
         os.makedirs(dirpath, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile(
+        dir=dirpath or ".",
+        prefix=os.path.basename(final_path) + ".",
+        suffix=".part",
+        delete=False,
+    ) as temp_file:
+        temp_path = temp_file.name
 
     try:
         client.retrieve(dataset, request, temp_path)

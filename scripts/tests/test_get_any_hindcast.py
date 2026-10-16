@@ -103,7 +103,7 @@ def test_do_cdsapi_call_downloads_missing_or_empty_file(
     get_any_hindcast_module.do_cdsapi_call(*_call_arguments(tmp_path, pycpt, years))
 
     assert fname.read_bytes() == b"downloaded grib data"
-    assert not Path(f"{fname}.part").exists()
+    assert not list(tmp_path.glob(f"{fname.name}.*.part"))
     client.retrieve.assert_called_once()
     dataset, request, target = client.retrieve.call_args.args
     assert dataset == "seasonal-monthly-single-levels"
@@ -118,4 +118,6 @@ def test_do_cdsapi_call_downloads_missing_or_empty_file(
         "leadtime_month": [1, 2],
         "area": [10.0, -20.0, -10.0, 20.0],
     }
-    assert target == f"{fname}.part"
+    assert Path(target).parent == fname.parent
+    assert target.endswith(".part")
+    assert Path(target).name.startswith(f"{fname.name}.")

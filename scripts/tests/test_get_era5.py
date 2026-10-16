@@ -81,7 +81,7 @@ def test_get_obs_downloads_when_destination_missing_or_empty(
 
     assert result == obs_fname
     assert Path(obs_fname).read_bytes() == b"downloaded grib data"
-    assert not Path(obs_fname + ".part").exists()
+    assert not list(tmp_path.glob("observations.grib.*.part"))
     client.retrieve.assert_called_once()
     request = client.retrieve.call_args.args[1]
     assert request["year"] == ["1993", "1994", "1995"]

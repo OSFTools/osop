@@ -18,6 +18,7 @@ from datetime import datetime
 import logging
 
 from osop.pycpt_convert import process_grib_to_pycpt
+from osop.util import download_and_rename_cds
 
 logger = logging.getLogger(__name__)
 
@@ -67,11 +68,6 @@ def get_obs(obs_fname, config):
         "area": config["area"],
         "format": "grib",
     }
-
-    try:
-        from lib.osop.util import download_and_rename_cds
-    except Exception:
-        from osop.util import download_and_rename_cds
 
     download_and_rename_cds(
         c, "reanalysis-era5-single-levels-monthly-means", request, obs_fname

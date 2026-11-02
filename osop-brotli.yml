@@ -1,4 +1,4 @@
-name: osop-brotli-test
+name: osop-brotli-ellie-test
 channels:
   - iri-nextgen
   - conda-forge

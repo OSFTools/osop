@@ -166,6 +166,7 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
         area = str(parameters["area"])
         variable = str(parameters["variable"])
         pycpt_value = parameters["pycpt"]
+        observation_source = str(parameters["observation_source"])
     except KeyError as exc:
         raise ConfigError(f"Missing required parameters field: {exc.args[0]}") from exc
     except (TypeError, ValueError) as exc:
@@ -240,6 +241,7 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
             "pycpt": pycpt_enabled,
             "predictor_area": predictor_area,
             "forecast_year": int(parameters.get("forecast_year", 0)),
+            "observation_source": str(parameters.get("observation_source", "")),
         },
         "paths": resolved_paths,
         "centres": config["centres"],
@@ -429,6 +431,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
     centres = _select_centres(config)
     pycpt_arg = _bool_str(params["pycpt"])
     subprocess_env = _build_subprocess_env(script_dir)
+    obs_name = str(params["observation_source"])
     configure_pycpt(subprocess_env)
 
     ensure_directories(paths)
@@ -441,19 +444,40 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
     failures: list[str] = []
 
     if config["workflow"]["hindcast"]:
-        era5_cmd = [
-            sys.executable,
-            str(script_dir / "get_era5.py"),
-            *_build_common_args(config, paths["hindcast"]["downloads"]),
-            "--pycpt",
-            pycpt_arg,
-            "--pycptdir",
-            paths["hindcast"]["pycpt"],
-        ]
-        if _run_step(era5_cmd, env=subprocess_env) != 0:
-            failures.append("era5")
+        if obs_name == "era5":
+            
+            era5_cmd = [
+                sys.executable,
+                str(script_dir / "get_era5.py"),
+                *_build_common_args(config, paths["hindcast"]["downloads"]),
+                "--pycpt",
+                pycpt_arg,
+                "--pycptdir",
+                paths["hindcast"]["pycpt"],
+            ]
+            if _run_step(era5_cmd, env=subprocess_env) != 0:
+                failures.append("era5")
+            else:
+                print("ERA5 download completed successfully")
+
+        elif obs_name == "chirps":
+
+            chirps_cmd = [
+                sys.executable,
+                str(script_dir / "get_chirps.py"),
+                *_build_common_args(config, paths["hindcast"]["downloads"]),
+                "--pycpt",
+                pycpt_arg,
+                "--pycptdir",
+                paths["hindcast"]["pycpt"],
+            ]
+            if _run_step(chirps_cmd, env=subprocess_env) != 0:
+                failures.append("chirps")
+            else:
+                print("CHIRPS download completed successfully")
+
         else:
-            print("ERA5 download completed successfully")
+            print(f"Observation source {obs_name} not supported. Current supported sources are 'era5' and 'chirps'.")
 
         for centre in centres:
             if centre != "mme":
@@ -475,7 +499,6 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
                     continue
                 else:
                     print(f"Hindcast download for {centre} completed successfully")
-
             products_cmd = [
                 sys.executable,
                 str(script_dir / "compute_products.py"),
@@ -490,6 +513,8 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
                 pycpt_arg,
                 "--pycptdir",
                 paths["hindcast"]["pycpt"],
+                "--obs_name",
+                obs_name,
             ]
             if _run_step(products_cmd, env=subprocess_env) != 0:
                 failures.append(f"hindcast-products:{centre}")
@@ -498,7 +523,6 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
                 print(
                     f"Hindcast products computation for {centre} completed successfully"
                 )
-
             scores_cmd = [
                 sys.executable,
                 str(script_dir / "compute_scores.py"),
@@ -509,6 +533,8 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
                 paths["hindcast"]["scores"],
                 "--productsdir",
                 paths["hindcast"]["products"],
+                "--obs_name",
+                obs_name,
             ]
             if _run_step(scores_cmd, env=subprocess_env) != 0:
                 failures.append(f"hindcast-scores:{centre}")
@@ -517,7 +543,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
                 print(
                     f"Hindcast scores computation for {centre} completed successfully"
                 )
-
+            
             plots_cmd = [
                 sys.executable,
                 str(script_dir / "plot_verification.py"),
@@ -530,6 +556,8 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
                 paths["hindcast"]["scores"],
                 "--plotdir",
                 paths["hindcast"]["plots"],
+                "--obs_name",
+                obs_name,
             ]
             if params["method"] is not None:
                 plots_cmd.extend(["--method", params["method"]])

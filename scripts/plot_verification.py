@@ -65,6 +65,11 @@ def parse_args():
         help="Changes the plotting look, use pmesh for pcolourmesh",
     )
     parser.add_argument("--logdir", required=True, help="location to store logfiles")
+    parser.add_argument(
+        "--obs_name",
+        required=True,
+        help="Observation source name (e.g., chirps, era5)",
+    )
 
     args = parser.parse_args()
     return args
@@ -116,6 +121,7 @@ if __name__ == "__main__":
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ".")
     fname_var = args.variable
+    obs_name = args.obs_name
 
     if fname_var == "2m_temperature":
         var = "t2m"
@@ -138,6 +144,7 @@ if __name__ == "__main__":
         obs_str=obs_str,
         fname_var=fname_var,
         var=var,
+        obs_name=obs_name,
     )
 
     logger.debug(config)
@@ -177,6 +184,7 @@ if __name__ == "__main__":
         fname_var=fname_var,
         var=var,
         mme_svcs=mme_svcs,
+        obs_name=obs_name,
     )
 
     logger.debug(config)
@@ -189,6 +197,7 @@ if __name__ == "__main__":
         config["hcendy"] = 2016
 
     for score in scores:
+        
         for aggr in ["1m", "nm"]:
             config["aggr"] = aggr
             config["score"] = score

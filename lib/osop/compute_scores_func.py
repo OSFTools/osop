@@ -47,12 +47,22 @@ def read_obs(obs_fname, config):
     obs_ds_nm : xarray.Dataset
         Preprocessed observation data with n-monthly time resolution.
     """
-    obs_ds = xr.open_dataset(obs_fname, engine="cfgrib")
+    
+    if config["obs_name"] == "chirps":
+        engine = "netcdf4"
+        obs_ds = xr.open_dataset(obs_fname, engine=engine)
+        obs_ds = obs_ds.rename(
+                    {"latitude": "lat", "longitude": "lon"}
+        ).swap_dims({"start_date": "valid_time"})
 
-    # Renaming to match hindcast names
-    obs_ds = obs_ds.rename(
-        {"latitude": "lat", "longitude": "lon", "time": "start_date"}
-    ).swap_dims({"start_date": "valid_time"})
+    else:
+        engine = "cfgrib"
+        obs_ds = xr.open_dataset(obs_fname, engine=engine)
+
+        # Renaming to match hindcast names
+        obs_ds = obs_ds.rename(
+            {"latitude": "lat", "longitude": "lon", "time": "start_date"}
+        ).swap_dims({"start_date": "valid_time"})
 
     # Assign 'forecastMonth' coordinate values
     fcmonths = [
@@ -84,6 +94,7 @@ def read_obs(obs_fname, config):
 
     obs_ds["valid_time"] = obs_ds.valid_time.dt.strftime("%Y-%m")
     obs_ds_nm["valid_time"] = obs_ds_nm.valid_time.dt.strftime("%Y-%m")
+    
     return obs_ds, obs_ds_nm
 
 
@@ -246,6 +257,7 @@ def scores_prblstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir):
     -----
     Saves probabilistic scores to NetCDF files.
     """
+    
     # Define quantiles for tercile categories
     quantiles = [1 / 3.0, 2 / 3.0]
     numcategories = len(quantiles) + 1
@@ -308,7 +320,7 @@ def scores_prblstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir):
             thisrel = xr.Dataset()
             for var in thishcst.data_vars:
                 var_obs = var
-
+                
                 thisroc[var] = xs.roc(
                     thisobs[var_obs],
                     thishcst[var],
@@ -397,18 +409,23 @@ def calc_scores(config, downloaddir, scoresdir, productsdir):
         fpath=downloaddir, **config
     )
 
+    # If obs source is CHIRPS need to load nc file instead of grib
+    if config["obs_name"] == "chirps":
+        obs_fname = obs_fname.replace(".grib", ".nc")
+
     ## read obs
     obs_ds, obs_ds_nm = read_obs(obs_fname, config)
 
     # if the observations are ERA5, rename tprate
     # and convert from m/day to m/s
-    if config["obs_name"] == "era5" and config["hc_var"] == "total_precipitation":
+    if (config["obs_name"] == "era5" or config["obs_name"] == "chirps") and config["hc_var"] == "total_precipitation":
         obs_ds = obs_ds.rename({"tp": "tprate"})
         obs_ds_nm = obs_ds_nm.rename({"tp": "tprate"})
         obs_ds["tprate"].attrs["units"] = "m/s"
         obs_ds["tprate"] = obs_ds["tprate"] * 3600 * 24
         obs_ds_nm["tprate"] = obs_ds_nm["tprate"] * 3600 * 24
         obs_ds_nm["tprate"].attrs["units"] = "m/s"
+
     ## calc scores
     scores_prblstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir)
     scores_dtrmnstc(obs_ds, obs_ds_nm, hcst_bname, scoresdir, productsdir)

@@ -62,7 +62,10 @@ def parse_args():
         required=False,
         help="Years to rerieve data for (comma separated). Optional. Default is hindcast period 1993-2016.",
     )
-    parser.add_argument("--logdir", required=True, help="location to store logfiles")
+    parser.add_argument("--logdir", required=True, help="location to store logfiles"
+    )
+    parser.add_argument("--obs_name", required=False, help="source of observation or reanalysis dataset. Optional. Defaults to ERA5"
+    )
 
     args = parser.parse_args()
     return args
@@ -109,6 +112,7 @@ if __name__ == "__main__":
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ".")
     hc_var = args.variable
+    obs_name = args.obs_name
 
     if hc_var == "2m_temperature":
         var = "t2m"
@@ -127,6 +131,7 @@ if __name__ == "__main__":
         obs_str=obs_str,
         var=var,
         hc_var=hc_var,
+        obs_name=obs_name,
     )
     # get remaining arguments from yml file
     ymllocation = os.path.join(downloaddir, "parseyml.yml")
@@ -152,10 +157,6 @@ if __name__ == "__main__":
         config["hcstarty"] = 1993
         config["hcendy"] = 2016
 
-    if args.obs_dataset:
-        config["obs_name"] = args.obs
-    else:
-        config["obs_name"] = "era5"
 
     logger.debug(config)
     # hindcast info

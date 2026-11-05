@@ -65,6 +65,11 @@ def parse_args():
         default=None,
         help="predictor extent for obs (comma separated N,W,S,E)",
     )
+    parser.add_argument(
+        "--obs_name",
+        required=True,
+        help="name of the observation source (e.g., chirps, era5)",
+    )
 
     args = parser.parse_args()
     return args
@@ -109,6 +114,7 @@ if __name__ == "__main__":
     area = [float(pt) for pt in args.area.split(",")]
     area_str = args.area.replace(",", ".")
     variable = args.variable
+    obs_name = args.obs_name
 
     if pycpt == "True":
         if args.predictor_area is None:
@@ -145,6 +151,7 @@ if __name__ == "__main__":
         area_str=area_str,
         leads_str=leads_str,
         var=variable,
+        obs_name=obs_name,
     )
     logger.debug(config)
 
@@ -179,6 +186,7 @@ if __name__ == "__main__":
         if centre not in Services.keys():
             raise ValueError(f"Unknown system for C3S: {centre}")
         config["system"] = Services[centre]
+        # breakpoint()
         calc_products(config, downloaddir, productsdir)
 
     if pycpt == "True":
@@ -189,6 +197,7 @@ if __name__ == "__main__":
             gcm_area=predict_bounds,
             gcm_area_str=predict_str,
             leads_str=leads_str,
+            obs_name=obs_name,
             var=variable,
             pycptver="pycpt",
         )

@@ -302,15 +302,15 @@ def get_thresh(icat, quantiles, xrds, dims=["number", "start_date"]):
     else:
         if icat == 0:
             xrds_lo = -np.inf
-            xrds_hi = xrds.quantile(quantiles[icat], dim=dims)
+            xrds_hi = xrds.quantile(quantiles[icat], dim=dims, skipna=False)
 
         elif icat == len(quantiles):
-            xrds_lo = xrds.quantile(quantiles[icat - 1], dim=dims)
+            xrds_lo = xrds.quantile(quantiles[icat - 1], dim=dims, skipna=False)
             xrds_hi = np.inf
 
         else:
-            xrds_lo = xrds.quantile(quantiles[icat - 1], dim=dims)
-            xrds_hi = xrds.quantile(quantiles[icat], dim=dims)
+            xrds_lo = xrds.quantile(quantiles[icat - 1], dim=dims, skipna=False)
+            xrds_hi = xrds.quantile(quantiles[icat], dim=dims, skipna=False)
 
     return xrds_lo, xrds_hi
 

@@ -114,6 +114,7 @@ def prep_titles(config, scoresdir):
 
     Currently this replicates the titles here:
     https://confluence.ecmwf.int/display/CKB/C3S+seasonal+forecasts+verification+plots
+    with the addition of observation source in the fourth line.
 
     Parameters
     ----------
@@ -163,7 +164,10 @@ def prep_titles(config, scoresdir):
             lines.append(", ".join(services[i : i + 5]))
 
         tit_line3 += "\n MME services:" + "\n ".join(lines)
-    return tit_line1, tit_line2, tit_line3
+
+    tit_line4 = f"Observation source: {config['obs_name']}"
+
+    return tit_line1, tit_line2, tit_line3, tit_line4
 
 
 def plot_score(
@@ -195,7 +199,8 @@ def plot_score(
     None
     """
     # choose a projection and set up an axes based on that
-    projection = ccrs.Mercator()
+    # projection = ccrs.Mercator()
+    projection = ccrs.PlateCarree()
     ax = plt.axes(projection=projection)
     # Specify CRS
     crs = ccrs.PlateCarree()
@@ -258,7 +263,7 @@ def plot_score(
         ex_dir = "min"
         under = "white"
         levels = np.linspace(0.5, 1.0, 6)
-
+    # breakpoint()
     cs = plt.contourf(
         lon,
         lat,
@@ -286,6 +291,7 @@ def plot_score(
         os.path.join(plotdir, f"{info}.png"), bbox_inches="tight", pad_inches=0.01
     )
     logger.info(f"Saved figure to {os.path.join(plotdir, f'{info}.png')}")
+    
     plt.close()
 
 

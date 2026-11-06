@@ -164,7 +164,7 @@ def main():
     # start logging - need to know logdir location before we can set it up
     logfile = os.path.join(
         args.logdir,
-        f"download_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+        f"download_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}.txt",
     )
 
     loglev = logging.INFO  # can be an argument later if needed
@@ -183,7 +183,7 @@ def main():
     downloaddir = args.downloaddir
     leadtime_month = [int(l) for l in args.leads.split(",")]
     area = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area_str = args.area.replace(",", "_")
     month = int(args.month)
     variable = str(args.variable)
 

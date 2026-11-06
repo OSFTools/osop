@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # start logging - need to know logdir location before we can set it up
     logfile = os.path.join(
         args.logdir,
-        f"plots_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+        f"plots_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}.txt",
     )
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     leads_str = "".join([str(mon) for mon in leadtime_month])
     obs_str = "".join([str(mon - 1) for mon in leadtime_month])
     area = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area_str = args.area.replace(",", "_")
     fname_var = args.variable
 
     if fname_var == "2m_temperature":

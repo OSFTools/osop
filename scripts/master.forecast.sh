@@ -18,7 +18,8 @@ set -eu
 # this conda env gives an error on load, so
 # can't use -u option
 set +u
-conda activate osop 
+conda activate osop
+export PYTHONPATH="C:/Users/wafae/projets/osop/lib;$PYTHONPATH"
 set -u
 
 # pick download location
@@ -48,12 +49,12 @@ parseyml="$downloaddir/parseyml.yml"
 ## NOTE: TO SUCCESSFULLY RUN THIS SCRIPT; MASTER.SH MUST BE RUN IN FULL FIRST WITH THE SAME "SET PARAMETERS".
 
 # set parameters 
-month=5 # initialisation month
-leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
-area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
-variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
+month=8
+leads="2,3,4"
+area="45,-30,-2.5,60"
+variable="2m_temperature"
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
-years=2025
+years=2026
 
 
 # Services in use: 
@@ -63,12 +64,12 @@ Services:
     ecmwf: [51,1]
     meteo_france: [9,1]
     dwd: [22,1]
-    cmcc: [35,1]
+    cmcc: [4,1]
     ncep: [2,1]
-    jma: [3,0]  
+    jma: [4,0]  
     eccc_can: [4,1]
     eccc_gem5: [5,1]
-    ukmo: [604,1]
+    ukmo: [610,1]
     mme: [1,0]
 EOF
 echo "YML file created: $parseyml"

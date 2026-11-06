@@ -70,7 +70,7 @@ if __name__ == "__main__":
     # start logging - need to know logdir location before we can set it up
     logfile = os.path.join(
         args.logdir,
-        f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+        f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}.txt",
     )
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     leadtime_month = [int(l) for l in args.leads.split(",")]
     leads_str = "".join([str(mon) for mon in leadtime_month])
     area = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area_str = args.area.replace(",", "_")
     variable = args.variable
 
     # get remaining arguments from yml file

@@ -18,7 +18,8 @@ set -eu
 # this conda env gives an error on load, so
 # can't use -u option
 set +u
-conda activate osop-simple
+conda activate osop
+export PYTHONPATH="C:/Users/wafae/projets/osop/lib;$PYTHONPATH"
 set -u
 
 # pick download location
@@ -44,7 +45,7 @@ parseyml="$downloaddir/parseyml.yml"
 month=5 # initialisation month
 leads="2,3,4" # e.g. if month=5 and leads="2,3,4", valid months are JJA (6,7,8)
 area="45,-30,-2.5,60" # sub-area in degrees for area of interest (comma separated N,W,S,E)
-variable="2m_temperature" # variable of interest, typically "2m_temperature" or "total_precipitation"
+variable="total_precipitation" # variable of interest, typically "2m_temperature" or "total_precipitation"
 location="Morocco" #Current options include 'None' - no borders, 'UK','Morocco' and 'SAU' - Saudi Arabia
 method="pmesh" #Changes plot looks, remove for standard.
 

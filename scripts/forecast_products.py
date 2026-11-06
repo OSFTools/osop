@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     logfile = os.path.join(
         args.logdir,
-        f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+        f"products_log_{args.variable}_{args.centre}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}.txt",
     )
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     obs_month = [int(l) - 1 for l in args.leads.split(",")]
     obs_str = "".join([str(mon) for mon in obs_month])
     area = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area_str = args.area.replace(",", "_")
     hc_var = args.variable
 
     if hc_var == "2m_temperature":

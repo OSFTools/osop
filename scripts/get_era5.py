@@ -125,7 +125,7 @@ if __name__ == "__main__":
     # start logging - need to know logdir location before we can set it up
     logfile = os.path.join(
         args.logdir,
-        f"era5_log_{args.variable}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H:%M:%S')}.txt",
+        f"era5_log_{args.variable}_{args.month}_{datetime.today().strftime('%Y-%m-%d_%H-%M-%S')}.txt",
     )
     loglev = logging.INFO  # can be an argument later if needed
     logging.basicConfig(
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     # for filename to keep consistent with hindcast filenames
     leads_str = "".join([str(mon) for mon in leadtime_month])
     area_bounds = [float(pt) for pt in args.area.split(",")]
-    area_str = args.area.replace(",", ":")
+    area_str = args.area.replace(",", "_")
     var = args.variable
 
     # add arguments to config dictionary used to pass parameters

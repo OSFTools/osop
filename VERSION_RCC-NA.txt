@@ -1,0 +1,5 @@
+0fadf80 RCC-NA: OSOP core fixes (Windows, system versions 2026) + JJA/SON 2026 bulletin map scripts
+42ba122 chore: update pre-commit hooks (#123)
+5f072d3 Fix for tests failing  (#130)
+origin	https://github.com/OSFTools/osop.git (fetch)
+origin	https://github.com/OSFTools/osop.git (push)

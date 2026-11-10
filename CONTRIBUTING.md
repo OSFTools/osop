@@ -74,7 +74,7 @@ GitHub pages version will be automatically updated.
 5. Mark your pull request as ready for review and request a code review.
 
 > \[!NOTE]
-> Note that you will automatically be asked to sign the [Contributor Licence Agreement](https://cla-assistant.io/OSFTools/osop/)
+> Note that you will automatically be asked to sign the [Contributor Licence Agreement](https://cla-assistant.io/OSFTools/osop)
 > (CLA), if you have not already done so.
    
 6. We will review your code and request changes if necessary.

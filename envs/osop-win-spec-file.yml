@@ -32,17 +32,17 @@ dependencies:
   - blosc=1.21.6=h85f69ea_0
   - bokeh=3.6.0=pyhd8ed1ab_0
   - bottleneck=1.4.2=py312h1a27103_0
-  - brotli=1.1.0=h2466b09_2
-  - brotli-bin=1.1.0=h2466b09_2
-  - brotli-python=1.1.0=py312h275cf98_2
+  - brotli=1.1.1=hc8c2fe1_0
+  - brotli-bin=1.1.1=hd477307_0
+  - brotli-python=1.1.1=py312ha763cb9_0
   - bzip2=1.0.8=h2466b09_7
   - c-ares=1.34.2=h2466b09_0
-  - ca-certificates=2026.7.22=h4c7d964_0
+  - ca-certificates=2026.10.23=h4c7d964_0
   - cached-property=1.5.2=hd8ed1ab_1
   - cached_property=1.5.2=pyha770c72_1
   - cartopy=0.24.0=py312h72972c8_0
   - cdsapi=0.7.7=pyhd8ed1ab_0
-  - certifi=2026.7.22=pyhd8ed1ab_0
+  - certifi=2026.10.23=pyhd8ed1ab_3
   - cffi=1.17.1=py312h4389bb4_0
   - cfgrib=0.9.15.1=pyhd8ed1ab_0
   - cfgv=3.5.0=pyhd8ed1ab_0
@@ -135,9 +135,9 @@ dependencies:
   - libarrow-dataset=18.0.0=hac47afa_0_cpu
   - libarrow-substrait=18.0.0=ha9530af_0_cpu
   - libblas=3.9.0=25_win64_mkl
-  - libbrotlicommon=1.1.0=h2466b09_2
-  - libbrotlidec=1.1.0=h2466b09_2
-  - libbrotlienc=1.1.0=h2466b09_2
+  - libbrotlicommon=1.1.1=hf02afa3_0
+  - libbrotlidec=1.1.1=h84f9c24_0
+  - libbrotlienc=1.1.1=he2a975b_0
   - libcblas=3.9.0=25_win64_mkl
   - libcrc32c=1.1.2=h0e60522_0
   - libcurl=8.10.1=h1ee3ff0_0
@@ -207,7 +207,7 @@ dependencies:
   - numpy=2.1.2=py312hf10105a_0
   - numpy_groupies=0.11.3=pyhd8ed1ab_0
   - openjpeg=2.5.2=h3d672ee_0
-  - openssl=3.5.0=ha4e3fda_1
+  - openssl=3.6.5=hf411b9b_0
   - orc=2.0.2=h1c5a4bf_1
   - overrides=7.7.0=pyhd8ed1ab_0
   - packaging=24.1=pyhd8ed1ab_0
@@ -311,9 +311,10 @@ dependencies:
   - uriparser=0.9.8=h5a68840_0
   - urllib3=1.26.19=pyhd8ed1ab_0
   - vc=14.3=h8a93ad2_22
-  - vc14_runtime=14.40.33810=hcc2c482_22
+  - vc14_runtime=14.51.36247=h072b54c_43
+  - vcomp14=14.51.36247=h1c3f1cb_43
   - virtualenv=20.33.1=pyhd8ed1ab_0
-  - vs2015_runtime=14.40.33810=h3bf8584_22
+  - vs2015_runtime=14.51.36247=hda273ae_43
   - wcwidth=0.2.13=pyhd8ed1ab_0
   - webcolors=24.8.0=pyhd8ed1ab_0
   - webencodings=0.5.1=pyhd8ed1ab_2

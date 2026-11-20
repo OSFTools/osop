@@ -6,6 +6,8 @@
 """A module with utility functions for seasonal forecasts."""
 
 import logging
+import os
+import tempfile
 import warnings
 
 import eccodes
@@ -185,3 +187,44 @@ def log_warning(message, category, filename, lineno, file=None, line=None):
 
 
 warnings.showwarning = log_warning
+
+
+def download_and_rename_cds(
+    client, dataset: str, request: dict, final_path: str
+) -> str:
+    """Download a CDS dataset using a cdsapi.Client and atomically rename.
+
+    This helper wraps `client.retrieve(dataset, request, target_path)` and
+    performs unique temp-file handling and basic exception cleanup so callers
+    can react to specific CDS API errors in one place.
+    """
+    # Ensure directory exists
+    dirpath = os.path.dirname(final_path)
+    if dirpath and not os.path.exists(dirpath):
+        os.makedirs(dirpath, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile(
+        dir=dirpath or ".",
+        prefix=os.path.basename(final_path) + ".",
+        suffix=".part",
+        delete=False,
+    ) as temp_file:
+        temp_path = temp_file.name
+
+    try:
+        client.retrieve(dataset, request, temp_path)
+
+        if not os.path.exists(temp_path) or os.path.getsize(temp_path) == 0:
+            raise IOError(f"CDS download failed or produced empty file: {temp_path}")
+
+        os.replace(temp_path, final_path)
+        return final_path
+
+    except Exception:
+        # Cleanup partial file on error if present
+        try:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        except Exception:
+            pass
+        raise

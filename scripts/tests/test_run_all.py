@@ -330,6 +330,101 @@ def test_validate_config_paths_base_required(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# _user_confirmation
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("response", ["y", " Y ", "Y"])
+def test_user_confirmation_accepts_y(response):
+    """A case-insensitive y is accepted as confirmation."""
+    run_all = _get_run_all()
+    with patch("builtins.input", return_value=response):
+        assert run_all._user_confirmation() is True
+
+
+@pytest.mark.parametrize("response", ["n", "N", "", "   "])
+def test_user_confirmation_rejects_n_blank_and_whitespace(response):
+    """No, blank, and whitespace responses reject confirmation."""
+    run_all = _get_run_all()
+    with patch("builtins.input", return_value=response):
+        assert run_all._user_confirmation() is False
+
+
+def test_user_confirmation_retries_invalid_input(capsys):
+    """Invalid input is reported and prompting continues."""
+    run_all = _get_run_all()
+    with patch("builtins.input", side_effect=["maybe", " y "]):
+        assert run_all._user_confirmation() is True
+
+    assert "Invalid input. Please enter 'y' or 'n'." in capsys.readouterr().out
+
+
+def test_user_confirmation_keyboard_interrupt(capsys):
+    """KeyboardInterrupt aborts confirmation and rejects the action."""
+    run_all = _get_run_all()
+    with patch("builtins.input", side_effect=KeyboardInterrupt):
+        assert run_all._user_confirmation() is False
+
+    assert "Aborting." in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# _clean_files
+# ---------------------------------------------------------------------------
+
+
+def test_clean_files_disabled_does_not_prompt(tmp_path):
+    """No cleanup is prompted or performed when both flags are disabled."""
+    run_all = _get_run_all()
+    config = run_all.validate_config(_minimal_config(tmp_path))
+
+    with patch.object(run_all, "_user_confirmation") as confirm:
+        run_all._clean_files(config)
+
+    confirm.assert_not_called()
+
+
+def test_clean_files_auto_yes_removes_downloads_and_outputs(tmp_path):
+    """Auto-confirmation removes configured download and output directories."""
+    run_all = _get_run_all()
+    config = run_all.validate_config(_minimal_config(tmp_path))
+    config["workflow"]["clean_downloads"] = True
+    config["workflow"]["clean_outputs"] = True
+
+    directories = [
+        Path(config["paths"]["logdir"]),
+        *[
+            Path(config["paths"][section][key])
+            for section in ("hindcast", "forecast")
+            for key in ("downloads", "products", "scores", "plots", "pycpt")
+        ],
+    ]
+    for directory in directories:
+        directory.mkdir(parents=True)
+        (directory / "keep.txt").write_text("test", encoding="utf-8")
+
+    with patch.object(run_all, "_user_confirmation") as confirm:
+        run_all._clean_files(config, auto_yes=True)
+
+    confirm.assert_not_called()
+    assert all(not directory.exists() for directory in directories)
+
+
+def test_clean_files_confirmation_no_preserves_directories(tmp_path):
+    """A negative response preserves every configured directory."""
+    run_all = _get_run_all()
+    config = run_all.validate_config(_minimal_config(tmp_path))
+    config["workflow"]["clean_downloads"] = True
+    download = Path(config["paths"]["hindcast"]["downloads"])
+    download.mkdir(parents=True)
+
+    with patch.object(run_all, "_user_confirmation", return_value=False):
+        run_all._clean_files(config)
+
+    assert download.exists()
+
+
+# ---------------------------------------------------------------------------
 # write_services_yaml
 # ---------------------------------------------------------------------------
 

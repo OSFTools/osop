@@ -225,6 +225,8 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
         "workflow": {
             "hindcast": bool(workflow.get("hindcast", True)),
             "forecast": forecast_enabled,
+            "clean_downloads": bool(workflow.get("clean_downloads", False)),
+            "clean_outputs": bool(workflow.get("clean_outputs", False)),
         },
         "parameters": {
             "month": month,
@@ -409,6 +411,70 @@ def _bool_str(value: bool) -> str:
     return "True" if value else "False"
 
 
+def _user_confirmation() -> bool:
+    """Prompt the user for a yes/no confirmation.
+
+    Returns
+    -------
+    bool
+        True if the user confirms with 'y', False otherwise.
+    """
+    while True:
+        try:
+            response = input("Confirm? [y/n]: ").strip().lower()
+            if response == "y":
+                return True
+            elif response == "n" or response == "":
+                print("Skipped.")
+                return False
+            else:
+                print("Invalid input. Please enter 'y' or 'n'.")
+        except KeyboardInterrupt:
+            print("\nAborting.")
+            return False
+
+
+def _clean_files(config: dict[str, Any], auto_yes: bool = False) -> None:
+    """Remove all previous output and log directories if they exist."""
+
+    def recursive_search(d, keys_to_match):
+        for k, v in d.items():
+            if k in keys_to_match:
+                directory = Path(v)
+                if directory not in directories_to_clean:
+                    directories_to_clean.append(directory)
+            if isinstance(v, dict):
+                recursive_search(v, keys_to_match)
+
+    directories_to_clean = []
+    keys_to_match = []
+    enabled = []
+
+    if config["workflow"]["clean_downloads"]:
+        keys_to_match.append("downloads")
+        enabled.append("downloads")
+    if config["workflow"]["clean_outputs"]:
+        keys_to_match.extend(["logdir", "products", "scores", "plots", "pycpt"])
+        enabled.append("outputs")
+
+    if not enabled:
+        return
+
+    recursive_search(config["paths"], keys_to_match)
+
+    print(
+        f"{', '.join(enabled)} enabled. "
+        "Delete the content of the following directories?"
+    )
+    for directory in directories_to_clean:
+        print(f"  {directory}")
+
+    if auto_yes or _user_confirmation():
+        for directory in directories_to_clean:
+            if directory.exists():
+                shutil.rmtree(directory)
+
+
 def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
     """Execute configured hindcast and forecast workflows.
 
@@ -426,6 +492,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
     """
     paths = config["paths"]
     params = config["parameters"]
+
     centres = _select_centres(config)
     pycpt_arg = _bool_str(params["pycpt"])
     subprocess_env = _build_subprocess_env(script_dir)
@@ -641,6 +708,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=str(Path(__file__).resolve().parents[1] / "osop_config.yml"),
         help="Path to YAML configuration file",
     )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Automatically answer yes to prompts",
+    )
     return parser
 
 
@@ -664,6 +736,8 @@ def main(argv: list[str] | None = None) -> int:
         config_path = Path(args.config).expanduser().resolve()
         loaded = load_config(config_path)
         validated = validate_config(loaded)
+
+        _clean_files(validated, auto_yes=args.yes)
 
         script_dir = Path(__file__).resolve().parent
         return run_pipeline(validated, script_dir)

@@ -428,37 +428,49 @@ def _user_confirmation() -> bool:
                 return False
             else:
                 print("Invalid input. Please enter 'y' or 'n'.")
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, EOFError):
             return False
 
 
 def _clean_files(config: dict[str, Any], auto_yes: bool = False) -> None:
     """Remove all previous output and log directories if they exist."""
 
-    def recursive_search(d, keys_to_match):
-        for k, v in d.items():
-            if k in keys_to_match:
-                directory = Path(v)
-                if directory not in directories_to_clean:
-                    directories_to_clean.append(directory)
-            if isinstance(v, dict):
-                recursive_search(v, keys_to_match)
+    def add_directory(raw_path: str) -> None:
+        directory = Path(raw_path)
+        resolved = directory.resolve()
+        if (
+            not raw_path.strip()
+            or resolved == Path.cwd().resolve()
+            or resolved == Path(resolved.anchor)
+        ):
+            raise ConfigError(f"Unsafe cleanup directory: {raw_path!r}")
+        if directory not in directories_to_clean:
+            directories_to_clean.append(directory)
 
     directories_to_clean = []
-    keys_to_match = []
     enabled = []
+    paths = config["paths"]
+    active_sections = [
+        section
+        for section in ("hindcast", "forecast")
+        if config["workflow"].get(section, False)
+    ]
 
+    # Determine which directories to clean based on workflow configuration
     if config["workflow"]["clean_downloads"]:
-        keys_to_match.append("downloads")
+        for section in active_sections:
+            add_directory(paths[section]["downloads"])
         enabled.append("clean_downloads")
+
     if config["workflow"]["clean_outputs"]:
-        keys_to_match.extend(["logdir", "products", "scores", "plots", "pycpt"])
+        add_directory(paths["logdir"])
+        for section in active_sections:
+            for key in ("products", "scores", "plots", "pycpt"):
+                add_directory(paths[section][key])
         enabled.append("clean_outputs")
 
     if not enabled:
         return
-
-    recursive_search(config["paths"], keys_to_match)
 
     print(
         f"{', '.join(enabled)} enabled. "

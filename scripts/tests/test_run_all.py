@@ -386,6 +386,8 @@ def test_clean_files_auto_yes_removes_downloads_and_outputs(tmp_path):
     """Auto-confirmation removes configured download and output directories."""
     run_all = _get_run_all()
     config = run_all.validate_config(_minimal_config(tmp_path))
+    config["workflow"]["hindcast"] = True
+    config["workflow"]["forecast"] = True
     config["workflow"]["clean_downloads"] = True
     config["workflow"]["clean_outputs"] = True
 
@@ -406,6 +408,30 @@ def test_clean_files_auto_yes_removes_downloads_and_outputs(tmp_path):
 
     confirm.assert_not_called()
     assert all(not directory.exists() for directory in directories)
+
+
+def test_clean_files_respects_enabled_workflow_sections(tmp_path):
+    """Only directories for enabled workflow sections are cleaned."""
+    run_all = _get_run_all()
+    config = run_all.validate_config(_minimal_config(tmp_path))
+    config["workflow"]["hindcast"] = False
+    config["workflow"]["forecast"] = True
+    config["workflow"]["clean_downloads"] = True
+    config["workflow"]["clean_outputs"] = True
+
+    hindcast_dir = Path(config["paths"]["hindcast"]["downloads"])
+    forecast_dir = Path(config["paths"]["forecast"]["downloads"])
+    logdir = Path(config["paths"]["logdir"])
+
+    for directory in (hindcast_dir, forecast_dir, logdir):
+        directory.mkdir(parents=True)
+        (directory / "keep.txt").write_text("test", encoding="utf-8")
+
+    run_all._clean_files(config, auto_yes=True)
+
+    assert hindcast_dir.exists()
+    assert not forecast_dir.exists()
+    assert not logdir.exists()
 
 
 def test_clean_files_confirmation_no_preserves_directories(tmp_path):

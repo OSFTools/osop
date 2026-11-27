@@ -33,13 +33,29 @@ class ConfigError(Exception):
     """Raised when the orchestrator configuration is invalid."""
 
 
-def _parse_bool(value: str) -> bool:
+def _parse_bool(value: Any) -> bool:
+    """Coerce common boolean config values to ``bool``.
+
+    Accepts booleans, ``0``/``1`` integers, and case-insensitive string values
+    such as ``true``/``false``, ``yes``/``no``, and ``on``/``off``.
+    """
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, int):
+        if value in {0, 1}:
+            return bool(value)
+        raise ConfigError(f"Invalid boolean value: {value!r}")
+
+    if not isinstance(value, str):
+        raise ConfigError(f"Invalid boolean value: {value!r}")
+
     lowered = value.strip().lower()
     if lowered in {"1", "true", "yes", "y", "on"}:
         return True
     if lowered in {"0", "false", "no", "n", "off"}:
         return False
-    raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
+    raise ConfigError(f"Invalid boolean value: {value!r}")
 
 
 def parse_leads(leads: str) -> list[int]:
@@ -183,16 +199,16 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
             f"Unsupported variable: {variable}. Allowed: {sorted(ALLOWED_VARIABLES)}"
         )
 
-    if isinstance(pycpt_value, str):
-        pycpt_enabled = _parse_bool(pycpt_value)
-    else:
-        pycpt_enabled = bool(pycpt_value)
+    pycpt_enabled = _parse_bool(pycpt_value)
 
     predictor_area = str(parameters.get("predictor_area", ""))
     if pycpt_enabled:
         parse_bbox(predictor_area, "parameters.predictor_area")
 
-    forecast_enabled = bool(workflow.get("forecast", False))
+    hindcast_enabled = _parse_bool(workflow.get("hindcast", True))
+    forecast_enabled = _parse_bool(workflow.get("forecast", False))
+    clean_downloads = _parse_bool(workflow.get("clean_downloads", False))
+    clean_outputs = _parse_bool(workflow.get("clean_outputs", False))
     if forecast_enabled and "forecast_year" not in parameters:
         raise ConfigError(
             "parameters.forecast_year is required when forecast is enabled"
@@ -223,8 +239,10 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
             )
     return {
         "workflow": {
-            "hindcast": bool(workflow.get("hindcast", True)),
+            "hindcast": hindcast_enabled,
             "forecast": forecast_enabled,
+            "clean_downloads": clean_downloads,
+            "clean_outputs": clean_outputs,
         },
         "parameters": {
             "month": month,
@@ -409,6 +427,82 @@ def _bool_str(value: bool) -> str:
     return "True" if value else "False"
 
 
+def _user_confirmation() -> bool:
+    """Prompt the user for a yes/no confirmation.
+
+    Returns
+    -------
+    bool
+        True if the user confirms with 'y', False otherwise.
+    """
+    while True:
+        try:
+            response = input("Confirm? [y/n]: ").strip().lower()
+            if response == "y":
+                return True
+            elif response == "n" or response == "":
+                return False
+            else:
+                print("Invalid input. Please enter 'y' or 'n'.")
+        except (KeyboardInterrupt, EOFError):
+            return False
+
+
+def _clean_files(config: dict[str, Any], auto_yes: bool = False) -> None:
+    """Remove all previous output and log directories if they exist."""
+
+    def add_directory(raw_path: str) -> None:
+        directory = Path(raw_path)
+        resolved = directory.resolve()
+        if (
+            not raw_path.strip()
+            or resolved == Path.cwd().resolve()
+            or resolved == Path(resolved.anchor)
+        ):
+            raise ConfigError(f"Unsafe cleanup directory: {raw_path!r}")
+        if directory not in directories_to_clean:
+            directories_to_clean.append(directory)
+
+    directories_to_clean = []
+    enabled = []
+    paths = config["paths"]
+    active_sections = [
+        section
+        for section in ("hindcast", "forecast")
+        if config["workflow"].get(section, False)
+    ]
+
+    # Determine which directories to clean based on workflow configuration
+    if config["workflow"]["clean_downloads"]:
+        for section in active_sections:
+            add_directory(paths[section]["downloads"])
+        enabled.append("clean_downloads")
+
+    if config["workflow"]["clean_outputs"]:
+        add_directory(paths["logdir"])
+        for section in active_sections:
+            for key in ("products", "scores", "plots", "pycpt"):
+                add_directory(paths[section][key])
+        enabled.append("clean_outputs")
+
+    if not enabled:
+        return
+
+    print(
+        f"{', '.join(enabled)} enabled. "
+        "Delete the content of the following directories?"
+    )
+    for directory in directories_to_clean:
+        print(f"  {directory}")
+
+    if auto_yes or _user_confirmation():
+        for directory in directories_to_clean:
+            if directory.exists():
+                shutil.rmtree(directory)
+    else:
+        print("No files deleted. Continuing")
+
+
 def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
     """Execute configured hindcast and forecast workflows.
 
@@ -426,6 +520,7 @@ def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:
     """
     paths = config["paths"]
     params = config["parameters"]
+
     centres = _select_centres(config)
     pycpt_arg = _bool_str(params["pycpt"])
     subprocess_env = _build_subprocess_env(script_dir)
@@ -641,6 +736,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=str(Path(__file__).resolve().parents[1] / "osop_config.yml"),
         help="Path to YAML configuration file",
     )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Automatically answer yes to prompts",
+    )
     return parser
 
 
@@ -664,6 +764,8 @@ def main(argv: list[str] | None = None) -> int:
         config_path = Path(args.config).expanduser().resolve()
         loaded = load_config(config_path)
         validated = validate_config(loaded)
+
+        _clean_files(validated, auto_yes=args.yes)
 
         script_dir = Path(__file__).resolve().parent
         return run_pipeline(validated, script_dir)

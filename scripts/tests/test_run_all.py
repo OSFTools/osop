@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import functools
 import importlib.util
 import os
@@ -94,10 +93,31 @@ def test_parse_bool_falsy_values():
 
 
 def test_parse_bool_invalid_raises():
-    """An unrecognised value raises ArgumentTypeError."""
+    """An unrecognised value raises ConfigError."""
     run_all = _get_run_all()
-    with pytest.raises(argparse.ArgumentTypeError):
+    with pytest.raises(run_all.ConfigError):
         run_all._parse_bool("maybe")
+
+
+def test_parse_bool_accepts_bool_values():
+    """Boolean values are returned unchanged."""
+    run_all = _get_run_all()
+    assert run_all._parse_bool(True) is True
+    assert run_all._parse_bool(False) is False
+
+
+def test_parse_bool_accepts_integer_zero_one():
+    """Integer 0/1 values are coerced to booleans."""
+    run_all = _get_run_all()
+    assert run_all._parse_bool(1) is True
+    assert run_all._parse_bool(0) is False
+
+
+def test_parse_bool_rejects_invalid_integer():
+    """An integer other than 0/1 raises ConfigError."""
+    run_all = _get_run_all()
+    with pytest.raises(run_all.ConfigError):
+        run_all._parse_bool(2)
 
 
 # ---------------------------------------------------------------------------
@@ -263,6 +283,15 @@ def test_validate_config_pycpt_false_skips_predictor_area(tmp_path):
     assert run_all.validate_config(config)["parameters"]["pycpt"] is False
 
 
+def test_validate_config_pycpt_rejects_invalid_value(tmp_path):
+    """An invalid pycpt value raises ConfigError."""
+    run_all = _get_run_all()
+    config = _minimal_config(tmp_path)
+    config["parameters"]["pycpt"] = "maybe"
+    with pytest.raises(run_all.ConfigError, match="Invalid boolean value"):
+        run_all.validate_config(config)
+
+
 def test_validate_config_forecast_requires_year(tmp_path):
     """Enabling forecast without forecast_year raises ConfigError."""
     run_all = _get_run_all()
@@ -271,6 +300,22 @@ def test_validate_config_forecast_requires_year(tmp_path):
     del config["parameters"]["forecast_year"]
     with pytest.raises(run_all.ConfigError, match="forecast_year is required"):
         run_all.validate_config(config)
+
+
+def test_validate_config_workflow_string_bools_are_coerced(tmp_path):
+    """String workflow booleans are parsed with boolean coercion rules."""
+    run_all = _get_run_all()
+    config = _minimal_config(tmp_path)
+    config["workflow"]["hindcast"] = "false"
+    config["workflow"]["forecast"] = "true"
+    config["workflow"]["clean_downloads"] = "yes"
+    config["workflow"]["clean_outputs"] = "off"
+
+    validated = run_all.validate_config(config)
+    assert validated["workflow"]["hindcast"] is False
+    assert validated["workflow"]["forecast"] is True
+    assert validated["workflow"]["clean_downloads"] is True
+    assert validated["workflow"]["clean_outputs"] is False
 
 
 def test_validate_config_rejects_invalid_centres(tmp_path):
@@ -327,6 +372,125 @@ def test_validate_config_paths_base_required(tmp_path):
     del config["paths"]["base"]
     with pytest.raises(run_all.ConfigError, match="paths.base is required"):
         run_all.validate_config(config)
+
+
+# ---------------------------------------------------------------------------
+# _user_confirmation
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("response", ["y", " Y ", "Y"])
+def test_user_confirmation_accepts_y(response):
+    """A case-insensitive y is accepted as confirmation."""
+    run_all = _get_run_all()
+    with patch("builtins.input", return_value=response):
+        assert run_all._user_confirmation() is True
+
+
+@pytest.mark.parametrize("response", ["n", "N", "", "   "])
+def test_user_confirmation_rejects_n_blank_and_whitespace(response):
+    """No, blank, and whitespace responses reject confirmation."""
+    run_all = _get_run_all()
+    with patch("builtins.input", return_value=response):
+        assert run_all._user_confirmation() is False
+
+
+def test_user_confirmation_retries_invalid_input(capsys):
+    """Invalid input is reported and prompting continues."""
+    run_all = _get_run_all()
+    with patch("builtins.input", side_effect=["maybe", " y "]):
+        assert run_all._user_confirmation() is True
+
+    assert "Invalid input. Please enter 'y' or 'n'." in capsys.readouterr().out
+
+
+def test_user_confirmation_keyboard_interrupt(capsys):
+    """KeyboardInterrupt aborts confirmation and rejects the action."""
+    run_all = _get_run_all()
+    with patch("builtins.input", side_effect=KeyboardInterrupt):
+        assert run_all._user_confirmation() is False
+
+
+# ---------------------------------------------------------------------------
+# _clean_files
+# ---------------------------------------------------------------------------
+
+
+def test_clean_files_disabled_does_not_prompt(tmp_path):
+    """No cleanup is prompted or performed when both flags are disabled."""
+    run_all = _get_run_all()
+    config = run_all.validate_config(_minimal_config(tmp_path))
+
+    with patch.object(run_all, "_user_confirmation") as confirm:
+        run_all._clean_files(config)
+
+    confirm.assert_not_called()
+
+
+def test_clean_files_auto_yes_removes_downloads_and_outputs(tmp_path):
+    """Auto-confirmation removes configured download and output directories."""
+    run_all = _get_run_all()
+    config = run_all.validate_config(_minimal_config(tmp_path))
+    config["workflow"]["hindcast"] = True
+    config["workflow"]["forecast"] = True
+    config["workflow"]["clean_downloads"] = True
+    config["workflow"]["clean_outputs"] = True
+
+    directories = [
+        Path(config["paths"]["logdir"]),
+        *[
+            Path(config["paths"][section][key])
+            for section in ("hindcast", "forecast")
+            for key in ("downloads", "products", "scores", "plots", "pycpt")
+        ],
+    ]
+    for directory in directories:
+        directory.mkdir(parents=True)
+        (directory / "keep.txt").write_text("test", encoding="utf-8")
+
+    with patch.object(run_all, "_user_confirmation") as confirm:
+        run_all._clean_files(config, auto_yes=True)
+
+    confirm.assert_not_called()
+    assert all(not directory.exists() for directory in directories)
+
+
+def test_clean_files_respects_enabled_workflow_sections(tmp_path):
+    """Only directories for enabled workflow sections are cleaned."""
+    run_all = _get_run_all()
+    config = run_all.validate_config(_minimal_config(tmp_path))
+    config["workflow"]["hindcast"] = False
+    config["workflow"]["forecast"] = True
+    config["workflow"]["clean_downloads"] = True
+    config["workflow"]["clean_outputs"] = True
+
+    hindcast_dir = Path(config["paths"]["hindcast"]["downloads"])
+    forecast_dir = Path(config["paths"]["forecast"]["downloads"])
+    logdir = Path(config["paths"]["logdir"])
+
+    for directory in (hindcast_dir, forecast_dir, logdir):
+        directory.mkdir(parents=True)
+        (directory / "keep.txt").write_text("test", encoding="utf-8")
+
+    run_all._clean_files(config, auto_yes=True)
+
+    assert hindcast_dir.exists()
+    assert not forecast_dir.exists()
+    assert not logdir.exists()
+
+
+def test_clean_files_confirmation_no_preserves_directories(tmp_path):
+    """A negative response preserves every configured directory."""
+    run_all = _get_run_all()
+    config = run_all.validate_config(_minimal_config(tmp_path))
+    config["workflow"]["clean_downloads"] = True
+    download = Path(config["paths"]["hindcast"]["downloads"])
+    download.mkdir(parents=True)
+
+    with patch.object(run_all, "_user_confirmation", return_value=False):
+        run_all._clean_files(config)
+
+    assert download.exists()
 
 
 # ---------------------------------------------------------------------------

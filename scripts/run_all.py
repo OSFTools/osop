@@ -425,12 +425,10 @@ def _user_confirmation() -> bool:
             if response == "y":
                 return True
             elif response == "n" or response == "":
-                print("Skipped.")
                 return False
             else:
                 print("Invalid input. Please enter 'y' or 'n'.")
         except KeyboardInterrupt:
-            print("\nAborting.")
             return False
 
 
@@ -452,10 +450,10 @@ def _clean_files(config: dict[str, Any], auto_yes: bool = False) -> None:
 
     if config["workflow"]["clean_downloads"]:
         keys_to_match.append("downloads")
-        enabled.append("downloads")
+        enabled.append("clean_downloads")
     if config["workflow"]["clean_outputs"]:
         keys_to_match.extend(["logdir", "products", "scores", "plots", "pycpt"])
-        enabled.append("outputs")
+        enabled.append("clean_outputs")
 
     if not enabled:
         return
@@ -473,6 +471,8 @@ def _clean_files(config: dict[str, Any], auto_yes: bool = False) -> None:
         for directory in directories_to_clean:
             if directory.exists():
                 shutil.rmtree(directory)
+    else:
+        print("No files deleted. Continuing")
 
 
 def run_pipeline(config: dict[str, Any], script_dir: Path) -> int:

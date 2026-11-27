@@ -365,8 +365,6 @@ def test_user_confirmation_keyboard_interrupt(capsys):
     with patch("builtins.input", side_effect=KeyboardInterrupt):
         assert run_all._user_confirmation() is False
 
-    assert "Aborting." in capsys.readouterr().out
-
 
 # ---------------------------------------------------------------------------
 # _clean_files

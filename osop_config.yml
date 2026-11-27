@@ -1,7 +1,7 @@
 workflow:
   hindcast: true   # Run hindcast verification.
   forecast: false  # Generate a forecast; forecast_year is used when enabled.
-  clean_downloads: true # removes all previous downloads before running the workflow
+  clean_downloads: false # removes all previous downloads before running the workflow
   clean_outputs: false # removes all previous outputs before running the workflow
 
 parameters:

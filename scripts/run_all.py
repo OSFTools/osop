@@ -33,13 +33,29 @@ class ConfigError(Exception):
     """Raised when the orchestrator configuration is invalid."""
 
 
-def _parse_bool(value: str) -> bool:
+def _parse_bool(value: Any) -> bool:
+    """Coerce common boolean config values to ``bool``.
+
+    Accepts booleans, ``0``/``1`` integers, and case-insensitive string values
+    such as ``true``/``false``, ``yes``/``no``, and ``on``/``off``.
+    """
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, int):
+        if value in {0, 1}:
+            return bool(value)
+        raise ConfigError(f"Invalid boolean value: {value!r}")
+
+    if not isinstance(value, str):
+        raise ConfigError(f"Invalid boolean value: {value!r}")
+
     lowered = value.strip().lower()
     if lowered in {"1", "true", "yes", "y", "on"}:
         return True
     if lowered in {"0", "false", "no", "n", "off"}:
         return False
-    raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
+    raise ConfigError(f"Invalid boolean value: {value!r}")
 
 
 def parse_leads(leads: str) -> list[int]:
@@ -183,16 +199,16 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
             f"Unsupported variable: {variable}. Allowed: {sorted(ALLOWED_VARIABLES)}"
         )
 
-    if isinstance(pycpt_value, str):
-        pycpt_enabled = _parse_bool(pycpt_value)
-    else:
-        pycpt_enabled = bool(pycpt_value)
+    pycpt_enabled = _parse_bool(pycpt_value)
 
     predictor_area = str(parameters.get("predictor_area", ""))
     if pycpt_enabled:
         parse_bbox(predictor_area, "parameters.predictor_area")
 
-    forecast_enabled = bool(workflow.get("forecast", False))
+    hindcast_enabled = _parse_bool(workflow.get("hindcast", True))
+    forecast_enabled = _parse_bool(workflow.get("forecast", False))
+    clean_downloads = _parse_bool(workflow.get("clean_downloads", False))
+    clean_outputs = _parse_bool(workflow.get("clean_outputs", False))
     if forecast_enabled and "forecast_year" not in parameters:
         raise ConfigError(
             "parameters.forecast_year is required when forecast is enabled"
@@ -223,10 +239,10 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
             )
     return {
         "workflow": {
-            "hindcast": bool(workflow.get("hindcast", True)),
+            "hindcast": hindcast_enabled,
             "forecast": forecast_enabled,
-            "clean_downloads": bool(workflow.get("clean_downloads", False)),
-            "clean_outputs": bool(workflow.get("clean_outputs", False)),
+            "clean_downloads": clean_downloads,
+            "clean_outputs": clean_outputs,
         },
         "parameters": {
             "month": month,

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import functools
 import importlib.util
 import os
@@ -94,10 +93,31 @@ def test_parse_bool_falsy_values():
 
 
 def test_parse_bool_invalid_raises():
-    """An unrecognised value raises ArgumentTypeError."""
+    """An unrecognised value raises ConfigError."""
     run_all = _get_run_all()
-    with pytest.raises(argparse.ArgumentTypeError):
+    with pytest.raises(run_all.ConfigError):
         run_all._parse_bool("maybe")
+
+
+def test_parse_bool_accepts_bool_values():
+    """Boolean values are returned unchanged."""
+    run_all = _get_run_all()
+    assert run_all._parse_bool(True) is True
+    assert run_all._parse_bool(False) is False
+
+
+def test_parse_bool_accepts_integer_zero_one():
+    """Integer 0/1 values are coerced to booleans."""
+    run_all = _get_run_all()
+    assert run_all._parse_bool(1) is True
+    assert run_all._parse_bool(0) is False
+
+
+def test_parse_bool_rejects_invalid_integer():
+    """An integer other than 0/1 raises ConfigError."""
+    run_all = _get_run_all()
+    with pytest.raises(run_all.ConfigError):
+        run_all._parse_bool(2)
 
 
 # ---------------------------------------------------------------------------
@@ -263,6 +283,15 @@ def test_validate_config_pycpt_false_skips_predictor_area(tmp_path):
     assert run_all.validate_config(config)["parameters"]["pycpt"] is False
 
 
+def test_validate_config_pycpt_rejects_invalid_value(tmp_path):
+    """An invalid pycpt value raises ConfigError."""
+    run_all = _get_run_all()
+    config = _minimal_config(tmp_path)
+    config["parameters"]["pycpt"] = "maybe"
+    with pytest.raises(run_all.ConfigError, match="Invalid boolean value"):
+        run_all.validate_config(config)
+
+
 def test_validate_config_forecast_requires_year(tmp_path):
     """Enabling forecast without forecast_year raises ConfigError."""
     run_all = _get_run_all()
@@ -271,6 +300,22 @@ def test_validate_config_forecast_requires_year(tmp_path):
     del config["parameters"]["forecast_year"]
     with pytest.raises(run_all.ConfigError, match="forecast_year is required"):
         run_all.validate_config(config)
+
+
+def test_validate_config_workflow_string_bools_are_coerced(tmp_path):
+    """String workflow booleans are parsed with boolean coercion rules."""
+    run_all = _get_run_all()
+    config = _minimal_config(tmp_path)
+    config["workflow"]["hindcast"] = "false"
+    config["workflow"]["forecast"] = "true"
+    config["workflow"]["clean_downloads"] = "yes"
+    config["workflow"]["clean_outputs"] = "off"
+
+    validated = run_all.validate_config(config)
+    assert validated["workflow"]["hindcast"] is False
+    assert validated["workflow"]["forecast"] is True
+    assert validated["workflow"]["clean_downloads"] is True
+    assert validated["workflow"]["clean_outputs"] is False
 
 
 def test_validate_config_rejects_invalid_centres(tmp_path):
